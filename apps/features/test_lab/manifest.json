@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "test-lab",
+  "label": "模块测试台",
+  "version": "1.0.2",
+  "hostApi": 1,
+  "target": "windows-x64",
+  "frontend": "frontend/index.html",
+  "worker": "worker/module-worker.exe",
+  "methods": ["test.echo"],
+  "dataSchema": 1,
+  "source": {"commit": null, "dirty": true}
+}

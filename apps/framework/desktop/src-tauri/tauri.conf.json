@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "NimdaDesk",
+  "version": "0.5.0",
+  "identifier": "net.nimda.nimdadesk",
+  "build": {
+    "beforeDevCommand": {
+      "script": "npm run dev:web",
+      "cwd": "../../.."
+    },
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": {
+      "script": "npm run build:modules && npm run build:web && npm run build:worker",
+      "cwd": "../../.."
+    },
+    "frontendDist": "../../../../dist/frontend"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "NimdaDesk",
+        "width": 1180,
+        "height": 800,
+        "minWidth": 860,
+        "minHeight": 620,
+        "backgroundColor": "#101827"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost data:; connect-src ipc: http://ipc.localhost; font-src 'self' data:; frame-src http://127.0.0.1:*"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "externalBin": [
+      "binaries/nimdadesk-worker"
+    ],
+    "resources": {
+      "../../../../dist/worker/nimdadesk-worker/_internal/": "_internal/",
+      "../../../../dist/bundled-modules/": "bundled-modules/"
+    },
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ]
+  }
+}

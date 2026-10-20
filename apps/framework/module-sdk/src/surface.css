@@ -1,0 +1,5 @@
+body { min-width: 0; margin: 0; padding: 20px; background: var(--bg); }
+#app { min-width: 0; }
+.module-standalone-title { margin-bottom: 20px; }
+.module-standalone-title h2 { font-size: 23px; margin: 7px 0 12px; }
+.module-standalone-title p { color: var(--muted); font-size: 12px; line-height: 1.9; }

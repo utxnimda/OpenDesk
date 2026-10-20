@@ -1,0 +1,2 @@
+# Game-module sprite decoding; the framework worker remains standard-library only.
+Pillow==13.0.0

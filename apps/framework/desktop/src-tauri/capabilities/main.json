@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-window",
+  "description": "Local framework UI; no generic shell, filesystem or network plugin access.",
+  "windows": ["main"],
+  "permissions": [
+    "allow-host-info", "allow-settings-get", "allow-settings-save",
+    "allow-worker-call", "allow-worker-stop", "allow-frontend-ready",
+    "allow-modules-list", "allow-modules-import", "allow-modules-select",
+    "allow-modules-enable", "allow-modules-open", "allow-modules-call", "allow-modules-close",
+    "allow-modules-ui-ready", "allow-modules-load-failed", "core:event:allow-listen", "core:event:allow-unlisten"
+  ]
+}

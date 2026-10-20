@@ -1,0 +1,47 @@
+{
+  "name": "nimdadesk",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "A local desktop workbench framework; business modules are added explicitly.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node scripts/desktop.mjs dev",
+    "dev:web": "vite --config vite.config.ts",
+    "dev:example": "node scripts/web-example.mjs",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test:frontend": "vitest run",
+    "test:worker": "node scripts/python.mjs test",
+    "test:versioning": "node --test tests/versioning/*.test.mjs",
+    "version:check": "node scripts/version.mjs check",
+    "version:sync": "node scripts/version.mjs sync",
+    "version:prepare": "node scripts/version.mjs prepare",
+    "version:tags": "node scripts/version.mjs tags",
+    "test:architecture": "node scripts/check-boundaries.mjs",
+    "check": "node scripts/check.mjs",
+    "build:web": "npm run version:check && vite build --config vite.config.ts",
+    "build:worker": "node scripts/python.mjs bundle",
+    "build:modules": "node scripts/module-pack.mjs bundled",
+    "build:module-fixtures": "node scripts/module-pack.mjs fixtures",
+    "build": "node scripts/desktop.mjs build",
+    "desktop:check": "node scripts/desktop.mjs check",
+    "desktop:test": "node scripts/desktop.mjs test",
+    "doctor": "node scripts/doctor.mjs"
+  },
+  "dependencies": {
+    "@lucide/vue": "1.57.0",
+    "@tauri-apps/api": "2.12.4",
+    "vue": "3.5.44"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.3",
+    "@types/node": "24.10.1",
+    "@vitejs/plugin-vue": "6.0.10",
+    "typescript": "5.9.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.4",
+    "vue-tsc": "3.3.13"
+  }
+}
