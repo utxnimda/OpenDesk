@@ -1,4 +1,4 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 fn main() {
-    nimdadesk_lib::run();
+    opendesk_lib::run();
 }

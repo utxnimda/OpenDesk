@@ -66,10 +66,10 @@ bundled输出 `dist/bundled-modules/app-manifest.json` 和：
 
 | ID | 版本 | 用途 |
 |---|---|---|
-| tower-assistant | 0.1.2 | 自带原塔防助手，优化樱花并同步海盐蓝/松石绿/暖砂岩/石墨夜，不修改算法 |
-| test-lab | 1.0.2 | 自带测试页签，同步上述外观，marker=v1-baseline |
+| tower-assistant | 0.1.3 | 自带塔防助手，使用 OpenDesk 命名并同步樱花/海盐蓝/松石绿/暖砂岩/石墨夜外观，不修改算法 |
+| test-lab | 1.0.3 | 自带测试页签，使用 OpenDesk 命名并同步上述外观，marker=v1-baseline |
 
-新外观会改变包内容，因此以新包版本交付，不覆盖旧版摘要。升级宿主只增加这些随附包，不自动改变用户原先固定的版本；原有用户可在「功能管理」选择上述新版本，使页签也使用本次配色。当前 fixture 的版本切换基线为自带测试台 1.0.2，测试程序从实际索引读取基线版本。
+OpenDesk 命名变更涉及包内源码与通信标识，因此以新包版本交付，不覆盖旧版摘要。宿主升级不自动改变当前应用内用户固定的版本；旧应用数据及包选择不自动迁入 OpenDesk。当前 fixture 的版本切换基线为自带测试台 1.0.3，测试程序从实际索引读取基线版本。既有版本历史和验证记录保持原始事实。
 
 fixtures输出 `dist/module-fixtures/fixtures.json` 和：
 
@@ -88,7 +88,7 @@ Vite独立构建使用base='./'并烘焙 __MODULE_ID__/VERSION/MARKER。PyInstal
 
 ## 来源与重复构建
 
-默认Git来源为当前工程；构建时可设置绝对 NIMDADESK_SOURCE_ROOT 读取正式工程基线。跨暂存目录一律保守dirty，不能把基线commit冒充全部构建代码。环境变量只参与构建。
+默认Git来源为当前工程；构建时可设置绝对 OPENDESK_SOURCE_ROOT 读取正式工程基线。跨暂存目录一律保守dirty，不能把基线commit冒充全部构建代码。环境变量只参与构建。
 
 ZIP文件按路径排序并固定时间，PyInstaller使用固定SOURCE_DATE_EPOCH和PYTHONHASHSEED。构建缓存按模块源码、SDK、通用worker、样式、规范化依赖锁、打包脚本及实际工具版本生成指纹；未变化则校验并复用原包及原source身份。宿主版本字段从依赖指纹剔除，避免纯宿主版本升级改变未更新的模块包。
 
@@ -107,7 +107,7 @@ ZIP文件按路径排序并固定时间，PyInstaller使用固定SOURCE_DATE_EPO
 ```powershell
 .\scripts\module-smoke.ps1
 # 或指定待测宿主与fixture目录：
-.\scripts\module-smoke.ps1 -Executable .\dist\NimdaDesk\NimdaDesk.exe -Fixtures .\dist\module-fixtures
+.\scripts\module-smoke.ps1 -Executable .\dist\OpenDesk\OpenDesk.exe -Fixtures .\dist\module-fixtures
 ```
 
 脚本创建全新的 `.local/module-smoke/<时间戳-唯一后缀>` 框架数据根，清理子进程的源码/Python覆盖，以 Hidden 方式启动 `--module-smoke`，最多等待140秒，读取 `module-smoke-result.json` 并检查退出码以及本次数据根下无残留 module-worker。最后恢复调用者环境。超时只停止持有的本次进程对象，不停止其他正常应用或按名字杀进程。WebView2缓存不包含在框架数据根隔离保证中；只有实际运行后生成的结果才能证明桌面链路通过。

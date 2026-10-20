@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { readGitIdentity } from '../../scripts/build-version.mjs';
 
 test('Git identity distinguishes source archives, committed trees and untracked changes', () => {
-  const root = mkdtempSync(join(tmpdir(), 'nimdadesk-identity-'));
+  const root = mkdtempSync(join(tmpdir(), 'opendesk-identity-'));
   const run = (...args) => execFileSync('git', args, {
     cwd: root, encoding: 'utf8', windowsHide: true,
     env: { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: join(root, 'empty-gitconfig') },

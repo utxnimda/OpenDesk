@@ -51,7 +51,7 @@ export function sanitizeRepository(value) {
 }
 
 function provenance() {
-  const sourceRoot = process.env.NIMDADESK_SOURCE_ROOT ? resolve(process.env.NIMDADESK_SOURCE_ROOT) : root;
+  const sourceRoot = process.env.OPENDESK_SOURCE_ROOT ? resolve(process.env.OPENDESK_SOURCE_ROOT) : root;
   const identity = readGitIdentity(sourceRoot);
   const copiedBuild = realpathSync(sourceRoot).toLowerCase() !== realpathSync(root).toLowerCase();
   const env = { ...process.env };
@@ -104,9 +104,9 @@ function workerEntry(definition, manifest, marker) {
     : 'register(registry)';
   return [
     '"""Generated build composition. Identity is baked into this executable."""',
-    'from nimdadesk_worker.__main__ import main',
-    'from nimdadesk_worker.protocol import ProtocolError',
-    'from nimdadesk_worker.registry import MethodResult',
+    'from opendesk_worker.__main__ import main',
+    'from opendesk_worker.protocol import ProtocolError',
+    'from opendesk_worker.registry import MethodResult',
     `from ${definition.backend} import register`,
     '',
     'def configure(registry):',
@@ -133,7 +133,7 @@ function verifyFrozenWorker(executable, manifest, marker) {
     { protocolVersion: 1, id: 'stop', method: 'runtime.shutdown', params: {} },
   ];
   const env = { ...process.env };
-  for (const key of ['PYTHONPATH', 'PYTHONHOME', 'NIMDADESK_PYTHON', 'NIMDADESK_WORKER_SOURCE']) delete env[key];
+  for (const key of ['PYTHONPATH', 'PYTHONHOME', 'OPENDESK_PYTHON', 'OPENDESK_WORKER_SOURCE']) delete env[key];
   const result = spawnSync(executable, [], { input: requests.map((request) => JSON.stringify(request)).join('\n') + '\n', encoding: 'utf8', timeout: 30_000, windowsHide: true, cwd: dirname(executable), env, maxBuffer: 4 * 1024 * 1024 });
   if (result.error || result.status !== 0) throw new Error('Frozen module worker failed: ' + (result.error?.message ?? result.stderr));
   const messages = result.stdout.trim().split(/\r?\n/).map((line) => JSON.parse(line));

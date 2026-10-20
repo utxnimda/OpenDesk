@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import os
 
-from nimdadesk_worker.protocol import ProtocolError
-from nimdadesk_worker.registry import MethodRegistry, MethodResult
+from opendesk_worker.protocol import ProtocolError
+from opendesk_worker.registry import MethodRegistry, MethodResult
 
 MAX_TEXT_LENGTH = 4096
 

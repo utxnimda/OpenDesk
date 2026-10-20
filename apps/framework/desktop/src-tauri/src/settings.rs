@@ -133,7 +133,7 @@ mod tests {
     #[test]
     fn save_round_trip_and_preserve_future_schema() {
         let root =
-            std::env::temp_dir().join(format!("nimdadesk-settings-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("opendesk-settings-{}", uuid::Uuid::new_v4()));
         let store = SettingsStore::new(&root);
         assert_eq!(store.load().unwrap(), Settings::default());
         for theme in [
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn unknown_theme_is_rejected_without_replacing_original() {
         let root =
-            std::env::temp_dir().join(format!("nimdadesk-settings-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("opendesk-settings-{}", uuid::Uuid::new_v4()));
         let store = SettingsStore::new(&root);
         store.save(Settings::default()).unwrap();
         let original = r#"{"schemaVersion":1,"theme":"unknown-future-theme","closeToTray":true}"#;

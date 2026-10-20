@@ -1,6 +1,8 @@
-# NimdaDesk 架构与边界
+# OpenDesk 架构与边界
 
 本文包含用户授权的本地版本化页签包。实现范围与运行证据分开，具体检查结果见 README 和验证记录。
+
+OpenDesk 的应用标识为 `net.nimda.opendesk`。可执行文件、worker、构建目录及环境变量使用 OpenDesk / opendesk / OPENDESK 命名。默认配置与包选择归属该应用的数据目录，不自动迁入或删除旧应用数据；版本历史和历史验证记录保留原始身份及证据含义。
 
 ## 三层责任
 

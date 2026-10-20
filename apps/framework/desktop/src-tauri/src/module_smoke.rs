@@ -254,10 +254,10 @@ async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, Stri
 }
 
 pub async fn run(app: tauri::AppHandle) {
-    let fixtures = std::env::var_os("NIMDADESK_MODULE_FIXTURES").map(PathBuf::from);
+    let fixtures = std::env::var_os("OPENDESK_MODULE_FIXTURES").map(PathBuf::from);
     let result = match fixtures {
         Some(path) if path.is_absolute() => exercise(&app, &path).await,
-        _ => Err("NIMDADESK_MODULE_FIXTURES must name an absolute test fixture directory".into()),
+        _ => Err("OPENDESK_MODULE_FIXTURES must name an absolute test fixture directory".into()),
     };
     let state = app.state::<AppState>();
     if let Ok(manager) = &state.modules {

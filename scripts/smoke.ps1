@@ -1,17 +1,17 @@
 param([string]$Executable)
 $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-if (-not $Executable) { $Executable = Join-Path $projectRoot 'dist\NimdaDesk\NimdaDesk.exe' }
+if (-not $Executable) { $Executable = Join-Path $projectRoot 'dist\OpenDesk\OpenDesk.exe' }
 $Executable = (Resolve-Path -LiteralPath $Executable).Path
 $runRoot = Join-Path $projectRoot ('.local\smoke\' + [DateTime]::Now.ToString('yyyyMMdd-HHmmss-fff'))
 New-Item -ItemType Directory -Path $runRoot -Force | Out-Null
-$previousRoot = $env:NIMDADESK_DATA_DIR
-$previousPython = $env:NIMDADESK_PYTHON
-$previousSource = $env:NIMDADESK_WORKER_SOURCE
+$previousRoot = $env:OPENDESK_DATA_DIR
+$previousPython = $env:OPENDESK_PYTHON
+$previousSource = $env:OPENDESK_WORKER_SOURCE
 try {
-    $env:NIMDADESK_DATA_DIR = $runRoot
-    $env:NIMDADESK_PYTHON = $null
-    $env:NIMDADESK_WORKER_SOURCE = $null
+    $env:OPENDESK_DATA_DIR = $runRoot
+    Remove-Item -LiteralPath Env:\OPENDESK_PYTHON -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath Env:\OPENDESK_WORKER_SOURCE -ErrorAction SilentlyContinue
     # Start from another directory, with no source Python configuration.
     $process = Start-Process -FilePath $Executable -ArgumentList '--smoke-test' -WorkingDirectory $env:TEMP -WindowStyle Hidden -PassThru
     if (-not $process.WaitForExit(55000)) {
@@ -27,13 +27,21 @@ try {
         Get-Content -LiteralPath $reportPath
         throw "Desktop smoke failed. Exit=$($process.ExitCode)"
     }
-    $workerPath = Join-Path ([IO.Path]::GetDirectoryName($Executable)) 'nimdadesk-worker.exe'
-    $remaining = @(Get-CimInstance Win32_Process -Filter "Name='nimdadesk-worker.exe'" | Where-Object { $_.ExecutablePath -eq $workerPath })
+    $workerPath = Join-Path ([IO.Path]::GetDirectoryName($Executable)) 'opendesk-worker.exe'
+    $remaining = @(Get-CimInstance Win32_Process -Filter "Name='opendesk-worker.exe'" | Where-Object { $_.ExecutablePath -eq $workerPath })
     if ($remaining.Count -gt 0) { throw 'Desktop smoke left a packaged worker running.' }
     Get-Content -LiteralPath $reportPath
     Write-Output "Desktop smoke passed. Evidence: $reportPath"
 } finally {
-    $env:NIMDADESK_DATA_DIR = $previousRoot
-    $env:NIMDADESK_PYTHON = $previousPython
-    $env:NIMDADESK_WORKER_SOURCE = $previousSource
+    foreach ($entry in @(
+        @{ Name = 'OPENDESK_DATA_DIR'; Value = $previousRoot },
+        @{ Name = 'OPENDESK_PYTHON'; Value = $previousPython },
+        @{ Name = 'OPENDESK_WORKER_SOURCE'; Value = $previousSource }
+    )) {
+        if ($null -eq $entry.Value) {
+            Remove-Item -LiteralPath ('Env:\' + $entry.Name) -ErrorAction SilentlyContinue
+        } else {
+            [Environment]::SetEnvironmentVariable($entry.Name, $entry.Value, 'Process')
+        }
+    }
 }

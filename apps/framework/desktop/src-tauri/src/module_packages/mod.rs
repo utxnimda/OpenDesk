@@ -634,7 +634,7 @@ mod tests {
 
     fn test_manager() -> (PathBuf, ModuleManager) {
         let root = std::env::temp_dir().join(format!(
-            "nimdadesk-module-lifecycle-{}",
+            "opendesk-module-lifecycle-{}",
             uuid::Uuid::new_v4()
         ));
         fs::create_dir_all(&root).unwrap();

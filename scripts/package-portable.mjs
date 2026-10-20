@@ -4,21 +4,21 @@ import { root, desktop } from './environment.mjs';
 
 // This entry packages existing build products; it never launches a build or removes files.
 if (process.platform !== 'win32' || process.arch !== 'x64' ||
-    (process.env.NIMDADESK_TARGET && process.env.NIMDADESK_TARGET !== 'x86_64-pc-windows-msvc')) {
+    (process.env.OPENDESK_TARGET && process.env.OPENDESK_TARGET !== 'x86_64-pc-windows-msvc')) {
   throw new Error('The initial portable package supports Windows x64 only.');
 }
 if (process.argv.length > 3) throw new Error('Usage: node scripts/package-portable.mjs [host-executable]');
 
 const hostExecutable = process.argv[2]
   ? resolve(process.argv[2])
-  : join(desktop, 'src-tauri/target/release/nimdadesk.exe');
-const workerBundle = join(root, 'dist/worker/nimdadesk-worker');
+  : join(desktop, 'src-tauri/target/release/opendesk.exe');
+const workerBundle = join(root, 'dist/worker/opendesk-worker');
 const internal = join(workerBundle, '_internal');
 const bundledModules = join(root, 'dist/bundled-modules');
-const destination = join(root, 'dist/NimdaDesk');
+const destination = join(root, 'dist/OpenDesk');
 const files = [
-  [hostExecutable, join(destination, 'NimdaDesk.exe')],
-  [join(workerBundle, 'nimdadesk-worker.exe'), join(destination, 'nimdadesk-worker.exe')],
+  [hostExecutable, join(destination, 'OpenDesk.exe')],
+  [join(workerBundle, 'opendesk-worker.exe'), join(destination, 'opendesk-worker.exe')],
 ];
 const directories = [destination, join(destination, '_internal'), join(destination, 'bundled-modules')];
 
@@ -104,7 +104,7 @@ function checkExistingPackage() {
 // leave a partial package. Unknown destination entries reject the operation;
 // existing user data is never silently deleted or carried into a new release.
 requireFile(hostExecutable);
-requireFile(join(workerBundle, 'nimdadesk-worker.exe'));
+requireFile(join(workerBundle, 'opendesk-worker.exe'));
 collectRuntime(internal, join(destination, '_internal'));
 requireFile(join(bundledModules, 'app-manifest.json'));
 collectRuntime(bundledModules, join(destination, 'bundled-modules'));
@@ -120,7 +120,7 @@ for (const [source, target] of files) {
 }
 for (const directory of directories) checkDestination(directory, true);
 const existing = checkExistingPackage();
-console.log('Validated copy plan: NimdaDesk.exe, nimdadesk-worker.exe, _internal/ (' + (files.length - 2) + ' runtime files).');
+console.log('Validated copy plan: OpenDesk.exe, opendesk-worker.exe, _internal/ (' + (files.length - 2) + ' runtime files).');
 console.log('Existing output matches this manifest: ' + existing.existingFiles + ' files, ' + existing.existingDirectories + ' directories.');
 
 for (const directory of directories) mkdirSync(directory, { recursive: true });

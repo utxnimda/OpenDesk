@@ -459,7 +459,7 @@ mod tests {
     #[test]
     fn static_server_requires_nonce_host_and_get_then_releases_listener() {
         let root =
-            std::env::temp_dir().join(format!("nimdadesk-static-test-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("opendesk-static-test-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&root).unwrap();
         fs::write(root.join("index.html"), b"<p>module</p>").unwrap();
         let server = StaticServer::start(root.clone(), "index.html").unwrap();

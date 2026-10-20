@@ -1,16 +1,16 @@
 # OpenDesk
 
-OpenDesk 是 NimdaDesk 桌面工作台的公开源码仓库。本仓库从经过检查的源码快照建立全新 Git 历史，不导入旧提交、标签或生成产物。应用名称、标识和数据目录仍保持 NimdaDesk，既有版本记录保留其历史含义。
+OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk`，使用 OpenDesk 名称、构建产物和独立数据目录。本仓库从经过检查的源码快照建立全新 Git 历史，不导入旧提交、标签或生成产物。既有版本历史和验证记录保留原始名称、路径及历史含义，不能代替当前 OpenDesk 的构建与运行验证。
 
 [![Check](https://github.com/utxnimda/OpenDesk/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/utxnimda/OpenDesk/actions/workflows/check.yml)
 
 面向 Windows 的本地桌面工具台，用于挂载和开发独立功能。基于 **Tauri 2 + Vue 3 / TypeScript + Python worker**，通用框架管理窗口、设置和后台通信，业务模块各自负责界面与逻辑。
 
-**当前宿主版本：v0.5.0** · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md)
+**当前宿主版本：v0.6.0** · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md)
 
 ## 页签包与测试台
 
-应用自带「塔防山贼助手 0.1.2」与「模块测试台 1.0.2」两个独立页签包。打开「功能管理」可导入本地 `.ndpkg` 文件，查看导入记录、启停页签、选择已安装版本和查看包的 Git 来源。导入成功只增加候选版本，不自动替换正在使用的版本；同版本异摘要被拒绝，失败包的原件和具体错误保留在应用数据目录。
+应用自带「塔防山贼助手 0.1.3」与「模块测试台 1.0.3」两个独立页签包。打开「功能管理」可导入本地 `.ndpkg` 文件，查看导入记录、启停页签、选择已安装版本和查看包的 Git 来源。导入成功只增加候选版本，不自动替换正在使用的版本；同版本异摘要被拒绝，失败包的原件和具体错误保留在应用数据目录。
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
 
@@ -18,7 +18,7 @@ OpenDesk 是 NimdaDesk 桌面工作台的公开源码仓库。本仓库从经过
 
 | 包 | 用途 |
 |---|---|
-| `dist/module-fixtures/test-lab-1.1.0.ndpkg` | 导入后将测试台从 1.0.2 切到 1.1.0，再切回；对照前端版本与后台 echo |
+| `dist/module-fixtures/test-lab-1.1.0.ndpkg` | 导入后将测试台从 1.0.3 切到 1.1.0，再切回；对照前端版本与后台 echo |
 | `dist/module-fixtures/test-lab-2.0.0-incompatible.ndpkg` | host API 不兼容，应保留原件并拒绝，不影响当前测试台 |
 | `dist/module-fixtures/test-extra-1.0.0.ndpkg` | 导入全新页签，再选择版本并启用 |
 | `dist/module-fixtures/test-lab-1.2.0-ui-failure.ndpkg` | 合法纯前端包故意不发送SDK hello；应超时、记录错误并恢复此前可用版本 |
@@ -33,7 +33,7 @@ OpenDesk 是 NimdaDesk 桌面工作台的公开源码仓库。本仓库从经过
 
 | 稳定功能 ID | 功能 | 当前功能版本 | 最近更新所属应用版本 |
 |---|---|---|---|
-| `core.workbench` | 桌面工作台：主题、设置、诊断、托盘及快捷键 | 0.3.0 | 0.5.0 |
+| `core.workbench` | 桌面工作台：应用身份、主题、设置、诊断、托盘及快捷键 | 0.4.0 | 0.6.0 |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
 | `core.module-packages` | 页签导入、开关与独立版本管理 | 0.1.0 | 0.3.0 |
 | `tower.save-reader` | 存档与仓库读取 | 0.1.0 | 0.2.0 |
@@ -62,11 +62,11 @@ OpenDesk 是 NimdaDesk 桌面工作台的公开源码仓库。本仓库从经过
 | 暖砂岩 `sand` | 暖米灰背景与棕金色强调，减少冷白界面的生硬感 |
 | 石墨夜 `graphite` | 中性深灰层级与清晰强调色，提供低亮度的深色方案 |
 
-樱花配色最初参考 [NimdaClaw sakura](https://github.com/utxnimda/NimdaClaw/blob/76f4599d176502caaa1b9189c354e8c3e207f0ef/apps/framework/frontend/styles/app.css#L570-L639)，此版按 NimdaDesk 的页面层级与控件进一步调整。
+樱花配色最初参考 [NimdaClaw sakura](https://github.com/utxnimda/NimdaClaw/blob/76f4599d176502caaa1b9189c354e8c3e207f0ef/apps/framework/frontend/styles/app.css#L570-L639)，此版按 OpenDesk 的页面层级与控件进一步调整。
 
 具体复审结论、颜色职责和扩展规则见 [外观与配色](docs/appearance.md)。
 
-新随附的塔防助手 0.1.2、测试台 1.0.2 支持上述外观同步。旧包继续收到兼容的基础浅色或深色主题：石墨夜传递 `dark`，其余彩色外观传递 `light`；认识具体外观的旧包仍可按自身版本呈现。应用升级保留用户固定的包版本，如需页签内部显示本次配色，在「功能管理」手动选择对应新版。
+随附的塔防助手 0.1.3、测试台 1.0.3 支持上述外观同步，并使用 OpenDesk 命名的模块通信契约。旧包继续收到兼容的基础浅色或深色主题：石墨夜传递 `dark`，其余彩色外观传递 `light`；认识具体外观的旧包仍可按自身版本呈现。应用升级保留用户固定的包版本；旧应用的模块包不自动迁入 OpenDesk，导入后仍需通过当前宿主的身份与通信校验。
 
 ## 桌面基础
 
@@ -93,7 +93,7 @@ cd OpenDesk
 npm ci
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r packaging/requirements-build.txt
-$env:NIMDADESK_PYTHON = (Resolve-Path .\.venv\Scripts\python.exe).Path
+$env:OPENDESK_PYTHON = (Resolve-Path .\.venv\Scripts\python.exe).Path
 npm run build:worker
 npm run build:modules
 npm run dev
@@ -139,17 +139,17 @@ npm run dev
 
 发布包的真实桌面链路检查可运行 `.\scripts\smoke.ps1`。它使用独立的框架测试数据目录，从其他工作目录启动 EXE，验证 WebView、IPC、设置读写与打包 worker 启停，并在完成后退出。
 
-模块导入与真实版本切换检查使用 `.\scripts\module-smoke.ps1`，默认读取 `dist/NimdaDesk/NimdaDesk.exe` 与 `dist/module-fixtures`；可用 `-Executable`、`-Fixtures` 显式指定。先执行 `npm run build:module-fixtures` 准备四个测试包；只补建UI加载失败包可执行 `node scripts/module-pack.mjs ui-failure-fixture`。测试以全新的 `.local/module-smoke` 数据根启动 `--module-smoke`，最多等待140秒，核对报告、退出码及该测试根无遗留模块worker；超时只停止本次测试宿主，不停止其他正常实例。源码中有此测试入口不代表已经运行通过。
+模块导入与真实版本切换检查使用 `.\scripts\module-smoke.ps1`，默认读取 `dist/OpenDesk/OpenDesk.exe` 与 `dist/module-fixtures`；可用 `-Executable`、`-Fixtures` 显式指定。先执行 `npm run build:module-fixtures` 准备四个测试包；只补建UI加载失败包可执行 `node scripts/module-pack.mjs ui-failure-fixture`。测试以全新的 `.local/module-smoke` 数据根启动 `--module-smoke`，最多等待140秒，核对报告、退出码及该测试根无遗留模块worker；超时只停止本次测试宿主，不停止其他正常实例。源码中有此测试入口不代表已经运行通过。
 
 首次运行 Rust 检查前需要 `npm run build:worker` 和 `npm run build:modules`，因为桌面构建描述引用 worker 与自带包资源。首次取得仓库应使用已有 Cargo.lock；不要在正常检查时主动更新锁文件。
 
-生产包为 `dist/NimdaDesk/NimdaDesk.exe`，必须连同同目录的 `nimdadesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携压缩包应完整解压后启动，不能只复制 EXE。NSIS 安装器位于 `apps/framework/desktop/src-tauri/target/release/bundle/nsis`。生成安装器不代表已安装、已签名或已发布；上传 Git 源码和标签也不会自动创建 GitHub Release 或上传安装包。
+生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携压缩包应完整解压后启动，不能只复制 EXE。NSIS 安装器位于 `apps/framework/desktop/src-tauri/target/release/bundle/nsis`，当前文件名为 `OpenDesk_0.6.0_x64-setup.exe`。生成安装器不代表已安装、已签名或已发布；上传 Git 源码和标签也不会自动创建 GitHub Release 或上传安装包。
 
 便携目录重建时若存在不属于本次产物清单的文件或目录，构建会在复制前拒绝，避免旧依赖或个人文件混入新包。请将旧输出移走后重新生成，或先检查并手工清理；脚本不自动删除未知内容。
 
 ## 配置与运行数据
 
-默认数据根由 Tauri `app_data_dir` 决定，运行诊断页显示实际路径。可用绝对路径环境变量 `NIMDADESK_DATA_DIR` 显式覆盖，适合隔离测试。相对路径会拒绝。
+默认数据根由应用标识 `net.nimda.opendesk` 对应的 Tauri `app_data_dir` 决定，运行诊断页显示实际路径。OpenDesk 不自动读取、迁移或清理旧应用的数据和包选择。可用绝对路径环境变量 `OPENDESK_DATA_DIR` 显式覆盖，适合隔离测试。相对路径会拒绝；原应用的环境变量不作为兼容别名。
 
 该覆盖值只隔离本框架的设置、诊断日志和 smoke 结果。WebView2 浏览器缓存仍使用 Tauri 的默认 `app_local_data_dir`，不宣称完全隔离所有运行缓存。首版不保存窗口位置，避免引入另一套配置写入机制。
 

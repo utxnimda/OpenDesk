@@ -14,12 +14,12 @@ export function localConfig() {
 }
 
 export function pythonExecutable() {
-  const configured = process.env.NIMDADESK_PYTHON || localConfig().python;
+  const configured = process.env.OPENDESK_PYTHON || localConfig().python;
   if (configured) {
     if (!existsSync(configured)) throw new Error('Configured Python executable does not exist.');
     return configured;
   }
-  throw new Error('Python 3.11+ is required. Set NIMDADESK_PYTHON or .local/dev.json { "python": "absolute path" }.');
+  throw new Error('Python 3.11+ is required. Set OPENDESK_PYTHON or .local/dev.json { "python": "absolute path" }.');
 }
 
 export function buildEnvironment() {
@@ -31,8 +31,8 @@ export function buildEnvironment() {
     const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') || 'PATH';
     env[pathKey] = join(cargoHome, 'bin') + ';' + (env[pathKey] || '');
   }
-  env.NIMDADESK_PYTHON = pythonExecutable();
-  env.NIMDADESK_WORKER_SOURCE = workerComposition;
+  env.OPENDESK_PYTHON = pythonExecutable();
+  env.OPENDESK_WORKER_SOURCE = workerComposition;
   return env;
 }
 

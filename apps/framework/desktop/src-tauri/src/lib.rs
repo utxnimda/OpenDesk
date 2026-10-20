@@ -92,8 +92,8 @@ async fn modules_import(
 ) -> Result<Value, String> {
     let selected = tauri::async_runtime::spawn_blocking(|| {
         rfd::FileDialog::new()
-            .set_title("导入 NimdaDesk 页签包")
-            .add_filter("NimdaDesk 页签包", &["ndpkg"])
+            .set_title("导入 OpenDesk 页签包")
+            .add_filter("OpenDesk 页签包", &["ndpkg"])
             .pick_file()
     })
     .await
@@ -335,11 +335,11 @@ pub fn run() {
             frontend_ready
         ])
         .setup(|app| {
-            let data_root = match std::env::var_os("NIMDADESK_DATA_DIR") {
+            let data_root = match std::env::var_os("OPENDESK_DATA_DIR") {
                 Some(path) => {
                     let path = PathBuf::from(path);
                     if !path.is_absolute() {
-                        return Err("NIMDADESK_DATA_DIR must be absolute".into());
+                        return Err("OPENDESK_DATA_DIR must be absolute".into());
                     }
                     path
                 }
@@ -377,14 +377,14 @@ pub fn run() {
                 menu::{Menu, MenuItem},
                 tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
             };
-            let show = MenuItem::with_id(app, "show", "打开 NimdaDesk", true, None::<&str>)?;
+            let show = MenuItem::with_id(app, "show", "打开 OpenDesk", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show, &quit])?;
             TrayIconBuilder::with_id("main-tray")
                 .icon(tauri::image::Image::from_bytes(include_bytes!(
                     "../icons/icon.png"
                 ))?)
-                .tooltip("NimdaDesk")
+                .tooltip("OpenDesk")
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
@@ -475,7 +475,7 @@ pub fn run() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("NimdaDesk failed to initialize");
+        .expect("OpenDesk failed to initialize");
     app.run(|app, event| {
         if let tauri::RunEvent::ExitRequested { api, .. } = event {
             if !app.state::<AppState>().exiting.load(Ordering::SeqCst) {

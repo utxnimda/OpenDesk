@@ -9,7 +9,7 @@ export default defineConfig({
   root: at('./apps/framework/frontend'),
   envDir: at('./'),
   plugins: [vue()],
-  define: { __NIMDADESK_VERSION__: JSON.stringify(buildVersion(at('./'))) },
+  define: { __OPENDESK_VERSION__: JSON.stringify(buildVersion(at('./'))) },
   clearScreen: false,
   server: { host: '127.0.0.1', port: 1420, strictPort: true, fs: { allow: [at('./')] } },
   build: { outDir: at('./dist/frontend'), emptyOutDir: true, target: 'es2022' },

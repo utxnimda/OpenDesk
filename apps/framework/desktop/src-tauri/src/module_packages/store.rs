@@ -857,7 +857,7 @@ mod tests {
     use super::*;
     fn temporary() -> PathBuf {
         let root =
-            std::env::temp_dir().join(format!("nimdadesk-module-test-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("opendesk-module-test-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&root).unwrap();
         root
     }

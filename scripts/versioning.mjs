@@ -167,8 +167,8 @@ function ownTomlVersion(textValue, filename, version, lock = false) {
   const blocks = lock ? textValue.split(/(?=^\[\[package\]\]\s*$)/m) : textValue.split(/(?=^\[[^\]]+\]\s*$)/m);
   const indices = blocks.map((block, index) => ({ block, index })).filter(({ block }) =>
     (lock ? /^\[\[package\]\]/ : /^\[package\]/).test(block)
-    && /^name\s*=\s*"nimdadesk"\s*$/m.test(block));
-  requireThat(indices.length === 1, `${filename} 必须包含唯一的 nimdadesk package。`);
+    && /^name\s*=\s*"opendesk"\s*$/m.test(block));
+  requireThat(indices.length === 1, `${filename} 必须包含唯一的 opendesk package。`);
   const { block, index } = indices[0];
   const matches = [...block.matchAll(/^version\s*=\s*"([^"]+)"\s*$/gm)];
   requireThat(matches.length === 1, `${filename} 自身版本字段无效。`);
@@ -200,17 +200,17 @@ function updatesFor(root, manifest, includeManifest = false) {
     });
   }
   jsonVersion('package.json', (value) => {
-    requireThat(value?.name === 'nimdadesk', 'package.json 名称不是 nimdadesk。');
+    requireThat(value?.name === 'opendesk', 'package.json 名称不是 opendesk。');
     semver(value.version, 'package.json');
   }, (value) => { value.version = version; });
   jsonVersion('package-lock.json', (value) => {
-    requireThat(value?.name === 'nimdadesk' && [2, 3].includes(value.lockfileVersion)
-      && value.packages?.['']?.name === 'nimdadesk', 'package-lock.json 根 package 结构无效。');
+    requireThat(value?.name === 'opendesk' && [2, 3].includes(value.lockfileVersion)
+      && value.packages?.['']?.name === 'opendesk', 'package-lock.json 根 package 结构无效。');
     semver(value.version, 'package-lock.json');
     semver(value.packages[''].version, 'package-lock.json packages[""]');
   }, (value) => { value.version = version; value.packages[''].version = version; });
   jsonVersion(`${DESKTOP}/tauri.conf.json`, (value) => {
-    requireThat(value?.productName === 'NimdaDesk', 'tauri.conf.json 应用名称无效。');
+    requireThat(value?.productName === 'OpenDesk', 'tauri.conf.json 应用名称无效。');
     semver(value.version, 'tauri.conf.json');
   }, (value) => { value.version = version; });
   for (const [name, lock] of [['Cargo.toml', false], ['Cargo.lock', true]]) {

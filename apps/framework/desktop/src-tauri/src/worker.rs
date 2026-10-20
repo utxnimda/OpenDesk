@@ -92,7 +92,7 @@ impl WorkerManager {
                         return Err(format!("WORKER_HANDSHAKE_FAILED: {result:?}"));
                     }
                 };
-            if hello["worker"] != "nimdadesk-python" {
+            if hello["worker"] != "opendesk-python" {
                 let _ = worker.child.kill().await;
                 return Err("Unexpected worker identity".into());
             }
@@ -158,9 +158,9 @@ impl Worker {
     async fn spawn(diagnostics: Arc<Diagnostics>) -> Result<Self, String> {
         let mut command;
         if cfg!(debug_assertions) {
-            let python = std::env::var_os("NIMDADESK_PYTHON")
-                .ok_or("Set NIMDADESK_PYTHON or launch using npm run dev")?;
-            let source = std::env::var_os("NIMDADESK_WORKER_SOURCE")
+            let python = std::env::var_os("OPENDESK_PYTHON")
+                .ok_or("Set OPENDESK_PYTHON or launch using npm run dev")?;
+            let source = std::env::var_os("OPENDESK_WORKER_SOURCE")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
                     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -171,9 +171,9 @@ impl Worker {
         } else {
             let executable = std::env::current_exe().map_err(|e| e.to_string())?;
             let name = if cfg!(windows) {
-                "nimdadesk-worker.exe"
+                "opendesk-worker.exe"
             } else {
-                "nimdadesk-worker"
+                "opendesk-worker"
             };
             command = Command::new(
                 executable

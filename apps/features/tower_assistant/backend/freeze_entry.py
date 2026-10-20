@@ -6,7 +6,7 @@ project_root = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(project_root / "apps/framework/worker"))
 
-from nimdadesk_worker.__main__ import main
+from opendesk_worker.__main__ import main
 from apps.features.tower_assistant.backend.service import register
 
 if __name__ == "__main__":

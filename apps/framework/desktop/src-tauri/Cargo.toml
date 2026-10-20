@@ -1,12 +1,12 @@
 [package]
-name = "nimdadesk"
-version = "0.5.0"
-description = "NimdaDesk desktop framework"
+name = "opendesk"
+version = "0.6.0"
+description = "OpenDesk desktop framework"
 edition = "2021"
 rust-version = "1.85"
 
 [lib]
-name = "nimdadesk_lib"
+name = "opendesk_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

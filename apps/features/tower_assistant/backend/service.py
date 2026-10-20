@@ -5,8 +5,8 @@ from pathlib import Path
 import sys
 from typing import Any, Callable
 
-from nimdadesk_worker.protocol import ProtocolError
-from nimdadesk_worker.registry import MethodRegistry, MethodResult
+from opendesk_worker.protocol import ProtocolError
+from opendesk_worker.registry import MethodRegistry, MethodResult
 from . import reader, planner, visuals
 
 

@@ -1,6 +1,29 @@
-> 以下记录属于源码迁移前的历史验证，不表示 OpenDesk 已重新执行同样检查。旧运行编号、提交和工作区路径仅用于保留原始验证上下文。
+> 2026-10-20 的 OpenDesk 记录为当前工程实测；2026-10-19 及之前的记录属于源码迁移前历史。旧运行编号、提交和工作区路径仅用于保留原始验证上下文。
 
 # 验证记录
+
+## 2026-10-20：OpenDesk 0.6.0 改名、清理及打包启动
+
+按用户要求，将当前应用名称、O 字母图标、窗口/托盘、应用标识、Python 包、worker、构建变量和发布产物统一为 OpenDesk。标识为 `net.nimda.opendesk`；运行与构建变量使用 `OPENDESK_*`。既有版本历史不重写，宿主追加 `0.6.0`、`core.workbench` 追加 `0.4.0`，自带塔防助手与测试台分别发布 `0.1.3`、`1.0.3`。
+
+模块 protocol 1 保留既有消息标识；hostApi 1 的旧模块数据目录环境变量作为兼容别名指向同一个新目录，不创建旧目录。修正 PowerShell smoke 脚本清除及恢复环境变量的方法，避免将原本不存在的变量恢复为空字符串。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 工具链 | Windows x64；Node 24.14.1、Python 3.12.10、Rust/Cargo 1.99.0、VS 2022/MSVC 14.44、Windows SDK 10.0.26100.0、WebView2 155.0.4283.62 |
+| 版本、类型及边界 | `npm run check` 通过；33 项版本测试、63 项前端测试、69 项 Python 测试通过，60 个源文件的架构边界检查通过 |
+| 原生测试 | `cargo test --release --locked`：12 项 Rust 测试通过 |
+| 发布构建 | `npm run build` 通过，生成 `OpenDesk.exe`、`opendesk-worker.exe`、NSIS 安装器及完整便携目录 |
+| 桌面 smoke | `frontendMounted`、`ipc`、`settingsRoundTrip` 为 true；后台启动、重启及停止通过，无残留测试 worker；脚本退出后数据目录覆盖变量不存在 |
+| 模块 smoke | 真实页面及 worker 完成 `1.0.3 → 1.1.0 → 1.0.3`，验证新增页签、禁用拒绝执行、不兼容原件保留、旧会话拒绝、UI 失败恢复及独立模块不受影响 |
+| 正常启动 | 实际打开 `dist/OpenDesk/OpenDesk.exe`，窗口标题 OpenDesk、窗口可响应；默认目录为 `%APPDATA%\net.nimda.opendesk`，日志记录 `frontend.ready`，本次启动无 error |
+| 旧应用清理 | 已核对并删除旧 `net.nimda.nimdadesk` 的 Roaming 数据与 Local/WebView 缓存，以及本工程旧品牌的生成包、临时运行数据和原生构建产物；未发现旧品牌安装记录或持久环境变量 |
+
+便携 ZIP 包含 61 个文件，文件名检查没有旧品牌、私有部署模块、虚拟环境或本机配置。Windows EXE 的 ProductName/FileDescription 为 OpenDesk，ProductVersion 为 `0.6.0`。本次生成产物位于 `dist/releases/0.6.0/`，附 `SHA256SUMS.txt` 和 `release-manifest.json`。
+
+本机证据：`.local/check-opendesk-20261020.log`、`.local/rust-tests-opendesk-20261020.log`、`.local/build-opendesk-20261020.log`、`.local/smoke/20261020-195756-520/smoke-result.json`、`.local/module-smoke/20261020-195831-826-1db6901c/module-smoke-result.json`、`.local/launch-opendesk-20261020.json`、`.local/legacy-cleanup-20261020.json`。
+
+上述验证与出包在源码提交前完成，产物来源如实保留构建时的工作区 dirty 状态。安装器已生成但未执行安装，未签名、上传或发布；后续源码提交和推送状态以 Git 历史与远端核验为准，不反向改写已生成产物的来源身份。
 
 ## 2026-10-19：v0.5.0 本地提交与交付门禁
 

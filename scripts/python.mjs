@@ -11,7 +11,7 @@ if (mode === 'test') {
 } else if (mode === 'bundle') {
   const target = 'x86_64-pc-windows-msvc';
   if (process.platform !== 'win32' || process.arch !== 'x64' ||
-      (process.env.NIMDADESK_TARGET && process.env.NIMDADESK_TARGET !== target)) {
+      (process.env.OPENDESK_TARGET && process.env.OPENDESK_TARGET !== target)) {
     throw new Error('The initial worker bundle supports Windows x64 only; cross-compilation is not supported.');
   }
   run(python, ['-X', 'utf8', '-c', [
@@ -22,18 +22,18 @@ if (mode === 'test') {
   const config = join(root, '.cache/pyinstaller/config');
   mkdirSync(config, { recursive: true });
   run(python, ['-X', 'utf8', '-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir', '--contents-directory', '_internal',
-    '--name', 'nimdadesk-worker', '--distpath', join(root, 'dist/worker'),
+    '--name', 'opendesk-worker', '--distpath', join(root, 'dist/worker'),
     '--workpath', join(root, '.cache/pyinstaller/work'), '--specpath', join(root, '.cache/pyinstaller/spec'),
     '--paths', root, '--paths', worker, join(workerComposition, 'freeze_entry.py')], {
     env: { ...process.env, PYINSTALLER_CONFIG_DIR: config },
   });
-  const bundle = join(root, 'dist/worker/nimdadesk-worker');
-  if (!statSync(join(bundle, 'nimdadesk-worker.exe')).isFile() || !statSync(join(bundle, '_internal')).isDirectory()) {
+  const bundle = join(root, 'dist/worker/opendesk-worker');
+  if (!statSync(join(bundle, 'opendesk-worker.exe')).isFile() || !statSync(join(bundle, '_internal')).isDirectory()) {
     throw new Error('The worker bundle is incomplete: expected an executable and _internal runtime directory.');
   }
   const output = join(desktop, 'src-tauri/binaries');
   mkdirSync(output, { recursive: true });
-  copyFileSync(join(bundle, 'nimdadesk-worker.exe'), join(output, 'nimdadesk-worker-' + target + '.exe'));
+  copyFileSync(join(bundle, 'opendesk-worker.exe'), join(output, 'opendesk-worker-' + target + '.exe'));
 } else {
   throw new Error('Expected test or bundle');
 }

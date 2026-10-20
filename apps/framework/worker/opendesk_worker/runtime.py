@@ -20,7 +20,7 @@ def register_runtime(registry: MethodRegistry) -> None:
         _require_empty_params(params)
         return MethodResult({
             "protocolVersion": PROTOCOL_VERSION,
-            "worker": "nimdadesk-python",
+            "worker": "opendesk-python",
             "capabilities": registry.capabilities,
             "maxFrameBytes": MAX_FRAME_BYTES,
         })

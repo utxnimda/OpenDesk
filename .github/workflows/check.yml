@@ -33,7 +33,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install -r packaging/requirements-runtime.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          "NIMDADESK_PYTHON=$((Get-Command python).Source)" >> $env:GITHUB_ENV
+          "OPENDESK_PYTHON=$((Get-Command python).Source)" >> $env:GITHUB_ENV
       - name: Check versions, types, architecture and tests
         run: npm run check
       - name: Verify application tag

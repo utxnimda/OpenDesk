@@ -8,7 +8,7 @@ Python 3.11+，首版仅依赖标准库。worker 是由桌面宿主管理的子�
 
 ```powershell
 Push-Location apps/framework/worker
-python -m nimdadesk_worker
+python -m opendesk_worker
 Pop-Location
 ```
 
@@ -39,7 +39,7 @@ python -m unittest discover -s tests/worker -v
 
 | 方法 | 返回结果 |
 | --- | --- |
-| `runtime.hello` | `{protocolVersion:1,worker:"nimdadesk-python",capabilities:[...],maxFrameBytes:65536}` |
+| `runtime.hello` | `{protocolVersion:1,worker:"opendesk-python",capabilities:[...],maxFrameBytes:65536}` |
 | `runtime.ping` | `{message:"pong",protocolVersion:1,pid:number,pythonVersion:string}` |
 | `runtime.shutdown` | `{status:"stopping"}` |
 

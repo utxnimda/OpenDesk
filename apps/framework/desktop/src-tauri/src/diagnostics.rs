@@ -50,7 +50,7 @@ impl Diagnostics {
             Ok(())
         })();
         if let Err(error) = result {
-            eprintln!("NimdaDesk diagnostic write failed: {error}");
+            eprintln!("OpenDesk diagnostic write failed: {error}");
         }
     }
 }

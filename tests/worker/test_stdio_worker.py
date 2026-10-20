@@ -25,7 +25,7 @@ def request(request_id: str, method: str = "runtime.ping", **changes: object) ->
 class WorkerProcessTests(unittest.TestCase):
     def run_worker(self, payload: bytes) -> tuple[list[dict], str]:
         completed = subprocess.run(
-            [sys.executable, "-m", "nimdadesk_worker"],
+            [sys.executable, "-m", "opendesk_worker"],
             cwd=WORKER_ROOT,
             input=payload,
             stdout=subprocess.PIPE,
@@ -44,7 +44,7 @@ class WorkerProcessTests(unittest.TestCase):
 
     def test_responses_arrive_while_host_stdin_remains_open(self) -> None:
         process = subprocess.Popen(
-            [sys.executable, "-m", "nimdadesk_worker"],
+            [sys.executable, "-m", "opendesk_worker"],
             cwd=WORKER_ROOT,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -178,7 +178,7 @@ class WorkerProcessTests(unittest.TestCase):
 
 class FrameworkBoundaryTests(unittest.TestCase):
     def test_worker_imports_only_standard_library_or_worker_package(self) -> None:
-        for file in (WORKER_ROOT / "nimdadesk_worker").glob("*.py"):
+        for file in (WORKER_ROOT / "opendesk_worker").glob("*.py"):
             tree = ast.parse(file.read_text(encoding="utf-8"), filename=str(file))
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
@@ -192,7 +192,7 @@ class FrameworkBoundaryTests(unittest.TestCase):
                 else:
                     continue
                 for root in roots:
-                    self.assertTrue(root in sys.stdlib_module_names or root == "nimdadesk_worker", f"Unexpected worker dependency: {root} in {file}")
+                    self.assertTrue(root in sys.stdlib_module_names or root == "opendesk_worker", f"Unexpected worker dependency: {root} in {file}")
 
 
 if __name__ == "__main__":

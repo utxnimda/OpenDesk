@@ -177,7 +177,7 @@ function exportComparison() {
       <button class="button button-primary analyze-button" :disabled="busy || !services.host.available || !gameDir.trim() || (platforms.length > 1 && !platformId)" @click="generate"><RefreshCw v-if="busy" :size="15" class="spinning" /><Sparkles v-else :size="15" />{{ pending || '生成迁移方案' }}</button>
     </header>
 
-    <div v-if="!services.host.available" class="alert browser-note" role="status"><strong>浏览器预览无法读取本地游戏存档</strong><span>请从 NimdaDesk 桌面应用打开此工具。读取和分析只在本机进行。</span></div>
+    <div v-if="!services.host.available" class="alert browser-note" role="status"><strong>浏览器预览无法读取本地游戏存档</strong><span>请从 OpenDesk 桌面应用打开此工具。读取和分析只在本机进行。</span></div>
     <div v-if="failure" class="alert alert-error" role="alert">{{ failure }}</div>
 
     <section class="source-panel">

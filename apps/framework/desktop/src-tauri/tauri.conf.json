@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "NimdaDesk",
-  "version": "0.5.0",
-  "identifier": "net.nimda.nimdadesk",
+  "productName": "OpenDesk",
+  "version": "0.6.0",
+  "identifier": "net.nimda.opendesk",
   "build": {
     "beforeDevCommand": {
       "script": "npm run dev:web",
@@ -19,7 +19,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "NimdaDesk",
+        "title": "OpenDesk",
         "width": 1180,
         "height": 800,
         "minWidth": 860,
@@ -37,10 +37,10 @@
       "nsis"
     ],
     "externalBin": [
-      "binaries/nimdadesk-worker"
+      "binaries/opendesk-worker"
     ],
     "resources": {
-      "../../../../dist/worker/nimdadesk-worker/_internal/": "_internal/",
+      "../../../../dist/worker/opendesk-worker/_internal/": "_internal/",
       "../../../../dist/bundled-modules/": "bundled-modules/"
     },
     "icon": [

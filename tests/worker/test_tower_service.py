@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from nimdadesk_worker.protocol import MAX_RESPONSE_BYTES, ProtocolError, write_response
+from opendesk_worker.protocol import MAX_RESPONSE_BYTES, ProtocolError, write_response
 
 ROOT = Path(__file__).resolve().parents[2]
 

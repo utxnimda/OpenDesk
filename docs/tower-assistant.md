@@ -1,6 +1,6 @@
 # 塔防山贼助手
 
-本模块是 NimdaDesk 的一个内置业务模块，第一个工具为「渡劫布局分析」。前端位于 `apps/features/tower_assistant/frontend`，存档读取和规划位于同模块的 `backend`，由应用组合层注册。没有迁入以前独立规划器或自动搬迁助手的代码。
+本模块是 OpenDesk 的一个内置业务模块，第一个工具为「渡劫布局分析」。前端位于 `apps/features/tower_assistant/frontend`，存档读取和规划位于同模块的 `backend`，由应用组合层注册。没有迁入以前独立规划器或自动搬迁助手的代码。
 
 ## 输入与操作
 

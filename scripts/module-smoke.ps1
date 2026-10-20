@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-if (-not $Executable) { $Executable = Join-Path $projectRoot 'dist\NimdaDesk\NimdaDesk.exe' }
+if (-not $Executable) { $Executable = Join-Path $projectRoot 'dist\OpenDesk\OpenDesk.exe' }
 if (-not $Fixtures) { $Fixtures = Join-Path $projectRoot 'dist\module-fixtures' }
 $Executable = (Resolve-Path -LiteralPath $Executable).Path
 $Fixtures = (Resolve-Path -LiteralPath $Fixtures).Path
@@ -28,18 +28,18 @@ $runRoot = Join-Path $projectRoot ('.local\module-smoke\' + [DateTime]::Now.ToSt
 New-Item -ItemType Directory -Path $runRoot | Out-Null
 $runRoot = [IO.Path]::GetFullPath($runRoot)
 $rootPrefix = $runRoot.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-$environmentNames = @('NIMDADESK_DATA_DIR', 'NIMDADESK_MODULE_FIXTURES', 'NIMDADESK_PYTHON', 'NIMDADESK_WORKER_SOURCE', 'PYTHONHOME', 'PYTHONPATH')
+$environmentNames = @('OPENDESK_DATA_DIR', 'OPENDESK_MODULE_FIXTURES', 'OPENDESK_PYTHON', 'OPENDESK_WORKER_SOURCE', 'PYTHONHOME', 'PYTHONPATH')
 $previousEnvironment = @{}
 foreach ($name in $environmentNames) { $previousEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
 $ownedProcess = $null
 
 try {
-    $env:NIMDADESK_DATA_DIR = $runRoot
-    $env:NIMDADESK_MODULE_FIXTURES = $Fixtures
-    foreach ($name in @('NIMDADESK_PYTHON', 'NIMDADESK_WORKER_SOURCE', 'PYTHONHOME', 'PYTHONPATH')) {
-        [Environment]::SetEnvironmentVariable($name, $null, 'Process')
+    $env:OPENDESK_DATA_DIR = $runRoot
+    $env:OPENDESK_MODULE_FIXTURES = $Fixtures
+    foreach ($name in @('OPENDESK_PYTHON', 'OPENDESK_WORKER_SOURCE', 'PYTHONHOME', 'PYTHONPATH')) {
+        Remove-Item -LiteralPath ('Env:\' + $name) -ErrorAction SilentlyContinue
     }
-    # Retain the exact owned process object. Never stop another NimdaDesk instance.
+    # Retain the exact owned process object. Never stop another OpenDesk instance.
     $ownedProcess = Start-Process -FilePath $Executable -ArgumentList '--module-smoke' -WorkingDirectory $env:TEMP -WindowStyle Hidden -PassThru
     $timer = [Diagnostics.Stopwatch]::StartNew()
     $exited = $false
@@ -74,6 +74,12 @@ try {
     Write-Output $reportText
     Write-Output "Module smoke passed. Evidence: $reportPath"
 } finally {
-    foreach ($name in $environmentNames) { [Environment]::SetEnvironmentVariable($name, $previousEnvironment[$name], 'Process') }
+    foreach ($name in $environmentNames) {
+        if ($null -eq $previousEnvironment[$name]) {
+            Remove-Item -LiteralPath ('Env:\' + $name) -ErrorAction SilentlyContinue
+        } else {
+            [Environment]::SetEnvironmentVariable($name, $previousEnvironment[$name], 'Process')
+        }
+    }
     if ($null -ne $ownedProcess) { $ownedProcess.Dispose() }
 }

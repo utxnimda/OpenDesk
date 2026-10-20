@@ -1,6 +1,6 @@
 {
-  "name": "nimdadesk",
-  "version": "0.5.0",
+  "name": "opendesk",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "A local desktop workbench framework; business modules are added explicitly.",

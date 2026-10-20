@@ -2,6 +2,12 @@
 
 <!-- Generated from config/version.json by scripts/version.mjs. Do not edit directly. -->
 
+## 0.6.0 — 2026-10-20
+
+将桌面工作台统一更名为 OpenDesk，使用独立应用标识与数据目录。
+
+- **桌面工作台 0.4.0**（调整，`core.workbench`）：应用名称、图标、Windows 标识、Python worker、启动环境变量与安装/便携产物统一为 OpenDesk；使用 net.nimda.opendesk 数据目录，自带页签发布新包版本，保留既有模块消息协议兼容。
+
 ## 0.5.0 — 2026-10-19
 
 改善粉色主题的视觉层次，新增四套配色与外观缩略预览。

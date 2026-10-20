@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "test-lab",
   "label": "模块测试台",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "hostApi": 1,
   "target": "windows-x64",
   "frontend": "frontend/index.html",

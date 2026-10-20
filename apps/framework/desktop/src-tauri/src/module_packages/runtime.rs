@@ -160,6 +160,8 @@ impl ModuleWorker {
         let mut command = Command::new(root.join(entry));
         command
             .current_dir(data)
+            .env("OPENDESK_MODULE_DATA_DIR", data)
+            // hostApi 1 compatibility alias; shares the new data path without creating an old directory.
             .env("NIMDADESK_MODULE_DATA_DIR", data)
             .env("PYTHONDONTWRITEBYTECODE", "1")
             .env_remove("PYTHONPATH")

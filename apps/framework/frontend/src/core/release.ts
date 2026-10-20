@@ -29,10 +29,10 @@ export interface BuildVersion {
 }
 
 // Supplied by the build. This module has no runtime Git or filesystem access.
-declare const __NIMDADESK_VERSION__: BuildVersion;
+declare const __OPENDESK_VERSION__: BuildVersion;
 
 export function readBuildVersion(): BuildVersion {
-  if (typeof __NIMDADESK_VERSION__ !== 'undefined') return __NIMDADESK_VERSION__;
+  if (typeof __OPENDESK_VERSION__ !== 'undefined') return __OPENDESK_VERSION__;
   return { appVersion: 'unknown', git: { commit: null, shortCommit: null, dirty: null }, features: [], releases: [] };
 }
 

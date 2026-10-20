@@ -103,7 +103,7 @@ onMounted(async () => {
 <template>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark"><Boxes :size="23" :stroke-width="1.7" /></span><div><strong>NimdaDesk</strong><span>LOCAL WORKSPACE</span></div></div>
+      <div class="brand"><span class="brand-mark"><Boxes :size="23" :stroke-width="1.7" /></span><div><strong>OpenDesk</strong><span>LOCAL WORKSPACE</span></div></div>
       <div class="sidebar-rule"></div>
       <div class="navigation-label">工作空间</div>
       <nav class="navigation" aria-label="主导航"><button v-for="item in builtinNavigation" :key="item.id" class="nav-item" :class="{ active: currentPage === item.id }" :aria-current="currentPage === item.id ? 'page' : undefined" @click="navigate(item.id)"><component :is="item.icon" :size="18" :stroke-width="1.65" /><span>{{ item.label }}</span><ChevronRight v-if="currentPage === item.id" :size="14" class="nav-arrow" /></button></nav>
@@ -111,7 +111,7 @@ onMounted(async () => {
       <div class="sidebar-bottom"><div class="sidebar-note"><div class="note-icon"><CircleHelp :size="16" /></div><p>一个框架，<br />容纳你的下一个想法。</p><ArrowUpRight :size="15" /></div><button class="nav-item" :class="{ active: currentPage === 'settings' }" :aria-current="currentPage === 'settings' ? 'page' : undefined" @click="navigate('settings')"><Settings2 :size="18" :stroke-width="1.65" /><span>设置</span></button><button class="sidebar-version" :class="{ 'has-changes': buildVersion.git.dirty === true }" aria-label="查看应用版本与更新记录" @click="navigate('version')"><span class="version-dot"></span><span>{{ buildVersion.git.dirty === true ? '未提交构建' : '本地运行' }}</span><span class="version-number">{{ buildVersion.appVersion === 'unknown' ? '版本未知' : `v${buildVersion.appVersion}` }}</span></button></div>
     </aside>
     <div class="main-shell">
-      <header class="topbar"><div class="breadcrumb"><span>NimdaDesk</span><ChevronRight :size="13" /><strong>{{ pageLabel }}</strong></div><span class="environment-pill"><Monitor :size="13" />{{ host.available ? '桌面环境' : '浏览器预览' }}</span></header>
+      <header class="topbar"><div class="breadcrumb"><span>OpenDesk</span><ChevronRight :size="13" /><strong>{{ pageLabel }}</strong></div><span class="environment-pill"><Monitor :size="13" />{{ host.available ? '桌面环境' : '浏览器预览' }}</span></header>
       <main class="main-content">
         <div v-if="!host.available" class="preview-banner"><Monitor :size="15" /><span>浏览器预览，桌面能力不可用</span><span class="preview-detail">可预览界面与主题</span></div>
         <div v-if="initializing" class="alert" role="status">正在读取桌面环境与设置…</div>
@@ -124,7 +124,7 @@ onMounted(async () => {
         <VersionPage v-else-if="currentPage === 'version'" :host-version="info?.appVersion" />
         <PackagesPage v-else-if="currentPage === 'packages'" :host="host" :catalog="catalog" :loading="catalogLoading" @changed="updateCatalog" @refresh="refreshCatalog" @open="navigate" />
         <PackageFrame v-for="module in mountedModules" v-show="currentPage === module.id" :key="packageKey(module)" :module="module" :host="host" :theme="resolvedTheme" @failure="runtimeError = $event" />
-        <footer class="main-footer"><span>NIMDADESK / PERSONAL TOOLKIT</span><span>清晰的边界 · 按需的能力</span></footer>
+        <footer class="main-footer"><span>OPENDESK / PERSONAL TOOLKIT</span><span>清晰的边界 · 按需的能力</span></footer>
       </main>
     </div>
   </div>

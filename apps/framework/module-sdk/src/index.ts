@@ -1,6 +1,8 @@
 /** Browser-only module SDK. It deliberately has no Tauri or host-process imports. */
 export const BRIDGE_PROTOCOL = 1;
-export const BROWSER_UNAVAILABLE = '此功能需要由 NimdaDesk 打开，独立浏览器不能调用桌面能力。';
+// Protocol 1 keeps its legacy nimdadesk:* messages and nd-* fragment keys so
+// already installed module packages can still connect after the OpenDesk rename.
+export const BROWSER_UNAVAILABLE = '此功能需要由 OpenDesk 打开，独立浏览器不能调用桌面能力。';
 /** Resolved appearances; the host resolves its system preference before transport. */
 export const SUPPORTED_APPEARANCES = ['light', 'dark', 'sakura', 'ocean', 'forest', 'sand', 'graphite'] as const;
 export type Appearance = typeof SUPPORTED_APPEARANCES[number];

@@ -7,7 +7,7 @@ if not getattr(sys, "frozen", False):
     sys.path.insert(0, str(project_root))
     sys.path.insert(0, str(project_root / "apps/framework/worker"))
 
-from nimdadesk_worker.__main__ import main
+from opendesk_worker.__main__ import main
 
 if __name__ == "__main__":
     raise SystemExit(main())

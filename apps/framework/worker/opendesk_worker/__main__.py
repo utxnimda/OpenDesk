@@ -10,7 +10,7 @@ from .protocol import ProtocolError, error_response, parse_request, read_frames,
 from .registry import MethodRegistry
 from .runtime import register_runtime
 
-LOGGER = logging.getLogger("nimdadesk.worker")
+LOGGER = logging.getLogger("opendesk.worker")
 
 
 def main(configure: Callable[[MethodRegistry], None] | None = None) -> int:
