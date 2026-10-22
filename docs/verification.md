@@ -8,7 +8,33 @@
 
 源码检查阶段 `npm run check` 已通过 46 项版本/分发边界测试、108 项前端和 69 项 Python 测试，共 223 项；类型、72 个源文件架构检查通过。新增用例覆盖未知/重复/测试模块公开拒绝、残留导入包拒绝、同版本异内容保护、缓存身份和发布产物缺失/篡改。旧构建目录已完整保留到 `.local/previous-builds/distribution-20261022/`，没有删除本机已导入包或用户选择。
 
-App 与模块须在提交已审阅源码后从干净工作树构建，再准备 `dist/releases/app/0.12.0/`、`dist/releases/modules/tower-assistant/0.1.7/`。本节当前记录源码检查，后续构建、原生运行、上传与下载摘要核对分别追加实际结果；不因目录或下载链接存在而推断发布已经完成。
+源码提交并推送为 `5f56e901dd07a87663e8a8f77d0167e0fc5304bb`。App 与模块均从该干净提交构建，来源记录为 `dirty: false`，再准备 `dist/releases/app/0.12.0/`、`dist/releases/modules/tower-assistant/0.1.7/`。以下为本次实际执行结果：
+
+| 验证 | 结果 |
+|---|---|
+| Rust 与格式 | 全部 34 项测试、fmt 检查通过；包含 fixture 索引缺失/重复、路径边界、身份和摘要拒绝。与上述 223 项合计 257 项自动化测试通过 |
+| 测试启动前检查 | PowerShell 语法与 6 项无效 fixture 前置拒绝检查通过，拒绝时未启动宿主 |
+| 构建 | Tauri release、NSIS、60 文件便携目录构建成功，`dist/app-build.json` 绑定实际提交与每个文件摘要；正式 bundle 仅塔防助手 0.1.7 |
+| 原生宿主 smoke | WebView、IPC、设置往返、冻结 worker 启动/重启/停止通过；worker PID 6660 / 74280，退出无残留 |
+| 原生页签 smoke | 确认初始目录仅塔防；从独立 fixture 导入测试台基线后，真实 iframe/worker 完成 `1.0.6 → 1.1.0 → 1.0.6`，UI 加载失败恢复、禁用、过期会话拒绝、新 ID 导入及选择持久化通过 |
+| 原生宠物 smoke | 正式 0.12.0 分别显式选择阿宝与阿沐，图片 ready、设置往返、显示/隐藏/重开通过 |
+| 内容审计 | 塔防 ZIP 70 文件，冻结业务仅 tower-assistant；宿主 worker 仅框架。App ZIP 60 文件逐项与目录及构建收据相同，唯一 `.ndpkg` 为塔防 0.1.7；没有 test-lab、fixture、原视频、imports/installed、私有模块或运行配置 |
+| 安装器边界 | 核对 NSIS 实际编译输入清单，唯一页签同为塔防 0.1.7；安装器摘要与构建收据一致。未执行安装/卸载，不将清单核对当作安装测试 |
+| 发布入口失败行为 | 实际调用独立发布入口时拒绝 `test-lab`；重复暂存已存在的模块版本目录明确失败，原包摘要不变 |
+| GitHub CI | [main 提交](https://github.com/utxnimda/OpenDesk/actions/runs/39712678062)、[App 标签](https://github.com/utxnimda/OpenDesk/actions/runs/39712898819)、[页签标签](https://github.com/utxnimda/OpenDesk/actions/runs/39712898567) 均通过；页签标签额外核对公开清单与源 manifest 版本 |
+| 远端附件 | App 6 个附件、独立页签 4 个附件均已从 GitHub 下载，逐个 SHA-256 与本地产物一致；App 随附及单独下载的塔防包字节相同 |
+
+[OpenDesk v0.12.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.12.0) 与 [塔防山贼助手 v0.1.7](https://github.com/utxnimda/OpenDesk/releases/tag/modules/tower-assistant/v0.1.7) 已于北京时间 2026-10-22 10:50 公开发布，均非草稿；App 被设置为 Latest，插件独立发布不抢占 App 最新版入口。公开下载链接无登录请求返回 HTTP 200。旧 v0.6.0 Release 保留，未覆盖历史标签或附件；测试台未发布。
+
+| 发布文件 | 字节数 | SHA-256 |
+|---|---:|---|
+| `OpenDesk_0.12.0_windows-x64_portable.zip` | 78,174,984 | `56666d7edb2cbf214368270d848285bd979e9ab85b0f525ba3fe22c60ac303b3` |
+| `OpenDesk_0.12.0_x64-setup.exe` | 75,594,030 | `19b8d395e9b09f24b94e021d1e9ab4b40a96f7b63d3ed8cad3d9d885610c8960` |
+| `tower-assistant-0.1.7.ndpkg` | 15,433,091 | `132e67dfaf67edfdda35245ec44ac6fb36fbea93370cb11276e173461e99a151` |
+
+本次已执行 Git 提交、main 推送、两个版本标签推送及上述两个 Release 发布，范围依据用户 2026-10-22 的明确请求。未执行干净机器安装/卸载、多显示器/DPI 或长期运行验收，安装器未签名。远端依赖安装曾较慢，最终三个 CI 均成功，没有把等待期间的状态当作通过。
+
+本机证据：`.local/distribution-check.log`、`.local/distribution-build.log`、`.local/distribution-rust-tests.log`、`.local/module-smoke-preflight-checks.json`、`.local/smoke/20261022-104120-946/`、`.local/module-smoke/20261022-104119-413-61f70e5f/`、`.local/distribution-companions-native/20261022-104513-089/`、`.local/app-release-download-verification.json`、`.local/module-release-download-verification.json`、`.local/release-downloads/20261022/`、`.local/release-ci-main.log`、`.local/release-ci-app-tag.log`、`.local/release-ci-module-tag.log`。这些本机文件、原始视频、fixture 和生成包没有进入 Git。
 
 ## 2026-10-21：阿宝命名与阿沐全身骑行素材（0.11.0）
 
