@@ -1,6 +1,7 @@
-import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync } from 'node:fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { root, desktop } from './environment.mjs';
+import { assertBundleDirectory } from './distribution.mjs';
 
 // This entry packages existing build products; it never launches a build or removes files.
 if (process.platform !== 'win32' || process.arch !== 'x64' ||
@@ -107,6 +108,7 @@ requireFile(hostExecutable);
 requireFile(join(workerBundle, 'opendesk-worker.exe'));
 collectRuntime(internal, join(destination, '_internal'));
 requireFile(join(bundledModules, 'app-manifest.json'));
+assertBundleDirectory(root, bundledModules, JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version);
 collectRuntime(bundledModules, join(destination, 'bundled-modules'));
 requireFile(join(internal, 'base_library.zip'));
 const pythonRuntime = readdirSync(internal).find((name) => /^python3\d+\.dll$/i.test(name));

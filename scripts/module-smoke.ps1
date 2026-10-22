@@ -12,16 +12,43 @@ $Fixtures = (Resolve-Path -LiteralPath $Fixtures).Path
 if (-not (Test-Path -LiteralPath $Executable -PathType Leaf)) { throw 'A module-aware host executable is required.' }
 if (-not (Test-Path -LiteralPath $Fixtures -PathType Container)) { throw 'A fixture directory is required.' }
 
-$requiredPackages = @(
-    'test-lab-1.1.0.ndpkg',
-    'test-lab-2.0.0-incompatible.ndpkg',
-    'test-extra-1.0.0.ndpkg',
-    'test-lab-1.2.0-ui-failure.ndpkg'
-)
-foreach ($package in $requiredPackages) {
-    if (-not (Test-Path -LiteralPath (Join-Path $Fixtures $package) -PathType Leaf)) {
-        throw "Missing fixture: $package. Run npm run build:module-fixtures first."
+$indexPath = Join-Path $Fixtures 'fixtures.json'
+$indexFile = Get-Item -LiteralPath $indexPath
+if ($indexFile.PSIsContainer -or ($indexFile.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+    throw 'The fixture index must be a regular file inside the fixture directory.'
+}
+$fixtureIndex = Get-Content -LiteralPath $indexPath -Raw | ConvertFrom-Json
+if ($fixtureIndex.schemaVersion -ne 1 -or $fixtureIndex.testFixtures -ne $true -or $fixtureIndex.packages -isnot [array]) {
+    throw 'fixtures.json must declare schemaVersion 1, testFixtures true and a packages array.'
+}
+$requiredFixtures = [ordered]@{
+    'baseline' = @{ id = 'test-lab'; version = $null }
+    'compatible-update' = @{ id = 'test-lab'; version = '1.1.0' }
+    'incompatible' = @{ id = 'test-lab'; version = '2.0.0' }
+    'new-module' = @{ id = 'test-extra'; version = '1.0.0' }
+    'ui-failure' = @{ id = 'test-lab'; version = '1.2.0' }
+}
+$baselineFixture = $null
+foreach ($purpose in $requiredFixtures.Keys) {
+    $purposeEntries = @($fixtureIndex.packages | Where-Object { $_.purpose -ceq $purpose })
+    if ($purposeEntries.Count -ne 1) { throw "Exactly one '$purpose' fixture is required. Run npm run build:module-fixtures first." }
+    $entry = $purposeEntries[0]
+    $expected = $requiredFixtures[$purpose]
+    if ($entry.id -cne $expected.id -or $entry.version -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' -or ($expected.version -and $entry.version -cne $expected.version)) {
+        throw "Invalid '$purpose' fixture identity."
     }
+    if ($entry.file -cnotmatch '^[a-z0-9][a-z0-9._-]*\.ndpkg$' -or $entry.sha256 -cnotmatch '^[a-f0-9]{64}$') {
+        throw "Invalid '$purpose' fixture filename or SHA-256."
+    }
+    $packagePath = Join-Path $Fixtures $entry.file
+    $packageFile = Get-Item -LiteralPath $packagePath
+    if ($packageFile.PSIsContainer -or ($packageFile.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw "Fixture '$purpose' must be a regular package file, not a linked path."
+    }
+    if ((Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $entry.sha256) {
+        throw "SHA-256 mismatch for '$purpose' fixture."
+    }
+    if ($purpose -ceq 'baseline') { $baselineFixture = $entry }
 }
 
 $runRoot = Join-Path $projectRoot ('.local\module-smoke\' + [DateTime]::Now.ToString('yyyyMMdd-HHmmss-fff') + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
@@ -70,6 +97,9 @@ try {
     if ($ownedProcess.ExitCode -ne 0 -or $report.status -ne 'passed') {
         Write-Output $reportText
         throw "Module smoke failed. Exit=$($ownedProcess.ExitCode). Evidence: $reportPath"
+    }
+    if ($report.initialBundleOnlyTower -ne $true -or $report.baselineImportedFromFixture -ne $true -or $report.baselineFixtureSha256 -cne $baselineFixture.sha256 -or $report.baseline.version -cne $baselineFixture.version) {
+        throw "Module smoke did not verify the production bundle and explicit baseline import. Evidence: $reportPath"
     }
     Write-Output $reportText
     Write-Output "Module smoke passed. Evidence: $reportPath"

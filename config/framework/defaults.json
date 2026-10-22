@@ -1,5 +1,16 @@
 {
   "schemaVersion": 1,
   "theme": "system",
-  "closeToTray": true
+  "uiStyle": "simple",
+  "closeToTray": true,
+  "personalization": {
+    "pet": {
+      "enabled": false,
+      "mode": "desktop",
+      "modelId": null,
+      "size": 160,
+      "alwaysOnTop": true,
+      "animated": true
+    }
+  }
 }

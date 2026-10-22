@@ -2,14 +2,19 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import frameworkDefaults from '../../../../../config/framework/defaults.json';
 import type { PackageCatalog, PackageInstance } from './packages';
-import type { Appearance } from '../../../module-sdk/src/index';
+import type { Personalization } from './personalization';
+export type { Personalization, PetSettings } from './personalization';
+import type { Appearance, UIStyle } from '../../../module-sdk/src/index';
 
 export type Theme = 'system' | Appearance;
+export type { UIStyle } from '../../../module-sdk/src/index';
 
 export interface Settings {
   schemaVersion: 1;
   theme: Theme;
+  uiStyle: UIStyle;
   closeToTray: boolean;
+  personalization: Personalization;
 }
 
 export interface HostInfo {
@@ -34,6 +39,13 @@ export interface HostAdapter {
   getInfo(): Promise<HostInfo>;
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<Settings>;
+  showCompanion(): Promise<void>;
+  hideCompanion(): Promise<void>;
+  startCompanionDrag(): Promise<void>;
+  getCompanionState(): Promise<{ visible: boolean }>;
+  companionReady(modelId: string): Promise<void>;
+  subscribeSettingsChanged(callback: () => void): Promise<() => void>;
+  subscribeCompanionVisibilityChanged(callback: (visible: boolean) => void): Promise<() => void>;
   callWorker<T>(method: string, params?: Record<string, unknown>): Promise<T>;
   stopWorker(): Promise<void>;
   frontendReady(): Promise<void>;
@@ -69,6 +81,13 @@ export function createHostAdapter(bridge?: InvokeBridge, events?: EventBridge): 
     getInfo: () => request('host_info'),
     getSettings: () => request('settings_get'),
     saveSettings: (settings) => request('settings_save', { settings }),
+    showCompanion: () => request('companion_show'),
+    hideCompanion: () => request('companion_hide'),
+    startCompanionDrag: () => request('companion_start_drag'),
+    getCompanionState: () => request('companion_get_state'),
+    companionReady: (modelId) => request('companion_ready', { modelId }),
+    subscribeSettingsChanged: (callback) => events ? events('settings-changed', callback) : Promise.resolve(() => {}),
+    subscribeCompanionVisibilityChanged: (callback) => events ? events('companion-visibility-changed', (value) => { if (typeof value === 'boolean') callback(value); }) : Promise.resolve(() => {}),
     callWorker: (method, params = {}) => request('worker_call', { method, params }),
     stopWorker: () => request('worker_stop'),
     frontendReady: () => request('frontend_ready'),

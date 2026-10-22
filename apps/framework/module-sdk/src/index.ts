@@ -6,6 +6,20 @@ export const BROWSER_UNAVAILABLE = '此功能需要由 OpenDesk 打开，独立�
 /** Resolved appearances; the host resolves its system preference before transport. */
 export const SUPPORTED_APPEARANCES = ['light', 'dark', 'sakura', 'ocean', 'forest', 'sand', 'graphite'] as const;
 export type Appearance = typeof SUPPORTED_APPEARANCES[number];
+/** Layout and surface styling are independent from the user's color appearance. */
+export const SUPPORTED_UI_STYLES = ['simple', 'codex', 'cursor', 'web', 'anime', 'glass'] as const;
+export type UIStyle = typeof SUPPORTED_UI_STYLES[number];
+
+/** A bounded visual description only. Wallpaper bytes and local paths stay in the host. */
+export interface SurfaceEffects {
+  material: 'solid' | 'glass';
+  transparency: number;
+  motion: 'off' | 'subtle' | 'full';
+  transparentBackground: boolean;
+}
+export const DEFAULT_SURFACE_EFFECTS: Readonly<SurfaceEffects> = Object.freeze({
+  material: 'solid', transparency: 78, motion: 'off', transparentBackground: false,
+});
 
 /** Protocol 1 base for installed SDKs that do not know a newer appearance. */
 export function getBaseTheme(appearance: Appearance): 'light' | 'dark' {
@@ -27,6 +41,10 @@ export interface ConnectMessage {
   type: 'nimdadesk:connect'; protocol: 1; identity: ModuleIdentity; theme: 'light' | 'dark';
   /** Optional extension: unrecognized values fall back to the protocol 1 base. */
   appearance?: unknown;
+  /** Optional extension: older hosts and unknown styles use the simple layout. */
+  uiStyle?: unknown;
+  /** Optional extension: older hosts retain an opaque, motion-free module surface. */
+  surfaceEffects?: unknown;
 }
 export interface ModuleBridge {
   host: LimitedHost;
@@ -57,6 +75,30 @@ export function resolveMessageAppearance(theme: unknown, appearance?: unknown): 
   return SUPPORTED_APPEARANCES.find((value) => value === appearance) ?? theme;
 }
 
+export function resolveMessageUIStyle(uiStyle?: unknown): UIStyle {
+  return SUPPORTED_UI_STYLES.find((value) => value === uiStyle) ?? 'simple';
+}
+
+export function resolveMessageSurfaceEffects(value?: unknown): SurfaceEffects {
+  const fields = isRecord(value) ? value : {};
+  return {
+    material: fields.material === 'glass' ? 'glass' : 'solid',
+    transparency: typeof fields.transparency === 'number' && Number.isFinite(fields.transparency)
+      && fields.transparency >= 40 && fields.transparency <= 100 ? fields.transparency : 78,
+    motion: fields.motion === 'subtle' || fields.motion === 'full' ? fields.motion : 'off',
+    transparentBackground: fields.transparentBackground === true,
+  };
+}
+
+function applySurfaceEffects(value?: unknown) {
+  const effects = resolveMessageSurfaceEffects(value);
+  const root = document.documentElement;
+  root.dataset.material = effects.material;
+  root.dataset.motion = effects.motion;
+  root.dataset.shellBackground = String(effects.transparentBackground);
+  root.style.setProperty('--glass-opacity', `${effects.transparency}%`);
+}
+
 export function createModuleBridge(): ModuleBridge {
   const fragment = new URLSearchParams(window.location.hash.slice(1));
   const parentOrigin = fragment.get('nd-host-origin') ?? '';
@@ -76,6 +118,8 @@ export function createModuleBridge(): ModuleBridge {
     port = event.ports[0];
     const identity = event.data.identity;
     document.documentElement.dataset.theme = resolveMessageAppearance(event.data.theme, event.data.appearance)!;
+    document.documentElement.dataset.uiStyle = resolveMessageUIStyle(event.data.uiStyle);
+    applySurfaceEffects(event.data.surfaceEffects);
     port.onmessage = (message: MessageEvent) => {
       const data: unknown = message.data;
       if (!active || !isRecord(data) || data.generation !== generation) return;
@@ -83,7 +127,11 @@ export function createModuleBridge(): ModuleBridge {
       if (data.type === 'host-error') { clearTimeout(handshakeTimer); rejectReady(new Error(typeof data.error === 'string' ? data.error : '宿主未接受此模块。')); return; }
       if (data.type === 'theme') {
         const appearance = resolveMessageAppearance(data.theme, data.appearance);
-        if (appearance) document.documentElement.dataset.theme = appearance;
+        if (appearance) {
+          document.documentElement.dataset.theme = appearance;
+          document.documentElement.dataset.uiStyle = resolveMessageUIStyle(data.uiStyle);
+          applySurfaceEffects(data.surfaceEffects);
+        }
         return;
       }
       if (data.type !== 'result' || typeof data.id !== 'string') return;

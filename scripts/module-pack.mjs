@@ -1,16 +1,12 @@
 /** Build local, immutable-content .ndpkg artifacts. Never creates Git tags or publishes. */
 import { createHash, randomUUID } from 'node:crypto';
-import { copyFileSync, cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { readGitIdentity } from './build-version.mjs';
 import { pythonExecutable, root, run, worker } from './environment.mjs';
-
-const definitions = Object.freeze({
-  'tower-assistant': { folder: 'tower_assistant', backend: 'apps.features.tower_assistant.backend.service', marker: 'tower-baseline' },
-  'test-lab': { folder: 'test_lab', backend: 'apps.features.test_lab.backend.service', marker: 'v1-baseline' },
-});
+import { MODULE_DEFINITIONS as definitions, assertBundleDirectory, assertOutputDirectory, parseModulePackArgs, readDistribution, sha256, writeImmutableFiles } from './distribution.mjs';
 
 function underRoot(...parts) {
   const path = resolve(root, ...parts);
@@ -77,7 +73,7 @@ function buildFingerprint(source, manifest, marker) {
     }
   };
   for (const directory of [source, worker, underRoot('apps/framework/module-sdk')]) visit(directory);
-  for (const file of ['apps/framework/frontend/src/styles.css', 'apps/framework/frontend/src/themes.css', 'scripts/module-pack.mjs', 'scripts/module-pack-archive.py', 'packaging/requirements-build.txt', 'packaging/requirements-runtime.txt']) add(file, readFileSync(join(root, file)));
+  for (const file of ['apps/framework/frontend/src/styles.css', 'apps/framework/frontend/src/themes.css', 'apps/framework/frontend/src/workbench-styles.css', 'apps/framework/frontend/src/personalization.css', 'scripts/module-pack.mjs', 'scripts/distribution.mjs', 'scripts/module-pack-archive.py', 'packaging/requirements-build.txt', 'packaging/requirements-runtime.txt']) add(file, readFileSync(join(root, file)));
   const lock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
   delete lock.version;
   if (lock.packages?.['']) delete lock.packages[''].version;
@@ -152,22 +148,22 @@ async function buildPackage(sourceId, destination, override = {}) {
   const definition = definitions[sourceId];
   if (!definition) throw new Error('Unknown build source module.');
   const source = underRoot('apps/features', definition.folder);
-  const original = validateManifest(JSON.parse(readFileSync(join(source, 'manifest.json'), 'utf8')));
+  const original = sourceManifest(sourceId);
   const { marker = definition.marker, filename, ...fields } = override;
   const manifest = validateManifest({ ...original, ...fields, source: provenance() });
   const archive = join(destination, filename ?? `${manifest.id}-${manifest.version}.ndpkg`);
   const fingerprint = buildFingerprint(source, manifest, marker);
   const cache = underRoot('.cache/module-package-cache');
-  const cacheArchive = join(cache, `${fingerprint}.ndpkg`);
-  const cacheMetadata = join(cache, `${fingerprint}.json`);
+  const cacheArchive = underRoot('.cache/module-package-cache', `${fingerprint}.ndpkg`);
+  const cacheMetadata = underRoot('.cache/module-package-cache', `${fingerprint}.json`);
+  if (existsSync(cacheArchive) !== existsSync(cacheMetadata)) throw new Error('Cached module artifact is incomplete; preserve and review the cache entry before rebuilding.');
   if (existsSync(cacheArchive) && existsSync(cacheMetadata)) {
     const saved = JSON.parse(readFileSync(cacheMetadata, 'utf8'));
-    const actual = createHash('sha256').update(readFileSync(cacheArchive)).digest('hex');
-    if (saved.fingerprint !== fingerprint || saved.sha256 !== actual) throw new Error('Cached module artifact failed integrity checking; do not reuse it.');
-    validateManifest(saved.manifest);
-    copyFileSync(cacheArchive, archive);
-    console.log(`Reused unchanged ${manifest.id}@${manifest.version}; original source identity retained, sha256=${actual}`);
-    return { id: manifest.id, version: manifest.version, file: relative(destination, archive).replaceAll('\\', '/'), sha256: actual };
+    const bytes = readFileSync(cacheArchive);
+    const cached = validateCachedPackage(fingerprint, manifest, saved, bytes);
+    writeImmutableFiles(destination, { [basename(archive)]: bytes });
+    console.log(`Reused unchanged ${manifest.id}@${manifest.version}; original source identity retained, sha256=${cached.sha256}`);
+    return { entry: { id: manifest.id, version: manifest.version, file: basename(archive), sha256: cached.sha256 }, manifest: cached.manifest };
   }
   const frontend = underRoot('dist/module-build', manifest.id, manifest.version, 'frontend');
   if (!existsSync(join(source, 'frontend/index.html'))) throw new Error('Module frontend entry is missing: ' + manifest.id);
@@ -197,13 +193,31 @@ async function buildPackage(sourceId, destination, override = {}) {
     cpSync(frozen, join(packageRoot, 'worker'), { recursive: true, dereference: false, errorOnExist: true });
   }
   writeJson(join(packageRoot, 'manifest.json'), manifest);
-  run(pythonExecutable(), ['-X', 'utf8', join(root, 'scripts/module-pack-archive.py'), packageRoot, archive]);
-  const sha256 = createHash('sha256').update(readFileSync(archive)).digest('hex');
-  mkdirSync(cache, { recursive: true });
-  copyFileSync(archive, cacheArchive);
-  writeJson(cacheMetadata, { fingerprint, sha256, manifest });
+  const stagedArchive = join(temporary, 'artifact.ndpkg');
+  run(pythonExecutable(), ['-X', 'utf8', join(root, 'scripts/module-pack-archive.py'), packageRoot, stagedArchive]);
+  const bytes = readFileSync(stagedArchive);
+  const digest = sha256(bytes);
+  writeImmutableFiles(destination, { [basename(archive)]: bytes });
+  writeImmutableFiles(cache, { [basename(cacheArchive)]: bytes, [basename(cacheMetadata)]: JSON.stringify({ fingerprint, sha256: digest, manifest }, null, 2) + '\n' });
   console.log(`Built ${manifest.id}@${manifest.version}, source=${manifest.source.commit ?? 'unknown'}, dirty=${manifest.source.dirty}`);
-  return { id: manifest.id, version: manifest.version, file: relative(destination, archive).replaceAll('\\', '/'), sha256 };
+  return { entry: { id: manifest.id, version: manifest.version, file: basename(archive), sha256: digest }, manifest };
+}
+
+function sourceManifest(id) {
+  const definition = definitions[id];
+  if (!definition) throw new Error('Unknown build source module.');
+  const manifest = validateManifest(JSON.parse(readFileSync(underRoot('apps/features', definition.folder, 'manifest.json'), 'utf8')));
+  if (manifest.id !== id) throw new Error('Source manifest does not match its registered module ID: ' + id);
+  return manifest;
+}
+
+export function validateCachedPackage(fingerprint, requested, saved, bytes) {
+  if (!saved || saved.fingerprint !== fingerprint || saved.sha256 !== sha256(bytes)) throw new Error('Cached module artifact failed integrity checking; do not reuse it.');
+  validateManifest(saved.manifest);
+  const { source: _requestedSource, ...requestedIdentity } = validateManifest(requested);
+  const { source: _savedSource, ...savedIdentity } = saved.manifest;
+  if (JSON.stringify(requestedIdentity) !== JSON.stringify(savedIdentity)) throw new Error('Cached module identity does not match the requested build.');
+  return { sha256: saved.sha256, manifest: saved.manifest };
 }
 
 function buildUiFailureFixture(destination) {
@@ -216,29 +230,61 @@ function buildUiFailureFixture(destination) {
   // exercises the actual browser readiness timeout, not a simulated host error.
   writeFileSync(join(temporary, 'frontend/index.html'), '<!doctype html>\n<html lang="zh-CN"><head><meta charset="UTF-8"><title>模块加载失败测试</title></head><body><h1>故意加载失败测试</h1><p>test-lab 1.2.0：本测试页面故意不发送模块 SDK hello，用于验证超时与恢复原版本。</p></body></html>\n', 'utf8');
   const file = 'test-lab-1.2.0-ui-failure.ndpkg';
-  const archive = join(destination, file);
+  const archive = join(dirname(temporary), randomUUID() + '.ndpkg');
   run(pythonExecutable(), ['-X', 'utf8', join(root, 'scripts/module-pack-archive.py'), temporary, archive]);
-  return { id: manifest.id, version: manifest.version, file, sha256: createHash('sha256').update(readFileSync(archive)).digest('hex'), purpose: 'Deliberately no SDK hello; verify real UI timeout, retained lastError and restoration of the previously active version. No worker.' };
+  const bytes = readFileSync(archive);
+  writeImmutableFiles(destination, { [file]: bytes });
+  return { id: manifest.id, version: manifest.version, file, sha256: sha256(bytes), purpose: 'ui-failure', description: 'Deliberately no SDK hello; verify real UI timeout, retained lastError and restoration of the previously active version. No worker.' };
 }
 
 async function main() {
-  const [mode, ...extra] = process.argv.slice(2);
-  if (extra.length || !['bundled', 'fixtures', 'ui-failure-fixture'].includes(mode)) throw new Error('Usage: node scripts/module-pack.mjs bundled|fixtures|ui-failure-fixture');
+  const distribution = readDistribution(root);
+  const { mode, moduleId } = parseModulePackArgs(process.argv.slice(2), distribution);
+  const selected = mode === 'module' ? sourceManifest(moduleId) : null;
+  const destination = mode === 'module'
+    ? underRoot('dist/modules', selected.id, selected.version)
+    : underRoot(mode === 'bundled' ? 'dist/bundled-modules' : 'dist/module-fixtures');
+  if (mode === 'bundled') {
+    const names = distribution.bundledModules.map((id) => { const manifest = sourceManifest(id); return `${id}-${manifest.version}.ndpkg`; });
+    assertOutputDirectory(destination, ['app-manifest.json', ...names]);
+    if (existsSync(join(destination, 'app-manifest.json'))) {
+      const previous = JSON.parse(readFileSync(join(destination, 'app-manifest.json'), 'utf8'));
+      assertBundleDirectory(root, destination, previous.hostVersion);
+    }
+  } else if (mode === 'module') {
+    assertOutputDirectory(destination, [`${selected.id}-${selected.version}.ndpkg`, 'manifest.json', 'SHA256SUMS']);
+  } else if (mode === 'fixtures') {
+    const baseline = sourceManifest('test-lab');
+    assertOutputDirectory(destination, ['fixtures.json', `test-lab-${baseline.version}.ndpkg`, 'test-lab-1.1.0.ndpkg', 'test-lab-2.0.0-incompatible.ndpkg', 'test-extra-1.0.0.ndpkg', 'test-lab-1.2.0-ui-failure.ndpkg']);
+  } else {
+    const indexPath = underRoot('dist/module-fixtures', 'fixtures.json');
+    const previous = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, 'utf8')) : { schemaVersion: 1, testFixtures: true, packages: [] };
+    if (previous.schemaVersion !== 1 || previous.testFixtures !== true || !Array.isArray(previous.packages)) throw new Error('Existing fixture index is invalid; move the reviewed output aside before rebuilding.');
+    assertOutputDirectory(destination, ['fixtures.json', 'test-lab-1.2.0-ui-failure.ndpkg', ...previous.packages.map((entry) => entry.file)]);
+  }
   if (process.platform !== 'win32' || process.arch !== 'x64') throw new Error('Module packages currently target Windows x64.');
   const python = pythonExecutable();
   run(python, ['-X', 'utf8', '-c', "import platform, struct, sys; assert sys.platform == 'win32' and struct.calcsize('P') == 8 and platform.machine().lower() in ('amd64','x86_64') and sys.version_info >= (3,11), 'Windows x64 Python 3.11+ required'"]);
-  const destination = underRoot(mode === 'bundled' ? 'dist/bundled-modules' : 'dist/module-fixtures');
   mkdirSync(destination, { recursive: true });
   if (mode === 'bundled') {
     const modules = [];
-    for (const id of Object.keys(definitions)) modules.push({ ...await buildPackage(id, destination), defaultEnabled: true });
+    for (const id of distribution.bundledModules) modules.push({ ...(await buildPackage(id, destination)).entry, defaultEnabled: true });
     const hostVersion = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).version;
     writeJson(join(destination, 'app-manifest.json'), { schemaVersion: 1, hostVersion, modules });
+    assertBundleDirectory(root, destination, hostVersion);
+  } else if (mode === 'module') {
+    const result = await buildPackage(moduleId, destination);
+    writeImmutableFiles(destination, {
+      'manifest.json': JSON.stringify(result.manifest, null, 2) + '\n',
+      SHA256SUMS: `${result.entry.sha256}  ${result.entry.file}\n`,
+    });
+    console.log('Public module artifact: ' + join(destination, result.entry.file));
   } else if (mode === 'fixtures') {
     const fixtures = [];
-    fixtures.push({ ...await buildPackage('test-lab', destination, { version: '1.1.0', marker: 'v1.1-enhanced' }), purpose: 'Compatible update with a distinct frontend and worker marker.' });
-    fixtures.push({ ...await buildPackage('test-lab', destination, { version: '2.0.0', hostApi: 99, marker: 'incompatible-api99', filename: 'test-lab-2.0.0-incompatible.ndpkg' }), purpose: 'Deliberately incompatible hostApi=99; preserve original import and reject activation.' });
-    fixtures.push({ ...await buildPackage('test-lab', destination, { id: 'test-extra', label: '导入新增测试页签', version: '1.0.0', marker: 'extra-module' }), purpose: 'A new module ID to verify importing an additional tab.' });
+    fixtures.push({ ...(await buildPackage('test-lab', destination)).entry, purpose: 'baseline', description: 'Current test-lab source version, imported explicitly for local smoke verification; never bundled or released.' });
+    fixtures.push({ ...(await buildPackage('test-lab', destination, { version: '1.1.0', marker: 'v1.1-enhanced' })).entry, purpose: 'compatible-update', description: 'Compatible update with a distinct frontend and worker marker.' });
+    fixtures.push({ ...(await buildPackage('test-lab', destination, { version: '2.0.0', hostApi: 99, marker: 'incompatible-api99', filename: 'test-lab-2.0.0-incompatible.ndpkg' })).entry, purpose: 'incompatible', description: 'Deliberately incompatible hostApi=99; preserve original import and reject activation.' });
+    fixtures.push({ ...(await buildPackage('test-lab', destination, { id: 'test-extra', label: '导入新增测试页签', version: '1.0.0', marker: 'extra-module' })).entry, purpose: 'new-module', description: 'A new module ID to verify importing an additional tab.' });
     fixtures.push(buildUiFailureFixture(destination));
     writeJson(join(destination, 'fixtures.json'), { schemaVersion: 1, testFixtures: true, description: 'Local verification packages; these are not published release history.', packages: fixtures });
   } else {

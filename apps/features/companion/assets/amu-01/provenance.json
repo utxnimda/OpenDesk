@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "id": "amu-01",
+  "label": "阿沐",
+  "source": {
+    "kind": "user-provided-video",
+    "fileName": "生成指定动作的循环视频 (3).mp4",
+    "sha256": "e0cf7cbd7827cb6b6cb85f1c66281689c5bd3a68476a98f44d592eb0bb5b15f4",
+    "bytes": 2319029,
+    "includedInPackage": false
+  },
+  "processing": {
+    "tool": "scripts/prepare-companion-video.py",
+    "matteProfile": "teal",
+    "executedToolSha256": "45a5cabc9921dba4931cd7f7aad7750c4a8f7c3d7cd11a2afb2973fef5a5914a",
+    "currentToolSha256": "88daf9af41d585e9bfc00dd7d56aed116d507ae7546744c2279b5b12242b7a49",
+    "postExecutionToolChange": "External-tool timeouts and stage-specific failure messages only; image processing and APNG encoding unchanged.",
+    "sourceFrames": 145,
+    "animationSourceFrameRange": [
+      51,
+      130
+    ],
+    "frameRangeIndexing": "one-based inclusive",
+    "normalizationSourceFrameRange": [
+      1,
+      145
+    ],
+    "stillSourceFrame": 1,
+    "versions": {
+      "python": "3.12.14",
+      "numpy": "2.3.5",
+      "pillow": "12.3.0",
+      "ffmpeg": "ffmpeg version 8.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers"
+    },
+    "sourceSize": [
+      720,
+      1280
+    ],
+    "outputSize": [
+      768,
+      768
+    ],
+    "frames": 80,
+    "framesPerSecond": 24,
+    "durationSeconds": 3.3333333333333335,
+    "loopCount": 0,
+    "alpha": "RGBA",
+    "frameBlend": "SOURCE",
+    "sourceMotionPreserved": true,
+    "sourceFrameCadencePreserved": true,
+    "completeSourceSequenceInDefaultLoop": false,
+    "aiRedraw": false,
+    "audioIncluded": false,
+    "constantSourceCrop": [
+      55,
+      158,
+      694,
+      1230
+    ],
+    "constantBaseline": 734
+  },
+  "selection": {
+    "purpose": "Continuous two-pedal-cycle default with open-eye endpoints; full source action preserved separately.",
+    "seamPremultipliedRgbaMeanAbsoluteDifference": 0.014581458643078804,
+    "adjacentPremultipliedRgbaMedianDifference": 0.016354354098439217,
+    "isClaimedPerfectlySeamless": false
+  },
+  "assets": [
+    {
+      "mediaType": "image/apng",
+      "file": "loop.png",
+      "frames": 80,
+      "durationSeconds": 3.3333333333333335,
+      "sha256": "1019ad07b9ef2421e409b7e8417ec99ec0bb8f4493fe265ad78f2c7c8cc03fc9",
+      "bytes": 32268350
+    },
+    {
+      "mediaType": "image/png",
+      "file": "still.png",
+      "sourceFrame": 1,
+      "sha256": "cf3acee6d4a26461a5e319db5fcd766f801816f79b495c2f20a1a41e3e74613d",
+      "bytes": 384026
+    }
+  ],
+  "preservedFullAnimation": {
+    "repositoryRelativePath": "dist/companion-assets/amu-01/full-cycle.png",
+    "sourceFrameRange": [
+      1,
+      145
+    ],
+    "frames": 145,
+    "framesPerSecond": 24,
+    "durationSeconds": 6.041666666666667,
+    "sha256": "d9ebec6db1999c6d08184f506b87efe6982e0d1e5cd188c59ac8876facdf8d00",
+    "includedInApp": false
+  },
+  "verification": {
+    "selectedAndFullPixelExactWithPillowAndFfmpeg": true,
+    "allFrameBordersFullyTransparent": true,
+    "stillRetainsOriginalFirstFrame": true
+  },
+  "sourcePermissionNote": "Provided by the user, who requested publishing the current OpenDesk source and App packages on 2026-10-22. No independent third-party license is asserted."
+}

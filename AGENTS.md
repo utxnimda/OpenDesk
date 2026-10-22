@@ -61,6 +61,7 @@
 
 - `config/version.json` 管理宿主/core 版本并保留已有历史；历史业务版本不代表当前激活的模块包。包版本权威是包内 `manifest.json`，用户实际使用版本由宿主选择与成功激活状态决定。
 - 宿主与页签独立发布；同页签并行开发自行解决代码及版本冲突。独立页签更新不强制提升宿主。包版本、hostApi、dataSchema 分开；已发布的同 ID/版本/目标包不得替换为另一摘要。
+- 获得当次发布授权后，主框架交付源码、App 安装器/便携包及当次明确随附的正式页签；本仓库新开发或更新的正式页签另按模块 ID/版本独立打包并发布下载。以 `config/distribution.json` 显式限定范围，不从本机已安装、已导入目录或缓存推导上传清单。模块测试台、测试 fixture、外部导入及私有模块不得混入公开 App 或独立发布附件。二进制作为 Release 附件，不写入 Git 源码历史。
 - 用 `npm run version:prepare -- --file <草稿>` 维护宿主/core 新版本，用 `version:sync` 同步派生文件；不得只手改 package、Tauri 或 Cargo 的宿主版本。模块构建读取自己的 manifest，不写中央发布历史；fixture 不伪造正式发布记录。
 - 交付执行 `npm run version:check`（已纳入 `npm run check`）。已发布历史及标签不得覆盖；`version:tags` 只打印标签，不授权或执行提交、推送、安装器发布。Git 操作继续遵循本文件第 1 节及当次用户明确授权。
 

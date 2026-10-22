@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "traveler-01",
+  "label": "阿宝",
+  "source": {
+    "kind": "user-provided-video",
+    "fileName": "生成指定动作的循环视频 (1).mp4",
+    "sha256": "ac72d20e36419eece1df148e1aa6fba586eb2dd5d0c229c5b4a17e4668e816a5",
+    "includedInPackage": false
+  },
+  "processing": {
+    "tool": "scripts/prepare-companion-video.py",
+    "matteProfile": "purple",
+    "sourceFrames": 97,
+    "animationSourceFrameRange": [
+      1,
+      97
+    ],
+    "frameRangeIndexing": "one-based inclusive",
+    "stillSourceFrame": 1,
+    "versions": {
+      "python": "3.12.14",
+      "numpy": "2.3.5",
+      "pillow": "12.3.0",
+      "ffmpeg": "ffmpeg version 8.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers"
+    },
+    "sourceSize": [
+      720,
+      1280
+    ],
+    "outputSize": [
+      768,
+      768
+    ],
+    "frames": 97,
+    "framesPerSecond": 24,
+    "durationSeconds": 4.041666666666667,
+    "loopCount": 0,
+    "alpha": "RGBA",
+    "frameBlend": "SOURCE",
+    "sourceMotionPreserved": true,
+    "aiRedraw": false,
+    "audioIncluded": false,
+    "constantSourceCrop": [
+      104,
+      100,
+      666,
+      1260
+    ],
+    "constantBaseline": 734
+  },
+  "assets": [
+    {
+      "mediaType": "image/apng",
+      "file": "loop.png",
+      "sha256": "c1445ded3cbef17add278141b715aa219e7e61185ac6291df52ae595d80d82dc"
+    },
+    {
+      "mediaType": "image/png",
+      "file": "still.png",
+      "sha256": "e2b3ef3b98521079c1bb5fb6a410860227a822505a68bc9ce923b5e5a4229946"
+    }
+  ],
+  "sourcePermissionNote": "Provided by the user, who requested publishing the current OpenDesk source and App packages on 2026-10-22. No independent third-party license is asserted."
+}

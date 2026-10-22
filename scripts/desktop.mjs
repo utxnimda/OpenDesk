@@ -9,7 +9,10 @@ if (mode === 'check' || mode === 'test') {
   run(process.execPath, [join(root, 'node_modules/@tauri-apps/cli/tauri.js'), mode, ...process.argv.slice(3), '--', '--locked'], {
     cwd: desktop, env,
   });
-  if (mode === 'build') run(process.execPath, [join(root, 'scripts/package-portable.mjs')], { env });
+  if (mode === 'build') {
+    run(process.execPath, [join(root, 'scripts/package-portable.mjs')], { env });
+    run(process.execPath, [join(root, 'scripts/release-artifacts.mjs'), 'record'], { env });
+  }
 } else {
   throw new Error('Unknown desktop operation: ' + mode);
 }

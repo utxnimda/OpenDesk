@@ -1,6 +1,141 @@
-> 2026-10-20 的 OpenDesk 记录为当前工程实测；2026-10-19 及之前的记录属于源码迁移前历史。旧运行编号、提交和工作区路径仅用于保留原始验证上下文。
+> 2026-10-20 起的 OpenDesk 记录为当前工程实测；2026-10-19 及之前的记录属于源码迁移前历史。旧运行编号、提交和工作区路径仅用于保留原始验证上下文。
 
 # 验证记录
+
+## 2026-10-22：App 与正式页签分别发布（0.12.0 / tower-assistant 0.1.7）
+
+用户明确要求提交当前代码，并按 App、正式页签各自的版本提供下载；进一步限定主 App 仅随附塔防山贼助手，模块测试台及其他额外导入、非当前开发归属的包不上传。新增显式 `config/distribution.json`；打包及发布准备入口检查精确模块清单、实际目录内容、摘要和来源分支。`test-lab` 源码只用于开发验证，其基线与其他 fixture 由隔离 smoke 显式导入，不进入正式 App 或独立发布附件。
+
+源码检查阶段 `npm run check` 已通过 46 项版本/分发边界测试、108 项前端和 69 项 Python 测试，共 223 项；类型、72 个源文件架构检查通过。新增用例覆盖未知/重复/测试模块公开拒绝、残留导入包拒绝、同版本异内容保护、缓存身份和发布产物缺失/篡改。旧构建目录已完整保留到 `.local/previous-builds/distribution-20261022/`，没有删除本机已导入包或用户选择。
+
+App 与模块须在提交已审阅源码后从干净工作树构建，再准备 `dist/releases/app/0.12.0/`、`dist/releases/modules/tower-assistant/0.1.7/`。本节当前记录源码检查，后续构建、原生运行、上传与下载摘要核对分别追加实际结果；不因目录或下载链接存在而推断发布已经完成。
+
+## 2026-10-21：阿宝命名与阿沐全身骑行素材（0.11.0）
+
+第一只跑步角色正式显示为“阿宝”，保留稳定 ID `traveler-01`，97 帧动画及静态图的摘要没有变化。第二只“阿沐”使用本次补充的完整人物与自行车视频，ID 为 `amu-01`；此前裁切身体和车轮的近景视频未用于生产资源。
+
+阿沐源视频为 145 帧、24 FPS、6.041667 秒。当前默认连续选取源帧 51–130（从 1 开始、含首尾），共 80 帧、3.333333 秒，避开片尾闭眼后回到开头的较大跳变；这是已向用户说明的可逆默认选择，不将未答复偏好视为明确选择。全 145 帧仍共同决定固定画布、缩放和底线，静态图仍取源帧 1。完整动作另存 `dist/companion-assets/amu-01/full-cycle.png`，不重复加入 App。两者都是 768×768 RGBA APNG，没有 AI 重画、插帧、逐帧居中或变速，不宣称严格无缝。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 素材解码 | 阿沐默认 80 帧及完整 145 帧均经 Pillow、FFmpeg 独立解码，每帧像素与对应处理 PNG 完全一致；画布边界 alpha 全为 0，精确 1/24 秒时序及无限循环通过 |
+| 可复现与回归 | 从原视频重新处理后得到默认短循环；完整动作与已检查候选逐字节相同。默认 purple 分支完整重建阿宝后，原两份资源摘要保持不变。三段原视频摘要均未变化 |
+| 素材工具边界 | 8 类无效区间/profile 参数明确退出 2、未写处理帧；独立检查确认非空输出目录不被覆盖。FFprobe/FFmpeg 设置阶段超时，失败不返回成功；最终增加超时控制不改变像素算法，执行与最终工具摘要分别记录 |
+| 版本、类型、架构与自动化 | `npm run check` 通过：33 项版本、108 项前端、69 项 Python 测试，共 210 项；72 个源文件架构检查通过。原生实现未变，本轮未重复 Rust 单元测试，31 项结果仍属于前一节 0.10.0 证据 |
+| 浏览器交互 | CUA 控制的独立 Chrome 可见标签验证阿宝/阿沐选择、暂停由 loop 切 still、恢复切回 loop；仅有实际暂停与收起控件；两图自然尺寸 768×768、CSS filter 为 none，无背景入口，无 warn/error |
+| 原生双角色 smoke | 0.11.0 真实 EXE 在两个独立数据根明确选择 `traveler-01`、`amu-01`，均通过图片 ready、设置往返、显示/隐藏/重开；测试完成退出 |
+| 原生宿主 smoke | WebView、IPC、设置往返与冻结 worker 启动/重启/停止通过，worker PID 36160 / 54996；测试完成无该候选 worker 残留 |
+| 构建与包 | Tauri release 与 NSIS 成功；独立便携目录 61 文件，ZIP 所有文件摘要与原目录一致。随附塔防 0.1.6、测试台 1.0.6 摘要与 0.10.0 完全一致，未重复模块版本切换 smoke |
+| 正常桌面启动 | 替换本任务拥有的 0.10.0 实例，经 Explorer 启动 0.11.0，PID 10160；主界面与默认阿宝图片 ready、无 error。保留 Codex/浅色、152px、桌面宠物启用状态及全部模块选择 |
+| 退役素材复核 | 当前源图、前端构建及 Tauri 编码资源共检查 14 个 PNG 文件，仅阿宝/阿沐四种摘要，无旧五份素材匹配，已撤回路径保持不存在 |
+
+正常桌面核验第一次因 Windows PowerShell 默认编码误读含中文的 UTF-8 模块清单而失败；修正本机只读核验脚本的显式 UTF-8 读取后通过，没有改写应用数据或放宽模块路径校验。初次失败报告保留在 `.local/launch-0.11.0/verification-first-encoding-error.json`，不当作应用启动失败。
+
+生产资源见 `apps/features/companion/assets/{traveler-01,amu-01}/`；阿沐默认循环 SHA-256 为 `1019ad07b9ef2421e409b7e8417ec99ec0bb8f4493fe265ad78f2c7c8cc03fc9`，完整动作 `d9ebec6db1999c6d08184f506b87efe6982e0d1e5cd188c59ac8876facdf8d00`。来源、选帧与工具信息在各自 `SOURCES.md` / `provenance.json` 中。原始视频和音轨未进入源码或应用包。
+
+本地便携目录为 `dist/OpenDesk-0.11.0/`；ZIP、安装器及摘要位于 `dist/releases/0.11.0/`。ZIP 为 86,956,239 字节，SHA-256 `4f300c7c8ba84ce75795e1717206120826a7bdf979286d2921f27e0171d8cddd`；NSIS 为 83,772,512 字节，SHA-256 `c08815665a218f0fafec4b11d9d96cc810fa3597596c923efeee3d252fda7e0b`。未执行干净机器安装/卸载、多显示器/DPI、原生窗口手动拖动或长期常驻验收；浏览器截图和原生图片 ready 不冒充这些结果。未提交、推送或公开发布。
+
+本机证据：`.local/new-companion-video/amu/candidate/selected-reproduction/{report.json,selection-verification.json,installation.json}`、同级 `final-purple-regression/selection-verification.json` 与 `range-validation/results.json`、`.local/companion-video-readonly-review.json`、`.local/two-companions-check.log`、`.local/two-companions-build.log`、`.local/two-companions-review/`、`.local/two-companions-native/20261021-180415-159/`、`.local/smoke/20261021-180420-800/smoke-result.json`、`.local/launch-0.11.0/verification.json`、`.local/two-companions-source-hashes.json`、`.local/replaced-companion-audit.json`。
+
+## 2026-10-21：撤下未授权旧素材并接入用户视频宠物（0.9.1 / 0.10.0）
+
+用户明确要求删除“小鸭薄荷”后，删除了五个原始 PNG/APNG、角色注册与旧来源说明；撤回本工程中含它的 0.8/0.9 宿主 EXE、便携 ZIP、安装器、四张预览截图和本任务参考克隆。使用 `cargo clean --package opendesk --release` 清理已确认嵌入素材的本 crate 构建产物，未清理第三方依赖或原 Pet 工程。旧版本的文字记录和摘要保留，旧 release manifest 标记为 withdrawn；下文历史截图或产物链接可能已失效，不代表这些已撤回文件仍可分发。
+
+0.9.1 记录先撤下素材与空目录保护；用户随后提供第一段全身跑步视频并要求继续制作，0.10.0 接入新模型 `traveler-01`，显示名“旅途伙伴”。第二段骑行视频下半身和车轮被裁切，用户明确选择等待补充全身视频，故第二只仅作本机检查，没有进入生产角色目录。
+
+新资源由用户第一段视频逐帧处理：去除紫底和地面投影，生成连续透明边缘，保留灰衣、鞋、背包及头发；全帧使用共同包围盒和固定基线，没有逐帧重居中、AI 重画或动作插值。输出为 768×768、97 帧、精确 24 FPS、4.041667 秒的 RGBA APNG 及同画布静态首帧。保留源视频站立—跑步—站立节奏，源首尾不是相同帧，因此不将其声称为完全无缝的新生成循环。
+
+模型目前仅注册实际提供的 `idle` 与 `still`。`walk`、`wave`、`sleep` 改为可选，缺失或复用同一资源时不提供额外动作按钮；暂停与系统减少动效优先静态形象。显式空目录、失效模型与旧启用设置仍有守卫，避免创建无资源窗口或假成功动作。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 素材完整性 | Pillow 与 FFmpeg 独立读回全部 97 帧，每帧像素与处理 PNG 完全一致；画布边界 alpha 全为 0；帧数、无限循环、精确时长均通过 |
+| 可复现性 | 使用正式 `scripts/prepare-companion-video.py` 从原视频重新完整抽帧、处理、封装，APNG 与静态图均与生产资源逐字节一致；原始两段视频 SHA-256 前后不变 |
+| 编码兼容处理 | 最初优化 OVER 封装在两个解码器之间出现差异，最终改为完整 SOURCE 帧并通过双解码检查；保留通过画面的像素和时序 |
+| 版本、类型、架构、自动化 | `npm run check` 通过：33 项版本、108 项前端、69 项 Python 测试通过，72 个源文件的架构检查通过；Rust 0.10.0 的 31 项测试与最终 fmt 检查通过，共 241 项 |
+| 浏览器交互 | 正式 App 读取 768×768 循环资源，暂停后明确切到 `still.png`；只显示暂停与收起等实际可用控件，没有虚构挥手/休息素材；浏览器检查与原生窗口实际点击是不同证据 |
+| 原生宠物 smoke | 真实 EXE 以明确 `modelId=traveler-01` 启动，图片 ready、设置往返、显示/隐藏/重开全部通过 |
+| 原生宿主 smoke | WebView、IPC、设置往返及冻结 worker 启动/重启/停止通过，worker PID 67264 / 24188，退出后无测试 worker 残留 |
+| 模块与打包 | 随附塔防 0.1.6、测试台 1.0.6 的摘要与 0.9.0 已验证包完全一致，本轮未重复模块版本切换测试；生成 NSIS 与 61 文件便携包，ZIP逐文件摘要与目录一致 |
+| 正常桌面启动 | 经 Explorer 启动 0.10.0，PID 20196；主前端与新模型图片 ready，启动无 error；保留用户 Codex/浅色、152px 宠物大小和模块选择 |
+| 撤回核验 | 当前源素材、前端产物和 Tauri Brotli 编码资源共检查 6 个 PNG 文件，仅两种新摘要，无五种旧素材摘要；确认旧待撤回路径均已移除 |
+
+新原始视频未放入源码或分发包，来源说明只记录用户提供并委托本地处理的事实，不推定额外公开分发许可。安装器已生成，未做干净机器安装/卸载、原生多显示器/DPI及长期运行验收。没有提交、推送或公开发布。
+
+新素材位于 `apps/features/companion/assets/traveler-01/`，来源与参数见其 `SOURCES.md` / `provenance.json`；应用及本地包分别位于 `dist/OpenDesk-0.10.0/`、`dist/releases/0.10.0/`。上下文整理见[宠物资源重建上下文](companion-assets.md)。
+
+本机证据：`.local/new-companion-video/reproduction/{report.json,verification.json,production-comparison.json}`、`.local/video-companion-check.log`、`.local/video-companion-native-tests.log`、`.local/video-companion-build.log`、`.local/video-companion-review/`、`.local/video-companion-native/20261021-171719-538/companion-smoke-result.json`、`.local/smoke/20261021-171759-403/smoke-result.json`、`.local/launch-0.10.0/verification.json`、`.local/removed-mint-assets.json`、`.local/withdrawn-companion-artifacts.json`、`.local/replaced-companion-audit.json`。
+
+## 2026-10-21：OpenDesk 0.9.0 移除背景与氛围、重做深海透明风格
+
+按用户后续要求移除「背景与氛围」整项功能：设置页分类、背景导入/读取 IPC、图片显示与缓存、场景/粒子、用户材质及动效调节均删除。`Personalization` 只保留宠物配置；旧 schema 1 的已知 `background` / `effects` 字段兼容读取后忽略，读取本身不改文件，显式保存时不再输出退役字段。未知字段、坏宠物配置和未来 schema 仍拒绝。已有图片文件不读取、不删除；图片专用 JPEG/WebP 依赖及本次为 Blob 预览增加的 CSP 能力一并撤回。
+
+根据用户提供的界面参考图，将原 `glass` 布局重做并命名为「深海透明」，保留存储/协议 ID。采用 50px 顶部标签、190px 次级侧栏（最小窗口为 170px）、青色细边、低圆角和紧凑分区；建议深色配色使用蓝黑半透明分组和静态底色，浅色仍遵循主题变量。这里是应用内部的表面质感，不把主窗口改成透出其他桌面应用的透明窗口。其他五种风格和两种宠物模式保留。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 版本、类型、架构与自动化 | `npm run check` 通过；33 项版本、95 项前端、69 项 Python 测试全部通过；72 个源文件的架构检查通过 |
+| Rust 与格式 | `cargo test --release --locked --offline` 在 0.9.0 上 31/31 通过，`cargo fmt --check` 通过；覆盖旧背景字段兼容丢弃、宠物偏好保留、未来 schema/未知字段保护及退役 CLI 参数提前拒绝 |
+| 浏览器外观 | 检查深海透明深色、浅色；设置仅三类、无背景/场景 DOM；1280×720 与 860×620 无宿主横向或 body 纵向溢出；最小窗口顶部标签完整，主内容无需额外滚动；检查时无 warn/error |
+| 模块滚动与协议 | 显式模拟适配器配合真实跨来源 iframe/SDK；1280×720 下宿主 main 为 646/646、overflow hidden，iframe body 为 619/2432、overflow auto；收到 glass 材质、motion off，只有模块内部长内容滚动 |
+| 原生宠物与升级设置 | 使用真实旧 0.8 设置但不提供旧背景图片，`--companion-smoke --enable-companion` 通过；宠物图片加载、显示/隐藏/重开和设置往返均成功，保存后的个性化只含 pet，未创建壁纸目录 |
+| 原生宿主 smoke | WebView、IPC、设置往返、打包 worker 启动/重启/停止通过；worker PID 81852、50004，测试退出后无候选 worker 残留 |
+| 原生模块 smoke | 真实 iframe/worker 完成 `1.0.6 → 1.1.0 → 1.0.6`，新增页签、禁用拒绝、不兼容原件保留、旧会话拒绝和 UI 失败恢复通过 |
+| 本地出包 | Tauri release、NSIS 与 61 文件便携包生成成功；ZIP 逐文件 SHA-256 与原件一致；塔防助手 0.1.6、测试台 1.0.6；来源仍如实标记 dirty |
+| 实际切换启动 | 经 Explorer 正常启动 0.9.0，PID 30152，前端和桌面宠物 ready，启动无 error；普通桌面数据视图下核对退役设置已移除、其他偏好与模块选择保持、原背景文件 SHA-256 未变；现有 Codex 风格与跟随系统配色保留 |
+
+当前程序为 `dist/OpenDesk-0.9.0/OpenDesk.exe`；安装器、ZIP 和校验清单位于 `dist/releases/0.9.0/`。浏览器截图是实际前端预览，模块布局截图来自明确标识的模拟夹具，不冒充原生窗口点击。未进行干净机器安装/卸载、原生窗口拖动或多显示器/DPI 实机验收。宠物透明矩形鼠标命中的已有边界保持。没有 Git 提交、推送或公开发布。
+
+本机证据：`.local/remove-background-check.log`、`.local/companion-native-tests-final.log`、`.local/remove-background-build.log`、`.local/transparent-style-review/`、`.local/companion-native/20261021-163034-990/companion-smoke-result.json`、`.local/smoke/20261021-163048-079/smoke-result.json`、`.local/module-smoke/20261021-163142-878-0b048be4/module-smoke-result.json`、`.local/launch-0.9.0/verification.json`。
+
+## 2026-10-21：OpenDesk 0.8.0 背景、流光玻璃与宠物陪伴
+
+设置新增「背景与氛围」「宠物陪伴」分类，增加第六种流光玻璃布局、三处背景位置、磨砂材质、星尘/樱花及可关闭动效。壁纸由 Rust 有界导入并保存到应用数据目录，前端仅持有图片标识和受控显示数据；示例原图未加入源码或分发包。前端使用可释放的 Blob URL 显示大图，避免大型 data URL 写入 CSS 变量后失效。
+
+宠物提供应用内与桌面两种模式。桌面模式由主应用进程创建独立透明窗口，关闭宠物为临时隐藏，退出应用销毁宠物；应用内模式可拖动、收起和唤回。角色资源来自用户指定 Pet 仓库的固定提交，经过显式组合根注入框架，未引入原工程的网络、音频和 Electron 行为。资产来源和实际授权信息见 `apps/features/companion/assets/SOURCES.md`。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 版本、类型、架构与自动化 | `npm run check` 通过；33 项版本、94 项前端、69 项 Python 测试全部通过；76 个源文件的架构检查通过 |
+| 原生测试与格式 | `cargo test --release --locked` 30/30 通过；`cargo fmt --check` 通过。覆盖旧设置补全、壁纸尺寸/格式/路径边界、窗口缩放后坐标约束、验证入口参数及普通单实例保留 |
+| 浏览器背景与氛围 | 使用指定的 6015×4093 示例图片实际导入预览；整窗、工作台封面、导航区切换，模糊滑条和关闭动效均检查；流光玻璃设置页只有 `main-content` 一个纵向滚动容器；检查时无浏览器 warn/error |
+| 浏览器宠物交互 | 实际点击挥手显示气泡、暂停切换静态资源、拖动改变位置、收起后唤回，图片加载成功；此处使用应用内模式，不冒充原生桌面拖动验收 |
+| 新风格模块滚动与同步 | 显式模拟适配器配合真实跨来源 iframe/SDK；1280×720 下 glass 宿主 main 高度/内容均 619，iframe body 为 592/4303；anime 宿主均 575，iframe 为 548/3612。宿主为 hidden，iframe 为 auto；风格、材质和动效同步正确，切换后仍为同一实例 `browser-fixture-1` |
+| 原生个性化 smoke | 发布 EXE 导入示例图，得到 2560×1742 规范化背景；设置落盘往返、壁纸读取、宠物真实图片加载、显示/隐藏/重新显示全部通过，角色为 `mint-duck`，宿主退出码 0 |
+| 原生宿主 smoke | WebView 挂载、IPC、设置往返及冻结 worker 启动/重启/停止通过；worker PID 为 62408、69816，测试后无候选目录下进程残留 |
+| 原生模块 smoke | 真实 iframe/worker 完成 `1.0.5 → 1.1.0 → 1.0.5`；新增模块、禁用拒绝、不兼容原件保留、过期会话拒绝及 UI 失败恢复通过 |
+| 本地构建与便携包 | Tauri release 与 NSIS 生成成功；便携目录 61 文件，ZIP 逐项 SHA-256 与目录原件一致；产品元数据为 OpenDesk 0.8.0；随附塔防助手 0.1.5、测试台 1.0.5，包来源如实标记 dirty |
+
+候选位于 `dist/OpenDesk-0.8.0/`，ZIP、安装器、摘要及来源清单位于 `dist/releases/0.8.0/`。验证期间保留用户自行运行的 `dist/OpenDesk/` 旧实例，不覆盖其文件。首次候选提前退出且没有生成报告，未计为通过；包含最终验证入口的重新构建通过上述三种原生 smoke。只有显式绝对测试数据根下的验证模式跳过单实例，普通启动仍保持单实例；WebView2 缓存不因此完全隔离。并行保留旧实例时，日志如实记录原有全局快捷键已被注册的 warning，不把该次 smoke 当作快捷键验收。
+
+当前限制：桌面透明窗口的矩形范围仍参与鼠标命中，没有实现按图片透明像素穿透；原生窗口拖动、实际多显示器/DPI、长时间常驻与干净机器安装/卸载未验证。安装器已生成，不代表已安装或签名。当前改动未提交、推送或发布 GitHub Release。
+
+用户确认切换后，0.8.0 于当日 16:16 通过 Explorer 正常启动，进程 PID 78184；主前端、宠物图片就绪，示例背景导入，普通桌面数据视图中的随附新模块安装完成，本次启动无 error。直接从 Codex 的打包运行环境启动时，Windows 将新建 AppData 目录重定向至该包的 LocalCache，导致路径包含检查拒绝；普通 `Shell.Application` 调用也未改变这一上下文。通过 Explorer 打开仅含指定启动参数的本地快捷方式后，查询进程返回 `APPMODEL_ERROR_NO_PACKAGE`，问题消失；没有改动模块存储校验或安全策略。该重定向行为可参考 [Microsoft 的 MSIX 文件系统说明](https://learn.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes)。此前在打包环境取得的配置快照属于另一合并视图，不能当作普通桌面数据的逐字节升级前快照；后续验证已从正常桌面上下文单独保存基线。该过程的证据位于 `.local/launch-0.8.0/20261021-161116-199/actual-startup-verification.json` 与 `.local/explorer-launch-package-identity.json`。
+
+本机证据：`.local/personalization-check-final.log`、`.local/personalization-native-tests-final.log`、`.local/personalization-build-final.log`、`.local/personalization-review/`、`.local/personalization-native/20261021-154503-499/personalization-smoke-result.json`、`.local/smoke/20261021-154524-973/smoke-result.json`、`.local/module-smoke/20261021-154559-922-a00edc09/module-smoke-result.json`。
+
+## 2026-10-20：OpenDesk 0.7.0 五种界面风格与模块滚动
+
+在原简洁风格上增加 Codex、Cursor IDE、现代 Web 与二次元布局，风格与已有配色分别选择。设置支持布局缩略图、显式建议配色、即时预览与保存；重复点击当前设置入口保持预览，保存期间锁定草稿控件。旧 schema 1 文件缺少 `uiStyle` 时只在内存中补为 `simple`，未知值拒绝并保护原文件。
+
+模块外壳改为窗口剩余空间中的 flex 布局，去除固定 650px iframe 高度、重复卡片边框和重复模块标题。宿主不测量或操作跨来源模块 DOM；业务文档的长内容由 iframe body 滚动。协议 1 新增可选 `uiStyle`，旧消息与旧包保持兼容。塔防助手 0.1.4、测试台 1.0.4 包含新样式，用户原有包选择不自动替换。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 版本、类型、架构与自动化 | `npm run check` 通过；33 项版本、77 项前端、69 项 Python 测试通过，61 个源文件的架构检查通过 |
+| 原生测试 | `cargo test --release --locked`：15 项通过，包含五种风格落盘重读、旧设置兼容和未知值保护 |
+| 浏览器外观 | 查看五种风格工作台与设置缩略图，检查默认窗口和最小桌面尺寸 |
+| 浏览器模块布局 | 显式模拟 HostAdapter，使用真实 App、PackageFrame、跨来源 iframe、MessageChannel、SDK 和共享 CSS；五种风格在 1180×800、860×620 下，宿主 html/body/main 均无纵向溢出，main overflow 为 hidden，iframe body 为 auto 且长内容可溢出；无宿主横向溢出 |
+| 浏览器设置与协议 | 界面操作保存五种风格后模块收到对应值；切换期间实例 generation 保持；同页导航不取消预览，未保存离开恢复，保存后重载保持 |
+| 五种原生启动 | 五份独立数据根分别预置五种风格，真实发布 EXE 均报告 frontendMounted、IPC、设置往返通过，保存后的 uiStyle 与预置值一致 |
+| 模块运行 | 真实桌面模块 smoke 通过 `1.0.4 → 1.1.0 → 1.0.4`，新增页签、禁用拒绝、不兼容原件保留、过期会话拒绝与 UI 失败恢复通过 |
+| 构建与正常启动 | 0.7.0 NSIS、61 文件便携目录和 ZIP 生成；默认用户数据根启动成功，窗口响应且日志记录 frontend.ready，没有本次启动 error |
+
+浏览器回归夹具仅提供测试设置与目录，不使用真实 worker；其 DOM 尺寸和协议证据不冒充原生执行。当前浏览器工具无法向该跨来源 iframe 发送点击/键盘事件，因此未用其证明滚轮操作或点击计数器保留；原生模块执行由独立的桌面 smoke 验证。没有进行完整可访问性审计或干净机器安装验收。
+
+证据位于忽略目录：`.local/ui-style-check.log`、`.local/ui-style-rust-tests.log`、`.local/ui-style-build.log`、`.local/ui-style-review/scroll-metrics.json`、`.local/ui-style-review/settings-flow.json`、`.local/ui-style-native/results.json`、`.local/module-smoke/20261020-204641-556-ac6cb709/module-smoke-result.json`。布局测试夹具及其操作步骤位于 `.local/ui-style-fixture/`，未引入生产组合根。
+
+当前改动未提交或推送，没有发布 0.7.0 GitHub Release；本地产物如实标记工作区 dirty。旧 0.6.0 生成目录在 `.local/previous-builds/20261020-ui-styles/` 中保留。
 
 ## 2026-10-20：OpenDesk 0.6.0 改名、清理及打包启动
 

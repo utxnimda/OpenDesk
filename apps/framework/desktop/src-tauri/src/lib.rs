@@ -1,6 +1,9 @@
+mod companion;
+mod companion_smoke;
 mod diagnostics;
 mod module_packages;
 mod module_smoke;
+mod personalization;
 mod process_job;
 mod settings;
 mod worker;
@@ -30,6 +33,10 @@ struct AppState {
     smoke_test: bool,
     module_smoke: bool,
     module_smoke_started: AtomicBool,
+    companion_smoke: bool,
+    companion_smoke_started: AtomicBool,
+    companion_ready: tokio::sync::Mutex<Option<String>>,
+    companion_show_lock: tokio::sync::Mutex<()>,
     module_ui_ready: tokio::sync::Mutex<std::collections::BTreeMap<String, Value>>,
     module_ui_calls: tokio::sync::Mutex<std::collections::BTreeMap<String, Value>>,
     module_ui_closed: tokio::sync::Mutex<std::collections::HashSet<String>>,
@@ -49,7 +56,12 @@ fn settings_get(state: State<'_, AppState>) -> Result<Settings, String> {
     state.settings.load()
 }
 #[tauri::command]
-fn settings_save(settings: Settings, state: State<'_, AppState>) -> Result<Settings, String> {
+fn settings_save(
+    settings: Settings,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<Settings, String> {
+    settings.validate()?;
     let result = state.settings.save(settings);
     state.diagnostics.record(
         if result.is_ok() { "info" } else { "error" },
@@ -60,7 +72,54 @@ fn settings_save(settings: Settings, state: State<'_, AppState>) -> Result<Setti
             "failed; existing data preserved"
         },
     );
+    if result.is_ok() {
+        if let Err(error) = app.emit("settings-changed", ()) {
+            state
+                .diagnostics
+                .record("warn", "settings.notification", &error.to_string());
+        }
+    }
     result
+}
+#[tauri::command]
+async fn companion_show(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let _guard = state.companion_show_lock.lock().await;
+    companion::show(&app, &state.settings.load()?.personalization.pet)
+}
+#[tauri::command]
+fn companion_hide(app: tauri::AppHandle) -> Result<(), String> {
+    companion::hide(&app)
+}
+#[tauri::command]
+fn companion_start_drag(window: tauri::WebviewWindow) -> Result<(), String> {
+    companion::start_drag(&window)
+}
+#[tauri::command]
+fn companion_get_state(app: tauri::AppHandle) -> Result<companion::CompanionState, String> {
+    companion::state(&app)
+}
+#[tauri::command]
+async fn companion_ready(
+    model_id: String,
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    if window.label() != companion::LABEL {
+        return Err("Only the companion surface may report readiness.".into());
+    }
+    if model_id.is_empty()
+        || model_id.len() > 64
+        || !model_id
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+    {
+        return Err("Invalid companion readiness identity.".into());
+    }
+    state
+        .diagnostics
+        .record("info", "companion.ready", &model_id);
+    *state.companion_ready.lock().await = Some(model_id);
+    Ok(())
 }
 #[tauri::command]
 async fn worker_call(
@@ -238,6 +297,10 @@ async fn frontend_ready(app: tauri::AppHandle, state: State<'_, AppState>) -> Re
     state
         .diagnostics
         .record("info", "frontend.ready", "Vue mounted and IPC connected");
+    if state.companion_smoke && !state.companion_smoke_started.swap(true, Ordering::SeqCst) {
+        tauri::async_runtime::spawn(companion_smoke::run(app.clone()));
+        return Ok(());
+    }
     if state.module_smoke && !state.module_smoke_started.swap(true, Ordering::SeqCst) {
         let app = app.clone();
         tauri::async_runtime::spawn(async move {
@@ -310,17 +373,228 @@ fn request_exit(app: &tauri::AppHandle) {
     });
 }
 
+fn apply_startup_preferences(data_root: &std::path::Path, args: &[String]) -> Result<(), String> {
+    for argument in args.iter().skip(1) {
+        reject_retired_flag(argument)?;
+    }
+    if !args.iter().skip(1).any(|arg| arg == "--enable-companion") {
+        return Ok(());
+    }
+    let store = SettingsStore::new(data_root);
+    // Load first: malformed existing preferences must never be replaced by defaults.
+    let mut settings = store.load()?;
+    settings.personalization.pet.enabled = true;
+    settings.personalization.pet.mode = personalization::PetMode::Desktop;
+    store.save(settings)?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum StartupMode {
+    Normal,
+    CoreSmoke,
+    ModuleSmoke,
+    CompanionSmoke,
+}
+
+fn reject_retired_flag(argument: &str) -> Result<(), String> {
+    if argument == "--import-wallpaper" || argument.starts_with("--import-wallpaper=") {
+        return Err(
+            "--import-wallpaper is no longer supported; background images have been removed."
+                .into(),
+        );
+    }
+    if argument == "--personalization-smoke" || argument.starts_with("--personalization-smoke=") {
+        return Err(
+            "--personalization-smoke is no longer supported; use --companion-smoke.".into(),
+        );
+    }
+    Ok(())
+}
+
+/// Test processes may bypass single-instance routing only with an explicit
+/// absolute framework-data root. Validate this before plugins or file writes.
+fn startup_mode(
+    args: &[String],
+    data_root: Option<&std::path::Path>,
+) -> Result<StartupMode, String> {
+    let mut mode = StartupMode::Normal;
+    for argument in args.iter().skip(1) {
+        reject_retired_flag(argument)?;
+        let candidate = match argument.as_str() {
+            "--smoke-test" => StartupMode::CoreSmoke,
+            "--module-smoke" => StartupMode::ModuleSmoke,
+            "--companion-smoke" => StartupMode::CompanionSmoke,
+            _ => continue,
+        };
+        if mode != StartupMode::Normal {
+            return Err("Only one smoke mode may run at a time.".into());
+        }
+        mode = candidate;
+    }
+    if mode != StartupMode::Normal && !data_root.is_some_and(std::path::Path::is_absolute) {
+        return Err("Smoke modes require an explicit absolute OPENDESK_DATA_DIR; default user data will not be used.".into());
+    }
+    Ok(mode)
+}
+
+#[cfg(test)]
+mod startup_tests {
+    use super::*;
+
+    #[test]
+    fn normal_startup_keeps_single_instance_even_with_an_explicit_data_root() {
+        let root = std::env::temp_dir().join("opendesk-mode-test");
+        let normal = vec!["opendesk".into(), "--enable-companion".into()];
+        assert_eq!(startup_mode(&normal, None).unwrap(), StartupMode::Normal);
+        assert_eq!(
+            startup_mode(&normal, Some(&root)).unwrap(),
+            StartupMode::Normal
+        );
+    }
+
+    #[test]
+    fn every_smoke_mode_requires_an_absolute_isolated_data_root() {
+        let root = std::env::temp_dir().join("opendesk-mode-test");
+        assert!(root.is_absolute());
+        for (flag, expected) in [
+            ("--smoke-test", StartupMode::CoreSmoke),
+            ("--module-smoke", StartupMode::ModuleSmoke),
+            ("--companion-smoke", StartupMode::CompanionSmoke),
+        ] {
+            let args = vec!["opendesk".into(), flag.into()];
+            assert_eq!(startup_mode(&args, Some(&root)).unwrap(), expected);
+            for invalid in [
+                None,
+                Some(std::path::Path::new("")),
+                Some(std::path::Path::new("relative/test")),
+            ] {
+                assert!(startup_mode(&args, invalid)
+                    .unwrap_err()
+                    .contains("absolute OPENDESK_DATA_DIR"));
+            }
+        }
+    }
+
+    #[test]
+    fn mixed_or_repeated_smoke_modes_are_rejected_before_startup_side_effects() {
+        let root = std::env::temp_dir().join("opendesk-mode-test");
+        for flags in [
+            ["--smoke-test", "--module-smoke"],
+            ["--companion-smoke", "--smoke-test"],
+            ["--companion-smoke", "--companion-smoke"],
+            ["--smoke-test", "--smoke-test"],
+        ] {
+            let args = vec!["opendesk".into(), flags[0].into(), flags[1].into()];
+            assert!(startup_mode(&args, Some(&root))
+                .unwrap_err()
+                .contains("Only one smoke mode"));
+        }
+    }
+
+    #[test]
+    fn explicit_companion_cli_preserves_preferences_and_retired_flags_preserve_file() {
+        let root = std::env::temp_dir().join(format!("opendesk-startup-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&root).unwrap();
+        let settings = Settings {
+            theme: settings::Theme::Forest,
+            close_to_tray: false,
+            personalization: personalization::Personalization {
+                pet: personalization::PetSettings {
+                    enabled: false,
+                    mode: personalization::PetMode::InApp,
+                    model_id: Some("sample-companion".into()),
+                    size: 208,
+                    always_on_top: false,
+                    animated: false,
+                },
+            },
+            ..Settings::default()
+        };
+        SettingsStore::new(&root).save(settings.clone()).unwrap();
+        let settings_path = root.join("config/framework/settings.json");
+        let original = std::fs::read(&settings_path).unwrap();
+        assert!(apply_startup_preferences(
+            &root,
+            &[
+                "opendesk".into(),
+                "--import-wallpaper".into(),
+                "relative.jpg".into()
+            ]
+        )
+        .is_err());
+        assert_eq!(std::fs::read(&settings_path).unwrap(), original);
+        apply_startup_preferences(&root, &["opendesk".into(), "--enable-companion".into()])
+            .unwrap();
+        let loaded = SettingsStore::new(&root).load().unwrap();
+        assert_eq!(loaded.theme, settings::Theme::Forest);
+        assert!(!loaded.close_to_tray);
+        assert_eq!(
+            loaded.personalization.pet,
+            personalization::PetSettings {
+                enabled: true,
+                mode: personalization::PetMode::Desktop,
+                ..settings.personalization.pet
+            }
+        );
+        let corrupt = r#"{"schemaVersion":99,"theme":"forest","closeToTray":false}"#;
+        std::fs::write(&settings_path, corrupt).unwrap();
+        assert!(apply_startup_preferences(
+            &root,
+            &["opendesk".into(), "--enable-companion".into()]
+        )
+        .is_err());
+        assert_eq!(std::fs::read_to_string(&settings_path).unwrap(), corrupt);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn retired_cli_flags_are_rejected_before_single_instance_or_file_writes() {
+        let root = std::env::temp_dir().join("opendesk-mode-test");
+        for flag in [
+            "--import-wallpaper",
+            "--import-wallpaper=C:/removed.jpg",
+            "--personalization-smoke",
+            "--personalization-smoke=true",
+        ] {
+            let args = vec!["opendesk".into(), flag.into()];
+            for data_root in [None, Some(root.as_path())] {
+                assert!(startup_mode(&args, data_root)
+                    .unwrap_err()
+                    .contains("no longer supported"));
+            }
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let app = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+    let args: Vec<String> = std::env::args().collect();
+    let data_root_override = std::env::var_os("OPENDESK_DATA_DIR").map(PathBuf::from);
+    let mode = match startup_mode(&args, data_root_override.as_deref()) {
+        Ok(mode) => mode,
+        Err(error) => {
+            eprintln!("OpenDesk startup refused: {error}");
+            std::process::exit(2);
+        }
+    };
+    let mut builder = tauri::Builder::default();
+    if mode == StartupMode::Normal {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _, _| {
             show_main(app)
-        }))
+        }));
+    }
+    let app = builder
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             host_info,
             settings_get,
             settings_save,
+            companion_show,
+            companion_hide,
+            companion_start_drag,
+            companion_get_state,
+            companion_ready,
             worker_call,
             worker_stop,
             modules_list,
@@ -334,10 +608,9 @@ pub fn run() {
             modules_load_failed,
             frontend_ready
         ])
-        .setup(|app| {
-            let data_root = match std::env::var_os("OPENDESK_DATA_DIR") {
+        .setup(move |app| {
+            let data_root = match data_root_override.clone() {
                 Some(path) => {
-                    let path = PathBuf::from(path);
                     if !path.is_absolute() {
                         return Err("OPENDESK_DATA_DIR must be absolute".into());
                     }
@@ -346,10 +619,12 @@ pub fn run() {
                 None => app.path().app_data_dir()?,
             };
             std::fs::create_dir_all(&data_root)?;
+            apply_startup_preferences(&data_root, &args)?;
             let diagnostics = Arc::new(Diagnostics::new(&data_root));
             diagnostics.record("info", "host.starting", env!("CARGO_PKG_VERSION"));
-            let smoke_test = std::env::args().any(|arg| arg == "--smoke-test");
-            let module_smoke = std::env::args().any(|arg| arg == "--module-smoke");
+            let smoke_test = mode == StartupMode::CoreSmoke;
+            let module_smoke = mode == StartupMode::ModuleSmoke;
+            let companion_smoke = mode == StartupMode::CompanionSmoke;
             let bundled_root = if cfg!(debug_assertions) {
                 PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../../dist/bundled-modules")
             } else {
@@ -369,6 +644,10 @@ pub fn run() {
                 smoke_test,
                 module_smoke,
                 module_smoke_started: AtomicBool::new(false),
+                companion_smoke,
+                companion_smoke_started: AtomicBool::new(false),
+                companion_ready: tokio::sync::Mutex::new(None),
+                companion_show_lock: tokio::sync::Mutex::new(()),
                 module_ui_ready: tokio::sync::Mutex::new(std::collections::BTreeMap::new()),
                 module_ui_calls: tokio::sync::Mutex::new(std::collections::BTreeMap::new()),
                 module_ui_closed: tokio::sync::Mutex::new(std::collections::HashSet::new()),
@@ -420,7 +699,7 @@ pub fn run() {
                     &error.to_string(),
                 );
             }
-            if smoke_test || module_smoke {
+            if smoke_test || module_smoke || companion_smoke {
                 // If the frontend fails to load, fail explicitly instead of leaving a hidden process.
                 let app = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
@@ -433,7 +712,9 @@ pub fn run() {
                     let state = app.state::<AppState>();
                     if !state.exiting.load(Ordering::SeqCst) {
                         let _ = std::fs::write(
-                            state.data_root.join(if module_smoke {
+                            state.data_root.join(if companion_smoke {
+                                "companion-smoke-result.json"
+                            } else if module_smoke {
                                 "module-smoke-result.json"
                             } else {
                                 "smoke-result.json"
@@ -458,6 +739,15 @@ pub fn run() {
                     return;
                 }
                 api.prevent_close();
+                if window.label() == companion::LABEL {
+                    if let Err(error) = companion::hide(window.app_handle()) {
+                        state.diagnostics.record("error", "companion.hide", &error);
+                    }
+                    return;
+                }
+                if window.label() != "main" {
+                    return;
+                }
                 if state
                     .settings
                     .load()

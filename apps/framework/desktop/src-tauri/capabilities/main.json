@@ -5,6 +5,7 @@
   "windows": ["main"],
   "permissions": [
     "allow-host-info", "allow-settings-get", "allow-settings-save",
+    "allow-companion-show", "allow-companion-hide", "allow-companion-get-state",
     "allow-worker-call", "allow-worker-stop", "allow-frontend-ready",
     "allow-modules-list", "allow-modules-import", "allow-modules-select",
     "allow-modules-enable", "allow-modules-open", "allow-modules-call", "allow-modules-close",

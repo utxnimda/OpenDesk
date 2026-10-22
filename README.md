@@ -6,24 +6,25 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 面向 Windows 的本地桌面工具台，用于挂载和开发独立功能。基于 **Tauri 2 + Vue 3 / TypeScript + Python worker**，通用框架管理窗口、设置和后台通信，业务模块各自负责界面与逻辑。
 
-**当前宿主版本：v0.6.0** · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md)
+**当前宿主版本：v0.12.0** · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md)
 
-## 页签包与测试台
+## 正式页签与本地开发测试
 
-应用自带「塔防山贼助手 0.1.3」与「模块测试台 1.0.3」两个独立页签包。打开「功能管理」可导入本地 `.ndpkg` 文件，查看导入记录、启停页签、选择已安装版本和查看包的 Git 来源。导入成功只增加候选版本，不自动替换正在使用的版本；同版本异摘要被拒绝，失败包的原件和具体错误保留在应用数据目录。
+App 0.12.0 只随附正式页签「塔防山贼助手 0.1.7」。`config/distribution.json` 的 `bundledModules` 与 `publicModules` 当前均只列出 `tower-assistant`。模块测试台源码保留用于开发验证，但其 `.ndpkg`、其他 fixture、本机导入包及私有模块不进入 App 或独立 Release。
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
 
-测试包由 `npm run build:module-fixtures` 生成：
+模块测试台的本地测试包由 `npm run build:module-fixtures` 生成，不属于公开下载清单：
 
 | 包 | 用途 |
 |---|---|
-| `dist/module-fixtures/test-lab-1.1.0.ndpkg` | 导入后将测试台从 1.0.3 切到 1.1.0，再切回；对照前端版本与后台 echo |
+| `dist/module-fixtures/test-lab-1.0.6.ndpkg` | 测试台当前源码 baseline，由 smoke 在独立测试根显式导入 |
+| `dist/module-fixtures/test-lab-1.1.0.ndpkg` | 导入后将测试台从 1.0.6 切到 1.1.0，再切回；对照前端版本与后台 echo |
 | `dist/module-fixtures/test-lab-2.0.0-incompatible.ndpkg` | host API 不兼容，应保留原件并拒绝，不影响当前测试台 |
 | `dist/module-fixtures/test-extra-1.0.0.ndpkg` | 导入全新页签，再选择版本并启用 |
 | `dist/module-fixtures/test-lab-1.2.0-ui-failure.ndpkg` | 合法纯前端包故意不发送SDK hello；应超时、记录错误并恢复此前可用版本 |
 
-上述额外包是明确的测试 fixture，不是已经发布的正式版本。模块测试台提供计数器和后台 echo，便于观察页签切换、独立进程与版本配套；它不接触真实游戏数据。
+上述五个包仅用于本机开发验证，不上传为 App 附件或独立 Release。`test-lab` 源码属于本仓库开发测试代码，可随源码保留；这不表示其产物有公开分发资格。正常用户升级不会卸载或覆盖先前自行导入的测试台及其他包，仍保留个人版本选择。
 
 当前包含「塔防山贼助手」：只读本地存档，分析渡劫布局和仓库灵物，生成前后对比图与可手工执行的迁移步骤。应用内的「版本与更新」页可查看各项功能版本、按功能筛选更新，以及构建时的 Git 提交与工作树状态。
 
@@ -33,9 +34,11 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 | 稳定功能 ID | 功能 | 当前功能版本 | 最近更新所属应用版本 |
 |---|---|---|---|
-| `core.workbench` | 桌面工作台：应用身份、主题、设置、诊断、托盘及快捷键 | 0.4.0 | 0.6.0 |
+| `core.workbench` | 桌面工作台：六种界面风格、配色、分类设置、诊断、托盘及快捷键 | 0.7.0 | 0.9.0 |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
-| `core.module-packages` | 页签导入、开关与独立版本管理 | 0.1.0 | 0.3.0 |
+| `core.module-packages` | 显式分发范围、App随附清单与正式页签按ID/版本独立交付 | 0.4.0 | 0.12.0 |
+| `core.personalization` | 已移除：背景图片、材质与氛围调节；保留历史 ID | 0.2.0 | 0.9.0 |
+| `core.companion` | 阿宝/阿沐视频角色、应用内/桌面陪伴与按实际资源显示的动作入口 | 0.3.0 | 0.11.0 |
 | `tower.save-reader` | 存档与仓库读取 | 0.1.0 | 0.2.0 |
 | `tower.tribulation-plan` | 渡劫迁移规划 | 0.1.0 | 0.2.0 |
 | `tower.map-details` | 对比地图与对象详情 | 0.1.0 | 0.2.0 |
@@ -50,9 +53,22 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 工具只读存档与游戏规则，提供前后地图、编号操作清单、仓库清单及 SVG 对比图导出。地图显示对应人物与灵物图标、名称和基础灵气；点击对象查看人物职业/装备、灵物五行及前后变化，同格对象可切换。它不连接游戏运行进程、不修改存档，也不自动执行迁移。存档时间不等于当前游戏实时状态；请在游戏中正常保存后重新读取。详细规则与限制见 [游戏模块说明](docs/tower-assistant.md)。
 
-## 外观配色
+## 界面风格与配色
 
-在「设置 → 外观」可以通过主题卡片的微缩界面预览比较配色，选择后即时预览，点击「保存设置」后持久化。原有浅色、深色和跟随系统保持可选；跟随系统仍为默认设置。
+设置分为「风格与配色」「宠物陪伴」「窗口行为」三类。「风格与配色」提供六种布局，`uiStyle` 与配色 `theme` 独立；切换风格不强制改变配色，「使用建议配色」是独立操作。默认使用简洁布局与跟随系统配色，宠物关闭。旧 schema 1 设置可继续读取，旧 `background` / `effects` 仅兼容忽略，不恢复背景或氛围。
+
+| 界面风格 | 布局方向 |
+|---|---|
+| 简洁 `simple` | 保留原有侧栏、欢迎区和清楚的内容分区 |
+| Codex `codex` | 参考专注工作区的留白、轻量侧栏与低边界列表 |
+| Cursor `cursor` | 参考 Cursor IDE 的活动栏、工作区标签和紧凑状态栏 |
+| 现代 Web `web` | 悬浮侧栏、功能卡片和宽阔内容画布 |
+| 二次元 `anime` | 顶部导航、柔彩静态装饰和圆润面板 |
+| 深海透明 `glass` | 深蓝黑半透明、青色细边、低圆角紧凑分区与顶部标签栏，建议搭配深色 |
+
+风格只改变呈现方式；工具入口、模块名称、所选版本与环境状态都来自实际数据，不增加 AI 对话、任务队列或代码编辑能力。桌面设置中选择风格或配色会即时预览，点击「保存设置」后持久化；离开设置页会恢复尚未保存的预览。浏览器仅支持当前会话预览，不读取或写入桌面配置，刷新后不保留预览。
+
+「风格与配色 → 配色」继续提供浅色、深色、跟随系统及以下配色，通过微缩界面卡片比较：
 
 | 外观 | 配色方向 |
 |---|---|
@@ -66,11 +82,24 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 具体复审结论、颜色职责和扩展规则见 [外观与配色](docs/appearance.md)。
 
-随附的塔防助手 0.1.3、测试台 1.0.3 支持上述外观同步，并使用 OpenDesk 命名的模块通信契约。旧包继续收到兼容的基础浅色或深色主题：石墨夜传递 `dark`，其余彩色外观传递 `light`；认识具体外观的旧包仍可按自身版本呈现。应用升级保留用户固定的包版本；旧应用的模块包不自动迁入 OpenDesk，导入后仍需通过当前宿主的身份与通信校验。
+随附模块支持六种风格与配色同步。模块仍使用既有 protocol 1 消息标识，`uiStyle`、`surfaceEffects` 保留可选扩展兼容；当前宿主只由风格生成固定、无动效的表面描述，没有用户材质或浓度调节。旧包可以忽略扩展，并继续收到兼容的基础浅色/深色主题。宿主不发送图片、路径或图片数据。升级保留用户固定的包版本，已有用户需在「功能管理」手动选择新版。
+
+打开功能后，模块外层固定占据主内容区的剩余空间，宿主不再叠加重复的卡片边框与模块标题；内容滚动由 iframe 内的页面负责。宿主不读取或测量 iframe 的业务 DOM 来调整高度，模块保留自己的布局与滚动责任。
+
+## 宠物陪伴与旧设置兼容
+
+0.11.0 提供两只用户视频角色：阿宝（`traveler-01`）保留第一段全身视频的完整站立—跑步—站立节奏，使用 768×768、97 帧、24 FPS、约 4.041667 秒的 APNG；阿沐（`amu-01`）来自补充的全身粉发骑行视频 (3)，当前默认使用连续源帧 51–130（含两端），共 80 帧、24 FPS、约 3.333333 秒。两只各提供 `loop.png` 与 `still.png`；没有独立散步、挥手或睡觉素材时，不显示这些动作入口。
+
+处理仅使用原视频完整帧的透明化、固定画布和格式转换，没有 AI 重画、插帧或变速。阿沐短循环是当前可逆的默认装配选择，不宣称数学上无缝；完整 145 帧、24 FPS、约 6.041667 秒的动作另存于本机 `dist/companion-assets/amu-01/full-cycle.png`，不作为运行时重复资源打包。近景视频 (2) 已弃用，仅全身视频 (3) 用于阿沐。来源、摘要与本地制作范围见 [阿宝来源](apps/features/companion/assets/traveler-01/SOURCES.md)、[阿沐来源](apps/features/companion/assets/amu-01/SOURCES.md) 及 [宠物资源说明](docs/companion-assets.md)。原视频不进入 Git、源码包或安装器。用户于 2026-10-22 明确要求公开交付当前源码和 App，本次按该请求纳入这两只处理后角色；不附加未提供的第三方许可证或套用旧素材的许可声明。发布完成状态以下载索引和实际 Release 为准。
+
+通用组件通过组合层注入角色，仍支持应用内拖动和同进程透明桌面窗口；应用内位置只在当前会话保留，退出 App 时桌面窗口一并退出。空目录或模型不存在时保留显示守卫，不自动选择替代角色。透明窗口仍有矩形命中区域，不承诺按角色像素穿透。
+
+当前已移除「背景与氛围」整项，包括图片导入、背景显示、粒子及氛围调节。旧配置中的 `personalization.background` / `effects` 仅兼容忽略；以前导入的图片保留在原目录，当前版本不读取也不删除。`--import-wallpaper` 明确拒绝，不再提供导入入口。0.8.0 的旧能力与验证仍保留为历史记录。
 
 ## 桌面基础
 
-- 工作区、浅色/深色/跟随系统及五种配色外观，以及真实宿主运行诊断。
+- 六种界面风格、独立配色设置、真实功能入口与宿主运行诊断。
+- 六种静态风格保留；阿宝和阿沐可选择应用内或桌面陪伴，动作入口按实际提供的资源显示。
 - 显式模块声明、校验、导航和页面懒加载；框架不导入具体业务模块。
 - Rust 宿主统一设置读写；格式带版本，暂存后替换，损坏/未来格式不被默认设置覆盖。
 - Python worker 按需启动；stdio v1 握手、有限方法路由、超时、错误与退出。
@@ -126,8 +155,11 @@ npm run dev
 | 命令 | 用途 |
 |---|---|
 | `npm run dev:web` | 127.0.0.1:1420 浏览器预览，明确不提供桌面能力 |
-| `npm run build:modules` | 构建自带页签包及 App 默认版本清单 |
-| `npm run build:module-fixtures` | 构建新版本、不兼容版本及新增页签测试包 |
+| `npm run build:modules` | 仅按分发清单构建 App 随附页签与默认清单，当前为塔防助手 |
+| `npm run build:module-fixtures` | 构建本地测试台 baseline 及四个变体，均不公开分发 |
+| `npm run build:module -- tower-assistant` | 独立构建正式塔防页签至 `dist/modules/tower-assistant/0.1.7/` |
+| `npm run release:stage -- app` | 校验干净提交与构建清单，本地整理 App 发布附件 |
+| `npm run release:stage -- module tower-assistant` | 本地整理塔防页签的独立版本发布附件 |
 | `npm run check` | 版本一致性、类型、架构边界、前端与 Python 子进程测试 |
 | `npm run version:check` | 检查版本历史、各构建版本与生成的 CHANGELOG 一致 |
 | `npm run version:prepare -- --file .local/next-release.json` | 校验并加入一次更新草稿，同步派生文件 |
@@ -135,25 +167,51 @@ npm run dev
 | `npm run version:tags` | 打印当前应用及本次变更功能的 Git 标签，不创建或推送标签 |
 | `npm run desktop:check` | Rust 静态编译检查 |
 | `npm run desktop:test` | Rust 测试 |
-| `npm run build` | 前端、Python 目录包、Tauri 发布构建、NSIS、便携目录 |
+| `npm run build` | 前端、worker、Tauri、NSIS和便携目录，并记录 `dist/app-build.json` 构建清单 |
 
 发布包的真实桌面链路检查可运行 `.\scripts\smoke.ps1`。它使用独立的框架测试数据目录，从其他工作目录启动 EXE，验证 WebView、IPC、设置读写与打包 worker 启停，并在完成后退出。
 
-模块导入与真实版本切换检查使用 `.\scripts\module-smoke.ps1`，默认读取 `dist/OpenDesk/OpenDesk.exe` 与 `dist/module-fixtures`；可用 `-Executable`、`-Fixtures` 显式指定。先执行 `npm run build:module-fixtures` 准备四个测试包；只补建UI加载失败包可执行 `node scripts/module-pack.mjs ui-failure-fixture`。测试以全新的 `.local/module-smoke` 数据根启动 `--module-smoke`，最多等待140秒，核对报告、退出码及该测试根无遗留模块worker；超时只停止本次测试宿主，不停止其他正常实例。源码中有此测试入口不代表已经运行通过。
+模块导入与版本切换检查使用 `.\scripts\module-smoke.ps1`，默认读取 `dist/OpenDesk/OpenDesk.exe` 与 `dist/module-fixtures`；可显式指定 `-Executable` / `-Fixtures`。先运行 `npm run build:module-fixtures` 准备五个本地测试包。smoke 在独立数据根按 fixture 索引导入测试台 baseline，再进行版本切换，不要求正式 App 随附测试台。报告、退出码及无遗留测试 worker 分别核对；超时只停止本次测试宿主。源码入口存在不代表已经验证通过。
+
+正常使用时从资源管理器双击便携目录中的 `OpenDesk.exe`。`--enable-companion` 可保存启用桌面宠物模式，使用前需从托盘退出已有实例；该参数只使用已经装配的角色，不导入或生成资源。单实例回调只唤起旧窗口，不处理第二次启动参数，即使显式设置 `OPENDESK_DATA_DIR`，普通启动也不会绕过单实例。已移除的 `--import-wallpaper` 参数会被拒绝。
+
+开发排障时，Codex 等 MSIX 打包宿主派生的进程可能受到文件系统重定向影响，导致模块实际路径与受校验路径不同。普通使用按资源管理器双击启动；若只在开发宿主内出现路径校验失败，应核对启动环境和规范化路径，保留模块 canonical 路径校验，不以放宽校验作为启动修复。
+
+三种检查模式 `--smoke-test`、`--module-smoke`、`--companion-smoke` 必须显式提供绝对路径的 `OPENDESK_DATA_DIR`，才会跳过单实例并允许与用户实例并存。调用方应选择不同于正常用户数据的独立测试目录；仅要求绝对路径不等于自动识别和隔离所有数据。变量缺失、空值、相对路径，或重复/混用 smoke 模式时，启动阶段以退出码 2 拒绝，不回退到默认用户目录。现有核心和模块 smoke 脚本会自行创建并传入绝对测试目录。
+
+`--companion-smoke` 使用独立测试根，检查设置往返、所选角色图片就绪与窗口显示/隐藏/重新显示，写入 `companion-smoke-result.json` 后退出。无资源或所选模型不存在时不能以其他形象冒充验证通过。smoke 只约束框架数据根与实例启动，WebView2 缓存仍可能共用默认应用缓存目录，不代表完整浏览器隔离。本次实际结果见验证记录，不用历史运行代替当前证据。
 
 首次运行 Rust 检查前需要 `npm run build:worker` 和 `npm run build:modules`，因为桌面构建描述引用 worker 与自带包资源。首次取得仓库应使用已有 Cargo.lock；不要在正常检查时主动更新锁文件。
 
-生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携压缩包应完整解压后启动，不能只复制 EXE。NSIS 安装器位于 `apps/framework/desktop/src-tauri/target/release/bundle/nsis`，当前文件名为 `OpenDesk_0.6.0_x64-setup.exe`。生成安装器不代表已安装、已签名或已发布；上传 Git 源码和标签也不会自动创建 GitHub Release 或上传安装包。
+生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携压缩包应完整解压后启动，不能只复制 EXE。NSIS 安装器位于 `apps/framework/desktop/src-tauri/target/release/bundle/nsis`，此版本的安装器文件名为 `OpenDesk_0.12.0_x64-setup.exe`。生成安装器不代表已安装、已签名或已发布；上传 Git 源码和标签也不会自动创建 GitHub Release 或上传安装包。
 
 便携目录重建时若存在不属于本次产物清单的文件或目录，构建会在复制前拒绝，避免旧依赖或个人文件混入新包。请将旧输出移走后重新生成，或先检查并手工清理；脚本不自动删除未知内容。
+
+## App 与独立页签交付
+
+App 标签使用 `v0.12.0`，塔防页签标签使用 `modules/tower-assistant/v0.1.7`，版本化下载入口见 [下载索引](docs/downloads.md)。当前文件描述的是已准备的交付规则；只有真实 Release 附件存在并核验后，才能称为已发布。
+
+在已审阅源码获准提交后，从干净提交构建，再运行：
+
+```powershell
+npm run build
+npm run build:module -- tower-assistant
+npm run release:stage -- app
+npm run release:stage -- module tower-assistant
+```
+
+App 暂存目录为 `dist/releases/app/0.12.0/`，正式页签为 `dist/releases/modules/tower-assistant/0.1.7/`。`release:stage` 只在本地整理文件，不提交、打标签或上传；它要求当前工作树干净，App 的 `dist/app-build.json` 与当前提交、版本和实际文件摘要一致，模块来源为本仓库已提交的干净开发历史，且在公开白名单内。已有发布版本目录会拒绝覆盖。
+
+上传时只使用各暂存目录中审核通过的明确文件清单。不得递归上传整个 `dist`、本机 imports/installed、测试 fixture、缓存或其他分支产物。新增/更新的正式页签按自己的 ID/版本独立构建、暂存与发布下载；本机安装或导入行为不产生发布授权，也不自动加入分发清单。
 
 ## 配置与运行数据
 
 默认数据根由应用标识 `net.nimda.opendesk` 对应的 Tauri `app_data_dir` 决定，运行诊断页显示实际路径。OpenDesk 不自动读取、迁移或清理旧应用的数据和包选择。可用绝对路径环境变量 `OPENDESK_DATA_DIR` 显式覆盖，适合隔离测试。相对路径会拒绝；原应用的环境变量不作为兼容别名。
 
-该覆盖值只隔离本框架的设置、诊断日志和 smoke 结果。WebView2 浏览器缓存仍使用 Tauri 的默认 `app_local_data_dir`，不宣称完全隔离所有运行缓存。首版不保存窗口位置，避免引入另一套配置写入机制。
+该覆盖值控制本框架当前使用的设置、导入模块、诊断日志和 smoke 结果的数据根；调用方仍需选择独立测试目录。旧壁纸文件不再读取或删除。WebView2 缓存仍使用 Tauri 默认 `app_local_data_dir`，不宣称完全隔离所有运行缓存。
 
 - `config/framework/settings.json`：真实设置，唯一写入方为 Rust。
+- 旧 `wallpapers/`：历史图片保留在原位，当前应用不读取、不删除、不打包。
 - `logs/framework.jsonl`：当前诊断日志；超过约 2 MiB 时保留一份 previous 文件。
 - `smoke-result.json`：仅使用 `--smoke-test` 时生成的桌面链路结果。
 
@@ -167,6 +225,7 @@ npm run dev
 apps/framework/frontend/           Vue 外壳、公开契约与组合入口
 apps/framework/desktop/src-tauri/  Rust 宿主与 capabilities
 apps/framework/worker/             Python 协议及运行时
+apps/composition/frontend/        宿主 Vite 入口、主界面/宠物窗口选择与资源装配
 apps/composition/worker/           应用 worker 装配入口
 apps/features/tower_assistant/     游戏读取、规划、对比地图模块
 apps/features/                    其他内置模块

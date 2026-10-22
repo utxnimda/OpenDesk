@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { errorMessage, type HostAdapter, type Theme } from '../core/host';
+import { errorMessage, type HostAdapter, type Theme, type UIStyle } from '../core/host';
 import type { InstalledModule, PackageInstance } from '../core/packages';
 import { createPackageBroker, isModuleHello, packageAppearance } from '../core/package-broker';
+import type { SurfaceEffects } from '../../../module-sdk/src/index';
 
-const props = defineProps<{ module: InstalledModule; host: HostAdapter; theme: Exclude<Theme, 'system'> }>();
+const props = defineProps<{ module: InstalledModule; host: HostAdapter; theme: Exclude<Theme, 'system'>; uiStyle: UIStyle; surfaceEffects?: SurfaceEffects }>();
 const emit = defineEmits<{ failure: [message: string] }>();
 const frame = ref<HTMLIFrameElement | null>(null);
 const source = ref(''); const failure = ref(''); const ready = ref(false);
@@ -83,12 +84,12 @@ function receive(event: MessageEvent) {
   frame.value!.contentWindow!.postMessage({
     type: 'nimdadesk:connect', protocol: 1,
     identity: { moduleId: owned.moduleId, version: owned.version, digest: owned.digest, generation: owned.generation },
-    ...packageAppearance(props.theme),
+    ...packageAppearance(props.theme, props.uiStyle, props.surfaceEffects),
   }, origin, [transport.port2]);
 }
-watch(() => props.theme, (theme) => {
-  if (channel && instance && !closed) channel.port1.postMessage({ type: 'theme', generation: instance.generation, ...packageAppearance(theme) });
-});
+watch(() => [props.theme, props.uiStyle, props.surfaceEffects] as const, ([theme, uiStyle, effects]) => {
+  if (channel && instance && !closed) channel.port1.postMessage({ type: 'theme', generation: instance.generation, ...packageAppearance(theme, uiStyle, effects) });
+}, { deep: true });
 onMounted(async () => {
   window.addEventListener('message', receive);
   try {
@@ -114,7 +115,7 @@ onUnmounted(() => {
 
 <template>
   <section class="package-frame-panel" :aria-label="module.label">
-    <div class="package-running-strip"><span>{{ module.label }}</span><code>v{{ module.selectedVersion }}</code><span class="package-runtime-status">{{ ready ? '独立运行' : failure ? '启动失败' : '正在连接…' }}</span></div>
+    <div class="package-running-strip"><code>v{{ module.selectedVersion }}</code><span class="package-runtime-status" role="status">{{ ready ? '独立运行' : failure ? '启动失败' : '正在连接…' }}</span></div>
     <div v-if="failure" class="alert alert-error" role="alert">{{ failure }}</div>
     <div v-else-if="!ready" class="package-loading" role="status">正在启动此版本的界面与后台…</div>
     <iframe v-if="source" ref="frame" :src="source" :title="`${module.label} v${module.selectedVersion}`" class="package-iframe" sandbox="allow-scripts allow-same-origin allow-downloads" referrerpolicy="no-referrer" allow="" :class="{ 'is-loading': !ready }" @error="reportLoadFailure('模块页面资源加载失败。')"></iframe>

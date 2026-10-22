@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "bundledModules": ["tower-assistant"],
+  "publicModules": ["tower-assistant"]
+}

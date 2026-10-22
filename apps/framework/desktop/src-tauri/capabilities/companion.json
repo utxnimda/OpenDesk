@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "companion-window",
+  "description": "Owned companion surface; read preferences and move or temporarily hide only itself.",
+  "windows": ["companion"],
+  "permissions": [
+    "allow-settings-get", "allow-companion-hide", "allow-companion-start-drag", "allow-companion-get-state", "allow-companion-ready",
+    "core:event:allow-listen", "core:event:allow-unlisten"
+  ]
+}

@@ -1,9 +1,9 @@
-import { BRIDGE_PROTOCOL, errorMessage, getBaseTheme, isRecord, matchesSource } from '../../../module-sdk/src/index';
-import type { Appearance } from '../../../module-sdk/src/index';
+import { BRIDGE_PROTOCOL, errorMessage, getBaseTheme, isRecord, matchesSource, resolveMessageSurfaceEffects } from '../../../module-sdk/src/index';
+import type { Appearance, SurfaceEffects, UIStyle } from '../../../module-sdk/src/index';
 
 /** Protocol 1 keeps its base theme valid for already installed module SDKs. */
-export function packageAppearance(appearance: Appearance): { theme: 'light' | 'dark'; appearance: Appearance } {
-  return { theme: getBaseTheme(appearance), appearance };
+export function packageAppearance(appearance: Appearance, uiStyle: UIStyle = 'simple', surfaceEffects?: SurfaceEffects): { theme: 'light' | 'dark'; appearance: Appearance; uiStyle: UIStyle; surfaceEffects: SurfaceEffects } {
+  return { theme: getBaseTheme(appearance), appearance, uiStyle, surfaceEffects: resolveMessageSurfaceEffects(surfaceEffects) };
 }
 
 export function isModuleHello(event: { origin: string; source: unknown; data: unknown }, expectedSource: unknown, expectedOrigin: string, generation: string): boolean {

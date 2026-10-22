@@ -1,6 +1,6 @@
 {
   "name": "opendesk",
-  "version": "0.6.0",
+  "version": "0.12.0",
   "private": true,
   "type": "module",
   "description": "A local desktop workbench framework; business modules are added explicitly.",
@@ -24,6 +24,8 @@
     "build:web": "npm run version:check && vite build --config vite.config.ts",
     "build:worker": "node scripts/python.mjs bundle",
     "build:modules": "node scripts/module-pack.mjs bundled",
+    "build:module": "node scripts/module-pack.mjs module",
+    "release:stage": "node scripts/release-artifacts.mjs",
     "build:module-fixtures": "node scripts/module-pack.mjs fixtures",
     "build": "node scripts/desktop.mjs build",
     "desktop:check": "node scripts/desktop.mjs check",

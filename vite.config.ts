@@ -6,7 +6,7 @@ import { buildVersion } from './scripts/build-version.mjs';
 const at = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
-  root: at('./apps/framework/frontend'),
+  root: at('./apps/composition/frontend'),
   envDir: at('./'),
   plugins: [vue()],
   define: { __OPENDESK_VERSION__: JSON.stringify(buildVersion(at('./'))) },

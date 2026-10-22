@@ -269,8 +269,15 @@ function checkMetadata() {
   const defaultsPath = 'config/framework/defaults.json';
   try {
     const value = JSON.parse(readFileSync(resolve(root, defaultsPath), 'utf8'));
-    if (!value || Array.isArray(value) || Object.keys(value).sort().join(',') !== 'closeToTray,schemaVersion,theme' || value.schemaVersion !== 1 || !['system', 'light', 'dark', 'sakura', 'ocean', 'forest', 'sand', 'graphite'].includes(value.theme) || typeof value.closeToTray !== 'boolean') {
-      report(defaultsPath, 1, 'settings-schema', 'Expected schema v1 with only schemaVersion, theme and closeToTray. Update the contract intentionally when the schema changes.');
+    if (!value || Array.isArray(value) || Object.keys(value).sort().join(',') !== 'closeToTray,personalization,schemaVersion,theme,uiStyle' || value.schemaVersion !== 1 || !['system', 'light', 'dark', 'sakura', 'ocean', 'forest', 'sand', 'graphite'].includes(value.theme) || !['simple', 'codex', 'cursor', 'web', 'anime', 'glass'].includes(value.uiStyle) || typeof value.closeToTray !== 'boolean') {
+      report(defaultsPath, 1, 'settings-schema', 'Expected schema v1 with schemaVersion, theme, uiStyle, closeToTray and personalization. Update the contract intentionally when the schema changes.');
+    }
+    const p = value.personalization;
+    const keys = (object, expected) => object && !Array.isArray(object) && Object.keys(object).sort().join(',') === expected;
+    const range = (number, min, max) => Number.isInteger(number) && number >= min && number <= max;
+    if (!keys(p, 'pet') ||
+      !keys(p.pet, 'alwaysOnTop,animated,enabled,mode,modelId,size') || typeof p.pet.enabled !== 'boolean' || !['desktop','in-app'].includes(p.pet.mode) || p.pet.modelId !== null || !range(p.pet.size,96,256) || typeof p.pet.alwaysOnTop !== 'boolean' || typeof p.pet.animated !== 'boolean') {
+      report(defaultsPath, 1, 'settings-schema', 'Personalization defaults must contain only the supported companion settings; retired background and atmosphere fields must not be emitted.');
     }
   } catch (error) { report(defaultsPath, 1, 'settings-schema', error.message); }
   for (const path of filesBelow(resolve(root, 'apps/framework/desktop/src-tauri/capabilities')).filter((path) => path.endsWith('.json'))) {
