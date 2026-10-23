@@ -6,11 +6,11 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 面向 Windows 的本地桌面工具台，用于挂载和开发独立功能。基于 **Tauri 2 + Vue 3 / TypeScript + Python worker**，通用框架管理窗口、设置和后台通信，业务模块各自负责界面与逻辑。
 
-**当前发布准备：v0.15.0（待干净构建与远端核验）** · **最新公开版本：v0.12.0** · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
+**最新公开版本：[v0.15.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.15.0)**（2026-10-23 已发布并完成远端附件摘要核验） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
 
 ## 正式页签与本地开发测试
 
-已公开的 App 0.12.0 只随附「塔防山贼助手 0.1.7」；本轮 0.15.0 的正式塔防 manifest 为 0.1.9（保留本地开发 0.1.8），新增薄荷奶油风格支持。`config/distribution.json` 的 `bundledModules` 与 `publicModules` 仍只列出 `tower-assistant`。模块测试台 1.0.7 源码保留用于开发验证，但其 `.ndpkg`、其他 fixture、本机导入包及私有模块不进入 App 或独立 Release。既有公开 0.1.7 产物保持不可变，新版不能覆盖其摘要。
+当前公开 App 0.15.0 只随附「塔防山贼助手 0.1.9」，该页签已[独立发布](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)，支持薄荷奶油风格。此前 App 0.12.0 / 塔防 0.1.7 与本地开发 0.1.8 保留。`config/distribution.json` 的 `bundledModules` 与 `publicModules` 仍只列出 `tower-assistant`。模块测试台 1.0.7 和 fixture 源码保留用于开发验证，其二进制包没有进入 App 或独立 Release。本机导入的部署工作台及其他私有模块的源码、配置、运行数据和包均未进入本次公开交付。旧公开产物保持不可变，新版不能覆盖其摘要。
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
 
@@ -34,11 +34,11 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 | 稳定功能 ID | 功能 | 当前功能版本 | 最近更新所属应用版本 |
 |---|---|---|---|
-| `core.workbench` | 七种界面风格，新增薄荷奶油；独立配色、分类设置与外观保存 | 0.8.0 | 0.15.0（本地开发） |
+| `core.workbench` | 七种界面风格，新增薄荷奶油；独立配色、分类设置与外观保存 | 0.8.0 | 0.15.0 |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
 | `core.module-packages` | 显式分发范围、App随附清单与正式页签按ID/版本独立交付 | 0.4.0 | 0.12.0 |
 | `core.personalization` | 已移除：背景图片、材质与氛围调节；保留历史 ID | 0.2.0 | 0.9.0 |
-| `core.companion` | 双模式宠物、共享菜单面板、受控独立菜单窗口与即时角色选择 | 0.6.0 | 0.15.0（本地开发） |
+| `core.companion` | 双模式宠物、共享菜单面板、受控独立菜单窗口与即时角色选择 | 0.6.0 | 0.15.0 |
 | `tower.save-reader` | 存档与仓库读取 | 0.1.0 | 0.2.0 |
 | `tower.tribulation-plan` | 渡劫迁移规划 | 0.1.0 | 0.2.0 |
 | `tower.map-details` | 对比地图与对象详情 | 0.1.0 | 0.2.0 |
@@ -109,12 +109,12 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 正式运行时资源为 14,061,447 字节的 alpha VP9 `thinking.webm`，768×768、145 帧、24 FPS；源时长为 145/24 秒，WebM 容器显示 6.042 秒。透明 APNG 母版单独导出，不进入运行时。前景颜色来自原视频采样，首帧生成 alpha 仅作轮廓辅助参考，不重画角色；VP9/YUV420 颜色转换可能产生色差，不能称为 RGBA 逐像素无损。
 
-视频在加载就绪后播放，以 `ended` 判断结束，重触发从头播放；暂停、隐藏、减少动效及模型切换清理当前播放。0.15.0 调整风格与菜单呈现，已有素材及摘要不变。0.13.1 的正式 WebM 曾在可见 Chrome 黑/白/棋盘底检查透明、完整播放和重播，并完成 Tauri/NSIS 构建、原生核心 smoke 与保留既有偏好的正常启动；这些历史结果不代替 0.15.0 的完整验收，也不证明当前菜单窗口或新动作的原生视觉已经检查。当前版本的类型、自动化、构建与运行结果分别见 [验证记录](docs/verification.md)；本轮已获用户明确发布授权，正在按发布手册准备干净源码和产物；完成情况以下载索引和验证记录为准。
+视频在加载就绪后播放，以 `ended` 判断结束，重触发从头播放；暂停、隐藏、减少动效及模型切换清理当前播放。0.15.0 调整风格与菜单呈现，已有素材及摘要不变。0.13.1 的正式 WebM 曾在可见 Chrome 黑/白/棋盘底检查透明、完整播放和重播，并完成 Tauri/NSIS 构建、原生核心 smoke 与保留既有偏好的正常启动；这些历史结果不代替 0.15.0 的完整验收，也不证明当前菜单窗口或新动作的原生视觉已经检查。本轮 0.15.0 正式构建完成 302 项自动化测试（255 项工程测试 + 47 项 Rust 测试）、核心/模块/两只宠物的原生 smoke，并已发布且下载核对全部 10 个远端附件。CI、原生人工交互及安装/卸载等证据边界分别见 [验证记录](docs/verification.md)，不以发布成功代替未执行的检查。
 
 ## 桌面基础
 
 - 七种界面风格、独立配色设置、真实功能入口与宿主运行诊断。
-- 既有静态风格保留并新增薄荷奶油；两只宠物素材不变，独立菜单面板属于当前未发布的本地开发。
+- 既有静态风格保留并新增薄荷奶油；两只宠物素材不变，独立菜单面板已随 0.15.0 发布。
 - 显式模块声明、校验、导航和页面懒加载；框架不导入具体业务模块。
 - Rust 宿主统一设置读写；格式带版本，暂存后替换，损坏/未来格式不被默认设置覆盖。
 - Python worker 按需启动；stdio v1 握手、有限方法路由、超时、错误与退出。
@@ -206,9 +206,9 @@ npm run dev
 
 ## App 与独立页签交付
 
-此前公开 App 为 `v0.12.0`，正式塔防页签为 `modules/tower-assistant/v0.1.7`，历史交付及摘要保留。2026-10-23 用户明确要求完善发布文档并执行发布，且排除本机导入的部署工作台。本轮目标是 App `0.15.0` 与塔防 `0.1.9`：保留已使用过的 dirty 开发包 `0.1.8`，从干净提交构建新的不可变产物。完整操作、附件清单、失败处理和远端校验见[发布手册](docs/releasing.md)，实际下载见[索引](docs/downloads.md)。
+2026-10-23 已发布 [App `v0.15.0`](https://github.com/utxnimda/OpenDesk/releases/tag/v0.15.0) 与[塔防 `0.1.9`](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)，构建来源均为干净提交 `aa7bdd7346fc1544bebff939b79ed40886c215a2`。App 的 6 个附件与页签的 4 个附件均已下载核对 SHA-256；App 标为最新，独立页签不覆盖 App 的最新入口。本机导入的部署工作台没有纳入源码或任何发布附件。此前公开 0.12.0 / 0.1.7 及已使用过的本地 dirty 开发包 0.1.8 保留。完整操作、附件清单、失败处理和远端校验见[发布手册](docs/releasing.md)，直接下载见[索引](docs/downloads.md)。后续发布结果文档提交不改变包的来源或移动标签。
 
-审阅并提交本轮准备后，从干净提交构建并暂存：
+后续发布仍先审阅并提交准备内容，再从干净提交构建并暂存：
 
 ```powershell
 npm run build
@@ -217,7 +217,7 @@ npm run release:stage -- app
 npm run release:stage -- module tower-assistant
 ```
 
-本轮暂存目标为 `dist/releases/app/0.15.0/` 与 `dist/releases/modules/tower-assistant/0.1.9/`；是否已生成及公开以实际验证记录为准。`release:stage` 只在本地整理文件，不提交、打标签或上传；它要求当前工作树干净，App 的 `dist/app-build.json` 与当前提交、版本和实际文件摘要一致，模块来源为本仓库已提交的干净开发历史，且在公开白名单内。已有发布版本目录会拒绝覆盖。
+本轮附件从 `dist/releases/app/0.15.0/` 与 `dist/releases/modules/tower-assistant/0.1.9/` 审核后发布。`release:stage` 本身只在本地整理文件，不提交、打标签或上传；它要求当前工作树干净，App 的 `dist/app-build.json` 与当前提交、版本和实际文件摘要一致，模块来源为本仓库已提交的干净开发历史，且在公开白名单内。已有发布版本目录会拒绝覆盖。
 
 上传时只使用各暂存目录中审核通过的明确文件清单。不得递归上传整个 `dist`、本机 imports/installed、测试 fixture、缓存或其他分支产物。新增/更新的正式页签按自己的 ID/版本独立构建、暂存与发布下载；本机安装或导入行为不产生发布授权，也不自动加入分发清单。
 

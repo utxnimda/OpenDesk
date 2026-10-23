@@ -1,12 +1,12 @@
 # OpenDesk 发布手册
 
-本手册描述可重复执行的公开交付流程，不代表命令已经执行。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
+本手册描述可重复执行的公开交付流程，命令块供后续发布参考，不应原样重复创建已发布版本。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
 
 ## 1. 当次目标与授权
 
 每次先确定 App 版本、更新页签的 ID/版本、随附范围、源码提交以及 Git/远端操作授权。历史授权不自动覆盖下次发布。
 
-2026-10-23，用户在现有改动已完成本地提交后，明确要求先完善发布文档，再执行发布，并再次排除本机导入的“部署工作台”。本轮准备交付 **App 0.15.0 + tower-assistant 0.1.9**；范围包括已审阅的源码、处理后运行资源、App 安装器/便携包，以及该页签的独立包。文档、正式页签版本和必要验证记录先提交，再从干净提交构建。下文的版本号是本轮示例，后续应替换为当次已确认的版本。
+2026-10-23，用户在现有改动已完成本地提交后，明确要求先完善发布文档，再执行发布，并再次排除本机导入的“部署工作台”。本轮已交付 **[App 0.15.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.15.0) + [tower-assistant 0.1.9](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)**；范围包括已审阅的源码、处理后运行资源、App 安装器/便携包，以及该页签的独立包。文档和正式页签版本先提交，产物从干净提交 `aa7bdd7346fc1544bebff939b79ed40886c215a2` 构建；App 6 个附件与页签 4 个附件均已下载复核。部署工作台等本机导入内容未发布。下文的版本号是本轮示例，后续必须替换为当次已确认的新版本，不覆盖这次交付。
 
 当前默认平台为 Windows x64。Git 源码提交、标签推送、二进制打包、Release 发布和远端下载核对分别记录；只有完成对应操作才报告成功。本轮授权允许依次完成这些步骤，不需要对已经明确授权的常规步骤重复询问。
 
@@ -49,7 +49,7 @@ npm run doctor
 - 宿主/core 变化使用 `npm run version:prepare -- --file .local/next-release.json`，并执行 `npm run version:check`；不只手改 package/Tauri/Cargo 版本。
 - 独立页签在自己的 manifest 升版本，hostApi 和 dataSchema 单独判断兼容性；仅更新页签不强制升宿主版本。
 - 已经安装、使用或发布过的同 ID/版本包，不以不同摘要覆盖。
-- 本轮保留 App 0.15.0，塔防从本地开发 0.1.8 升到尚未占用的 0.1.9；旧 0.1.8 和公开 0.1.7 保留。
+- 本轮实际保留 App 0.15.0，塔防从本地开发 0.1.8 升到当时尚未占用的 0.1.9；旧 0.1.8 和公开 0.1.7 保留。0.15.0 / 0.1.9 现已发布，不能再次分配给不同产物。
 
 **不能提交后直接把旧 dirty 包当成正式包。**模块缓存根据内容指纹复用，Git 来源本身不是输入指纹；提交源码后仍可能拿到原来的 dirty 包。应提升已使用过的页签版本，在干净提交上构建新产物。不得修改包内 `source`、重写摘要或删除来源信息来伪装干净构建。
 
@@ -103,11 +103,13 @@ if ($LASTEXITCODE -ne 0) { throw 'Standalone module build failed.' }
 核心桌面检查示例：
 
 ```powershell
-.\scripts\smoke.ps1 -Executable .\dist\OpenDesk\OpenDesk.exe
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\smoke.ps1 -Executable .\dist\OpenDesk\OpenDesk.exe
 if ($LASTEXITCODE -ne 0) { throw 'Native core smoke failed.' }
 ```
 
-涉及模块导入/选择时使用 `module-smoke.ps1`，其 fixture 另由 `build:module-fixtures` 生成，仅保留在本机测试目录；涉及宠物时按 README 使用独立数据根执行 companion smoke。不要把测试包复制到公开随附目录。记录实际结果文件、退出码、使用的 EXE 摘要及本次进程退出情况。
+通过单独 `powershell.exe -File` 运行后，`$LASTEXITCODE` 对应这个进程的退出码。在同一 PowerShell 中直接调用脚本后读取该变量，可能读到脚本内部或此前命令遗留的值；应同时核对实际 smoke 结果文件，避免把成功测试误报为失败。
+
+涉及模块导入/选择时使用 `module-smoke.ps1`，其 fixture 另由 `build:module-fixtures` 生成，仅保留在本机测试目录；涉及宠物时按 README 使用独立数据根执行 companion smoke。不要把测试包复制到公开随附目录。记录实际结果文件、退出码、使用的 EXE 摘要及本次进程退出情况。准备隔离测试设置 JSON 时写入 **UTF-8 无 BOM**：Windows PowerShell 5.1 的 `Set-Content -Encoding utf8` 会加入 BOM，可能被严格 JSON 读取拒绝；可使用 `[System.IO.File]::WriteAllText($testSettingsPath, $testSettingsJson, (New-Object System.Text.UTF8Encoding($false)))`，只写当次独立测试根，不修改真实用户设置。遇到此问题修正本地测试输入后重新运行，不放宽生产读取校验。
 
 静态检查、Rust 测试、构建、原生 smoke、浏览器视觉检查、原生人工交互、安装/卸载、签名、其他机器兼容性和长时运行是不同证据。未执行的项目明确写“未执行”。生成 NSIS 不代表已安装或已签名；SHA-256 只证明字节身份，不代替发布者签名。
 
@@ -120,7 +122,7 @@ npm run release:stage -- module tower-assistant
 if ($LASTEXITCODE -ne 0) { throw 'Module staging failed.' }
 ```
 
-本轮预期目录与**完整上传名单**：
+本轮已审核发布的目录与**完整上传名单**（后续发布替换版本）：
 
 ```text
 dist/releases/app/0.15.0/

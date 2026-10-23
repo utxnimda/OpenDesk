@@ -2,6 +2,46 @@
 
 # 验证记录
 
+## 2026-10-23：OpenDesk 0.15.0 与塔防 0.1.9 正式发布
+
+用户在现有改动已提交后，进一步明确要求先完善发布文档、再执行发布，并再次排除本机导入的部署工作台。本次完成源码推送、App/模块标签与独立 Release、远端附件下载核验；[发布手册](releasing.md)记录后续可复用步骤，[下载索引](downloads.md)保留新旧版本入口。以下记录不改写此前各开发阶段的未发布事实。
+
+实现提交为 `aab87044c4c4713a7bc486fdf27bf6511260d9e8`；发布准备与实际构建来源为 `aa7bdd7346fc1544bebff939b79ed40886c215a2`，`dirty:false`。本轮维持尚未发布的宿主 0.15.0，将已使用过的 dirty 塔防 0.1.8 升为正式 0.1.9，以免同 ID/版本产生另一摘要。旧开发包、旧公开 0.1.7、缓存和用户选择均保留；没有修改旧包来源字段来伪装干净产物。
+
+| 验证范围 | 实际结果 |
+|---|---|
+| 源码与授权 | 实际 Git 清单 195 文件，审查未发现私有模块、真实部署配置、运行数据、原视频、安装器或 `.ndpkg` 入库；处理后思考资源授权单独补充，不虚构第三方许可证 |
+| 源码检查 | `npm run check` 通过：46 项版本/分发、140 项前端、69 项 Python，共 255 项；类型与 80 个源码文件架构边界检查通过 |
+| Rust | `npm run desktop:test` 47/47 通过；与上述合计 302 项 |
+| 构建 | 从 aa7bdd7 干净提交完成正式前端、worker、Tauri、NSIS、60 文件便携包及独立塔防 0.1.9；App 收据与两个包来源一致 |
+| 公开范围 | `bundledModules` 和 `publicModules` 仅 `tower-assistant`；App 6 附件、独立页签 4 附件，无部署工作台、外部导入包、测试台二进制、fixture、私人配置/数据/图片、原始视频或完整动画母版 |
+| 实际包内容 | 塔防 ZIP 70 entries；通用 worker 的 113 个 PYZ 模块无具体业务，塔防 worker 的业务仅 tower_assistant 下 6 项；NSIS 的 59 个资源加主程序全部与便携收据摘要一致，便携 ZIP 60 文件逐项匹配 |
+| 核心原生 smoke | 新 EXE 的 WebView、IPC、设置往返及冻结 worker 启停/重启通过，worker PID 51616/31584；退出无残留 |
+| 模块原生 smoke | 实际 iframe/worker 往返、既有测试 fixture 1.0.6→1.1.0→1.0.6、UI 失败恢复、禁用/过期会话拒绝、不兼容原件保留通过；初始随附仅塔防，fixture 没有公开 |
+| 双宠物原生 smoke | 阿宝/阿沐各自隔离数据根、mint/light 下均通过真实面板 ready、窗口复用、菜单代次拒绝、关闭、屏幕边界、显示位置切换、大小与设置保留检查 |
+| 正常桌面启动 | Explorer 启动正式 `dist/OpenDesk/OpenDesk.exe`，PID 38556；frontend.ready、companion.ready 到达，无 error，Responding=true；设置完整摘要、全部页签选择及本地部署工作台登记保持一致，塔防 0.1.9 登记成功 |
+| Git 与 Release | main 及两个注解标签解析后均指向实际构建提交 aa7bdd7；App `v0.15.0` 为 Latest，页签 `modules/tower-assistant/v0.1.9` 为独立非 Latest；历史版本未覆盖 |
+| 远端附件复核 | App 6 个与模块 4 个附件均从 GitHub 下载，实际名称/数量符合白名单；每个 SHA-256 与暂存文件一致，下载的 SHA256SUMS 也逐项通过；两处页签包字节相同 |
+| GitHub Actions | 实际构建提交的三次运行全部 success：[main 39916819584](https://github.com/utxnimda/OpenDesk/actions/runs/39916819584)、[App 标签 39916819896](https://github.com/utxnimda/OpenDesk/actions/runs/39916819896)、[模块标签 39916819656](https://github.com/utxnimda/OpenDesk/actions/runs/39916819656)；检查与前端构建通过，两个标签版本核验通过 |
+
+主要交付摘要：
+
+| 文件 | SHA-256 |
+|---|---|
+| `OpenDesk_0.15.0_x64-setup.exe` | `9bed99568de903c71c17b11e94345a0d090895958f6bc88c23f0a4a54d7bf964` |
+| `OpenDesk_0.15.0_windows-x64_portable.zip` | `e3a24b8db160dece17e9e68e765f1201de114c44f972f0a77e805483e2415e27` |
+| `tower-assistant-0.1.9.ndpkg` | `bacc16c3aa03054932ccb76cad08039a1091b972ab449c8ea620a89c66df4b91` |
+| 便携目录 `OpenDesk.exe` | `b29f6551f8573ade9c03ce1f2f6538a010bf3a868142b52f5cd033cc224f2348` |
+
+中间失败与修正：受限环境先阻止测试调用 Git（EPERM），改用已授权本机权限后完整检查通过；首次核心 smoke 自身通过，但包装命令误读同进程残留 LASTEXITCODE，后续脚本改由独立 PowerShell 进程返回真实退出码。宠物辅助脚本在 Windows PowerShell 5.1 使用 `Set-Content -Encoding utf8` 生成 BOM，宿主按规则拒绝该测试设置；仅将忽略目录内的辅助脚本改为无 BOM UTF-8 后，双角色检查通过。第一次正常启动取样早于模块/宠物就绪，稍后重新只读检查通过；没有为通过测试修改产品代码、放宽设置解析或跳过失败。
+
+旧便携目录、旧随附目录、旧安装器及旧收据完整保留于 `.local/release-0.15/previous-build/`。构建前仅停止核实路径/PID/启动时间的当前 OpenDesk 实例，没有按进程名批量结束其他应用。用户数据根不作为构建输入，启动核验只记录设置与登记的摘要，不把私人内容复制到公开附件。
+
+本机证据：`.local/release-0.15-check.log`、`.local/release-0.15-rust-tests.log`、`.local/release-0.15-build.log`、`.local/release-0.15/{scope-audit.json,stage-app.log,stage-module.log,module-smoke.log,companion-smoke-retry.log,startup-verification.json,download-verification-app.json,download-verification-module.json}`；核心结果 `.local/smoke/20261023-151505-882/`，模块结果 `.local/module-smoke/20261023-151538-201-6e5383e5/`，双宠物 `.local/release-0.15/companion-smoke/20261023-151654-485/`。审计原文和测试产物保持本地，不加入公开附件。
+
+本轮未重做素材制作或浏览器视觉验收，媒体与界面证据仍引用本日此前相应验证；没有原生菜单逐项人工点击/视觉验收、干净机器安装/卸载、多显示器或长期运行验收。安装器未签名。发布结果文档另作后续提交，两个 Release 标签保持绑定实际构建来源，不移动到文档提交。
+
+
 ## 2026-10-23：现有改动提交范围与上传流程审阅
 
 用户要求先提交现有改动及相关资源到 Git，并明确排除本地导入的部署工作台，同时确认代码、资源、App 与正式页签的打包发布流程。本轮执行范围为本地提交和分发审计；没有执行 push、标签推送或 Release 上传。此前各开发阶段“未提交/未发布”的记录保留原始时间含义。

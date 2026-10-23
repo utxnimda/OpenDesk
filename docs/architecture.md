@@ -14,7 +14,7 @@ OpenDesk 的应用标识为 `net.nimda.opendesk`。可执行文件、worker、�
 
 框架不能导入具体业务；构建组合选择源码模块并产出包，运行组合由已验证清单和宿主选择决定。塔防算法保留在原模块中，框架只管理其包及生命周期。
 
-宿主 Vite 根入口为 `apps/composition/frontend`。组合层选择主界面、宠物或宠物菜单窗口并注入 `CompanionCatalog`。本地 0.15.0（core.companion 0.6.0、core.workbench 0.8.0）新增薄荷奶油风格与共享宠物菜单面板；既有媒体，包括 0.13.1 的透明思考 WebM，摘要保持不变。框架只认识媒体与交互契约，不导入角色目录。0.15.0 尚未发布，最新公开版本仍为 0.12.0；历史媒体结果与当前类型、自动化、构建、运行证据分别记录。
+宿主 Vite 根入口为 `apps/composition/frontend`。组合层选择主界面、宠物或宠物菜单窗口并注入 `CompanionCatalog`。已公开的 0.15.0（core.companion 0.6.0、core.workbench 0.8.0）新增薄荷奶油风格与共享宠物菜单面板；既有媒体，包括 0.13.1 的透明思考 WebM，摘要保持不变。框架只认识媒体与交互契约，不导入角色目录。0.15.0 已于 2026-10-23 发布并完成远端附件核验，0.12.0 保留为历史；历史媒体结果与当前类型、自动化、构建、运行证据分别记录。
 
 ```mermaid
 flowchart TB
@@ -36,7 +36,7 @@ flowchart TB
 
 `config/version.json` 保留宿主/core 与已有发布历史；包内 `manifest.json` 描述独立模块版本；App 索引说明本次默认随附内容；本机选择及成功激活状态说明用户实际使用版本。旧中央业务历史不能冒充当前包版本。
 
-正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定，当前只含 `tower-assistant`。已公开的 0.12.0 App 随附塔防助手 0.1.7；本轮正式 manifest 为塔防 0.1.9、测试台本地开发版本为 1.0.7。`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
+正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定，当前只含 `tower-assistant`。当前公开的 0.15.0 App 随附已独立发布的塔防助手 0.1.9；此前 0.12.0 App 随附 0.1.7 的事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
 
 模块前端由自己的 `frontend/index.html` 启动，使用相对路径资源。通过 `apps/framework/module-sdk` 的 `createModuleBridge()` 完成身份握手后访问 `bridge.host`。页面不直接导入 Tauri API，宿主核对当前包及其 manifest 业务方法。旧页面的消息不能被当作新版本结果。
 
@@ -114,7 +114,7 @@ App 设置只显示角色卡和「不启用宠物」，不复制宠物菜单。�
 
 `scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.1.9/`；App 构建写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
 
-`scripts/release-artifacts.mjs` 只在本地按版本准备 `dist/releases/app/<App版本>/` 和 `dist/releases/modules/<模块ID>/<模块版本>/`，核对干净提交、App 构建收据、正式模块来源和摘要，并拒绝重复版本目录。已公开的 App `v0.12.0` 与模块 `modules/tower-assistant/v0.1.7` 分别对应独立 Release。本地 0.15.0 / 0.1.8 开发产物为 dirty 来源，不能直接发布。本轮正式塔防升到 0.1.9，保留旧包和缓存，从干净提交构建 0.15.0 / 0.1.9；不能把旧包改来源字段冒充新构建。完整步骤见[发布手册](releasing.md)。下载索引为 [downloads.md](downloads.md)，本地提交或暂存不意味着已上传或已可下载。
+`scripts/release-artifacts.mjs` 只在本地按版本准备 `dist/releases/app/<App版本>/` 和 `dist/releases/modules/<模块ID>/<模块版本>/`，核对干净提交、App 构建收据、正式模块来源和摘要，并拒绝重复版本目录。当前公开的 App `v0.15.0` 与模块 `modules/tower-assistant/v0.1.9` 分别对应独立 Release，均来源于干净提交 `aa7bdd7346fc1544bebff939b79ed40886c215a2`；10 个远端附件均已下载核验。旧 0.15.0 / 0.1.8 本地开发产物的 dirty 事实保持，本轮未直接发布这些旧包，而是保留旧包和缓存、升塔防到 0.1.9 后重新构建。此前公开 0.12.0 / 0.1.7 不覆盖。完整步骤见[发布手册](releasing.md)，实际下载见 [downloads.md](downloads.md)；构建提交不随后续结果文档提交而变化。
 
 包构建固定 ZIP 元数据与 SOURCE_DATE_EPOCH，并按模块、SDK、worker、锁文件和工具链指纹复用已生成包，保留原来源身份；不承诺跨所有机器逐字节重建。构建事实与运行验证分别记录。
 

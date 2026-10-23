@@ -86,8 +86,8 @@ npm run build:module-fixtures
 
 | 命令 | 输出 | 范围 |
 |---|---|---|
-| `build:modules` | `dist/bundled-modules/app-manifest.json` 和 `tower-assistant-0.1.9.ndpkg` | 当前本地 App 0.15.0 仅随附塔防助手 |
-| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.1.9/` 下的包、manifest 与 SHA256SUMS | 按当前 manifest 构建的独立产物，尚未发布 |
+| `build:modules` | `dist/bundled-modules/app-manifest.json` 和 `tower-assistant-0.1.9.ndpkg` | 当前公开 App 0.15.0 仅随附塔防助手 |
+| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.1.9/` 下的包、manifest 与 SHA256SUMS | 0.1.9 已独立发布，正式包保持不可变 |
 | `build:module-fixtures` | `dist/module-fixtures/fixtures.json`、测试台 baseline 及四个变体 | 仅本机开发验证，不进入 App 或独立 Release |
 
 构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；此前公开塔防为 `0.1.7`，本轮正式 manifest 为 `0.1.9`，保留已使用过的本地开发 `0.1.8`。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。
@@ -120,14 +120,14 @@ ZIP文件按路径排序并固定时间，PyInstaller使用固定SOURCE_DATE_EPO
 
 ## 公开暂存与独立下载
 
-获得当次公开交付授权后，正式页签按 ID/版本建立独立下载，App 的随附包与独立页签包应核对为相同不可变产物。最新公开 App 标签为 `v0.12.0`，塔防标签为 `modules/tower-assistant/v0.1.7`；2026-10-23 用户明确授权本轮 0.15.0 / 0.1.9 交付，并排除本机导入的部署工作台；执行步骤见[发布手册](releasing.md)。下载目录索引见 [downloads.md](downloads.md)，是否已发布以真实 Release 为准。
+获得当次公开交付授权后，正式页签按 ID/版本建立独立下载，App 的随附包与独立页签包应核对为相同不可变产物。2026-10-23 已发布 [App `v0.15.0`](https://github.com/utxnimda/OpenDesk/releases/tag/v0.15.0) 与[塔防 `modules/tower-assistant/v0.1.9`](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)，均来源于干净提交 `aa7bdd7346fc1544bebff939b79ed40886c215a2`；6 个 App 附件与 4 个模块附件全部下载复核，随附和独立 `.ndpkg` 相同。本机导入的部署工作台、测试 fixture 二进制和其他私有模块均未发布。此前 0.12.0 / 0.1.7 保留，执行步骤见[发布手册](releasing.md)，直接下载见 [downloads.md](downloads.md)。
 
 ```powershell
 npm run release:stage -- app
 npm run release:stage -- module tower-assistant
 ```
 
-暂存目录由实际版本决定；本轮完成干净提交与构建后的输出位置为 `dist/releases/app/0.15.0/` 和 `dist/releases/modules/tower-assistant/0.1.9/`，包含版本清单与 `SHA256SUMS.txt`。这不是当前已经生成或公开的声明。暂存只操作本地：要求当前源码已提交且干净；App 构建收据 `dist/app-build.json` 必须对应当前提交、版本和实际文件摘要，模块内部 manifest 与独立 manifest 相同，来源必须是本仓库干净提交且属于当前开发历史。目录或同版本附件已经存在时拒绝覆盖。
+暂存目录由实际版本决定；本轮已从 `dist/releases/app/0.15.0/` 和 `dist/releases/modules/tower-assistant/0.1.9/` 审核并上传附件，包含版本清单与 `SHA256SUMS.txt`。暂存命令本身只操作本地：要求当前源码已提交且干净；App 构建收据 `dist/app-build.json` 必须对应当前提交、版本和实际文件摘要，模块内部 manifest 与独立 manifest 相同，来源必须是本仓库干净提交且属于当前开发历史。目录或同版本附件已经存在时拒绝覆盖，后续结果文档提交不移动此次构建标签。
 
 发布只取这些审核后的目录，禁止上传模块测试台、fixture、本机 imports/installed、私有模块或其他分支的未授权产物。构建缓存只负责复用已验证字节，不能扩大公开白名单；完整文件检查和新包审计仍应在最终构建后执行。
 
