@@ -33,12 +33,52 @@ pub struct PetSettings {
     pub size: u16,
     pub always_on_top: bool,
     pub animated: bool,
+    #[serde(default)]
+    pub action_mode: PetActionMode,
 }
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum PetMode {
     Desktop,
     InApp,
+}
+
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum PetActionMode {
+    #[default]
+    Idle,
+    Walk,
+    Wave,
+    Sleep,
+    Thinking,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(
+    tag = "type",
+    content = "value",
+    rename_all = "kebab-case",
+    deny_unknown_fields
+)]
+pub enum CompanionChange {
+    Mode(PetMode),
+    Size(u16),
+    AlwaysOnTop(bool),
+    Animated(bool),
+    ActionMode(PetActionMode),
+}
+
+impl CompanionChange {
+    pub fn apply(self, pet: &mut PetSettings) {
+        match self {
+            Self::Mode(value) => pet.mode = value,
+            Self::Size(value) => pet.size = value,
+            Self::AlwaysOnTop(value) => pet.always_on_top = value,
+            Self::Animated(value) => pet.animated = value,
+            Self::ActionMode(value) => pet.action_mode = value,
+        }
+    }
 }
 
 impl Default for PetSettings {
@@ -50,6 +90,7 @@ impl Default for PetSettings {
             size: 160,
             always_on_top: true,
             animated: true,
+            action_mode: PetActionMode::Idle,
         }
     }
 }
@@ -115,10 +156,63 @@ mod tests {
             r#"{"pet":{"mode":"external-process"}}"#,
             r#"{"pet":{"path":"C:/pet.png"}}"#,
             r#"{"pet":{"enabled":"yes"}}"#,
+            r#"{"pet":{"actionMode":"future-action"}}"#,
             r#"{"pet":null}"#,
         ] {
             assert!(serde_json::from_str::<Personalization>(input).is_err());
         }
+    }
+
+    #[test]
+    fn action_mode_defaults_for_legacy_preferences_and_round_trips() {
+        let legacy: PetSettings =
+            serde_json::from_str(r#"{"modelId":"sample-companion","size":208}"#).unwrap();
+        assert_eq!(legacy.action_mode, PetActionMode::Idle);
+        for (mode, name) in [
+            (PetActionMode::Idle, "idle"),
+            (PetActionMode::Walk, "walk"),
+            (PetActionMode::Wave, "wave"),
+            (PetActionMode::Sleep, "sleep"),
+            (PetActionMode::Thinking, "thinking"),
+        ] {
+            let settings = PetSettings {
+                action_mode: mode,
+                ..legacy.clone()
+            };
+            let serialized = serde_json::to_value(&settings).unwrap();
+            assert_eq!(serialized["actionMode"], name);
+            assert_eq!(
+                serde_json::from_value::<PetSettings>(serialized).unwrap(),
+                settings
+            );
+        }
+    }
+
+    #[test]
+    fn companion_changes_reject_unknown_fields_types_and_actions() {
+        for input in [
+            r#"{"type":"model-id","value":"another"}"#,
+            r#"{"type":"enabled","value":true}"#,
+            r#"{"type":"size","value":160,"enabled":true}"#,
+            r#"{"type":"size","value":160,"modelId":"another"}"#,
+            r#"{"type":"animated","value":"true"}"#,
+            r#"{"type":"always-on-top","value":1}"#,
+            r#"{"type":"mode","value":"external"}"#,
+            r#"{"type":"action-mode","value":"future-action"}"#,
+            r#"{"type":"size","value":96.5}"#,
+            r#"{"type":"size","value":-1}"#,
+            r#"{"type":"size"}"#,
+        ] {
+            assert!(
+                serde_json::from_str::<CompanionChange>(input).is_err(),
+                "must reject {input}"
+            );
+        }
+        assert_eq!(
+            serde_json::from_str::<CompanionChange>(r#"{"type":"action-mode","value":"thinking"}"#)
+                .unwrap(),
+            CompanionChange::ActionMode(PetActionMode::Thinking)
+        );
     }
 
     #[test]

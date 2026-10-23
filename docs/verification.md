@@ -2,6 +2,122 @@
 
 # 验证记录
 
+## 2026-10-23：现有改动提交范围与上传流程审阅
+
+用户要求先提交现有改动及相关资源到 Git，并明确排除本地导入的部署工作台，同时确认代码、资源、App 与正式页签的打包发布流程。本轮执行范围为本地提交和分发审计；没有执行 push、标签推送或 Release 上传。此前各开发阶段“未提交/未发布”的记录保留原始时间含义。
+
+审阅初始候选为173个跟踪文件、21个未忽略未跟踪文件。没有部署工作台/DSWorldDesk私有模块源码、真实环境配置、运行数据、EXE、ZIP、`.ndpkg`或原始MP4；旧小鸭素材摘要及已撤路径检查为0命中。新增入库资源为阿沐透明思考WebM、静态PNG、灰度alpha种子、轮廓及来源记录；完整APNG母版仍在忽略的dist。两处本机工程绝对路径属于既有通用工程验证历史，按规范保留，未包含私有部署配置。
+
+分发白名单仍只有tower-assistant。已核对App随附、独立输出及固定便携目录中的三份塔防0.1.8包，均70条目、摘要`800b268e8b78e9962a7d290fc97fcbf75e0911cc631671d33c5ad498ed626be2`，无部署工作台、测试包、本机imports/installed或私有数据。通用worker归档的122入口不含具体业务。Git忽略目录和实际打包入口分别检查，未把ignore或“没有密码”当作完整公开依据。
+
+当前开发包仍为dirty来源，App构建收据是旧0.12.0，不能直接正式上传。只读验证进一步确认模块缓存会保留旧包的dirty来源，不能仅靠提交后重复build粉饰为clean；正式交付宜保留已使用的0.1.8并提升正式页签版本，再从干净提交构建、检查包内清单、按版本暂存和核对SHA。CI当前只检查，不自动构建安装器或创建Release。详细流程与资源归属已同步[版本维护](versioning.md)。
+
+本机审计记录为`.local/public-source-audit.json`、`.local/replaced-companion-audit.json`；最终提交及文件范围以Git记录为准，不将开发包或私人审计输出加入源码历史。
+
+## 2026-10-23：薄荷奶油风格与精致宠物浮层（本地 0.15.0）
+
+用户提供浅粉/薄荷、圆角白卡与柔和阴影的参考图，要求增加对应风格并美化宠物右键菜单。新增第七种 `mint`“薄荷奶油”，推荐浅色但不强制更换配色；界面使用静态渐变、宽松内容列、26px 圆卡和薄荷选中态，深色/石墨夜保留可读语义色。未恢复背景图片或氛围设置，未采用参考图中的旧角色素材或语音功能。
+
+菜单改为共享 Vue 面板：头像/状态、播放按钮、显示位置分段按钮、真实动作选项、五档尺寸、桌面置顶及收起/打开应用。应用内用定位浮层，桌面用同进程的 `companion-menu` 独立透明窗口，基准320×480逻辑像素并限制在当前显示器工作区。新代次控制上下文、ready、局部写入与关闭；菜单权限不包含角色选择、全量设置、业务 worker 或任意执行能力。
+
+| 检查 | 实际结果 |
+|---|---|
+| 类型/版本/边界/自动化 | 最终 `npm run check` 通过：46 项版本/分发、140 项前端、69 项 Python，共255项；79个源文件边界检查通过 |
+| Rust | `npm run desktop:test` 47/47、fmt通过，包含新代次拒绝、角色/模式/旧默认模型、负坐标/分数DPI/小工作区与权限边界；合计302项测试 |
+| 样式和组件 | CSS解析、Vue scoped CSS编译与菜单SSR行为检查通过；薄荷浅色主要文字/说明文字对比约7.85/4.87，菜单说明文字约4.85 |
+| 实际浏览器画面 | 工具恢复后在内置浏览器完成实际UI验收：1280×720浅色、860×620最小窗口、石墨夜配色。没有body横向溢出，页面由main-content单独滚动；菜单320×373.1875完整限制在视口内 |
+| 菜单交互 | 右击打开、思考选项、暂停/继续、256px选择、方向键256→200、Escape关闭和焦点回到宠物通过；未提供的桌面能力在浏览器正确禁用，无console warn/error |
+| 模块产物 | 新塔防0.1.8包含mint SDK与共享样式，70文件、冻结worker检查通过；独立包与App随附包SHA-256均为`800b268e8b78e9962a7d290fc97fcbf75e0911cc631671d33c5ad498ed626be2`。旧公开0.1.7原包保留，测试台/fixture未进入App |
+| 最终构建 | Tauri release、NSIS及60文件便携包通过；当前源码基线仍是de5c9c0，dirty。独立候选`dist/OpenDesk-0.15.0-20261023-130550/`，固定启动目录同步更新 |
+| 双角色真实菜单 smoke | 阿宝与阿沐在独立数据根、mint/light设置下均通过实际Vue面板ready、同窗口复用、新代次与过期操作拒绝、关闭、模式切换/隐藏同步关闭、屏幕范围及原有宠物设置检查。150%缩放下菜单实际480×720物理像素 |
+| 原生核心 smoke | WebView、IPC、设置往返及冻结worker启停/重启通过，worker PID29804/20292，退出无残留 |
+| 原生模块 smoke | 实际iframe/worker往返、1.0.6→1.1.0→1.0.6、不兼容原件保留、UI失败恢复、禁用与过期会话拒绝通过；测试使用既有本地fixture，未声称重新构建了当前测试台1.0.7 |
+| 正常启动 | 固定`dist/OpenDesk/OpenDesk.exe`为0.15.0，Explorer启动PID20948；frontend.ready、阿沐companion.ready、Responding=true、0error。原web/ocean、阿沐256px桌面模式和全部模块选择保留；塔防0.1.8已登记 |
+
+首次候选的快速模式/禁用/恢复测试在第4次菜单打开等待ready超时，日志只证明前3代ready，未记录关闭原因。源码确认主界面设置镜像、宠物设置刷新和可见性通知会重复发送无代次hide；修正为Rust偏好命令独占后续原生窗口效果，前端通知只刷新显示，主界面仅初始读取/显式重试协调窗口，并忽略过期设置读取。没有给测试加盲等或跳过快速切换；最终相同双角色smoke通过。首次候选保留在`.local/previous-builds/mint-before-window-owner-fix/`，失败证据仍留存。
+
+最终EXE SHA-256：`5d8d260e636422c0fa61b21b03491a5bf12759b91569d3fe53a7f6a71399e073`；安装器SHA-256：`f543b28dee537e688940f7b6934c24a51e708bac1242457b5a42f24db69eb3be`。旧固定目录0.14.0完整备份至`.local/mint-launch-20261023-130550/previous-stable-portable/`。切换时未发现仍运行的旧主实例，没有按进程名批量停止任何程序。
+
+真实用户原先固定塔防0.1.4，保持该选择；需要新模块内部样式时由用户在功能管理选择0.1.8。本次没有Git提交、推送、标签或公开发布；新独立包只在本机。未执行原生菜单逐项人工点击/截图、干净机器安装卸载或长期运行，浏览器交互与原生自动化证据分别记录。
+
+证据：`.local/mint-check-final.log`、`.local/mint-build-final.log`、`.local/mint-modules-build.log`、`.local/mint-preview/{browser-results.json,mint-light-menu.png,mint-860-menu.png,mint-graphite-menu.png}`、`.local/mint-native/20261023-130550-807/`、`.local/smoke/20261023-130637-627/`、`.local/module-smoke/20261023-130636-269-3524f2c7/`、`.local/mint-launch-20261023-130550/{package.json,launch.json,verification.json}`。失败目录为`.local/mint-native/20261023-130113-578/`。临时浏览器标签、视口覆盖和本任务预览服务均已清理。
+
+## 2026-10-23：独立宠物右键菜单与即时角色选择（本地 0.14.0）
+
+用户要求应用内只选宠物，其余控制放在宠物右键菜单，并确认同时保留桌面/应用内显示位置与动作模式。应用内改为角色卡和“不启用宠物”，立即保存，点击当前角色可以召回。宠物工具条保留播放/暂停与更多；右键、Shift+F10、菜单键或更多打开菜单。桌面使用 Tauri 原生弹出菜单，避免小透明窗口裁切；浏览器使用明确的本地预览菜单，不冒充原生桌面能力。
+
+菜单提供显示位置、实际存在的循环动作、96/128/160/200/256px 大小、桌面置顶、暂停/继续、暂时收起和打开 OpenDesk。新增持久化 `actionMode`，旧数据默认 `idle`；选择思考模式后按视频 `ended` 开始下一轮，主点击的临时动作结束后回到当前所选模式。`animated` 是唯一手动播放开关，取消原局部暂停状态；暂停后继续按钮可用，系统减少动态效果仍优先。
+
+原生增加只选择角色、只更新单个宠物字段、只保存外观、打开主界面的受限命令，校验调用窗口、精确参数键、枚举和范围。宠物窗口不取得全量设置、角色选择或外观保存权限。局部修改在同一锁内读取、更新、校验和原子保存；设置页三方合并保留尚未保存的外观草稿。托盘新增“显示宠物”，根据已保存位置召回；没有启用角色时打开主界面。主界面空白处取消 WebView 默认菜单，输入框与选中文字保留标准文本操作；未改模块 iframe 自己的菜单。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 版本/类型/边界/自动化 | `npm run check` 通过：46 项版本/分发、130 项前端、69 项 Python，共 245 项；77 个源文件架构检查通过。最后的失效菜单回调守卫补充后，`vue-tsc` 与生产构建通过 |
+| Rust | 43/43 lib tests、fmt 检查通过；覆盖权限矩阵、未知/缺失参数、非法局部更新不改原文件、旧字段缺省、角色切换和锁内并发保存。与上述合计 288 项测试 |
+| 浏览器正式 UI | 实际选择阿沐，右击、更多、Shift+F10打开菜单；思考持续循环从代次 2 到 16 仍为 thinking，暂停切静态且可继续；调整256px后avatar/video均256×256；切默认模式返回原骑行 |
+| 菜单与召回边界 | 收起后点同角色已召回；阿宝动作菜单只提供默认循环；不启用移除宠物/召回/菜单；Escape关闭菜单；菜单与角色处于视口内，无warn/error。主界面空白实际右击无菜单。文本编辑例外做源码检查，未作实际剪贴板验收 |
+| 打包 | Tauri release与NSIS成功，独立候选和固定便携目录均60文件。角色卡CSS放在组件内，所有参与模块指纹的共享样式未改变；塔防0.1.7继续复用原SHA-256，没有同版换包 |
+| 双角色原生 smoke | `traveler-01`与`amu-01`分别在独立数据根启动，真实图像ready、设置往返、局部更新、外观不覆盖宠物、同角色偏好保留、256px原生窗口尺寸、desktop/in-app切换、禁用后更新不启用、隐藏和重开均通过 |
+| 原生核心 smoke | WebView挂载、IPC、设置往返及冻结worker启动/重启/停止通过，worker PID52860/47960，退出无残留 |
+| 正常启动 | 固定`dist/OpenDesk/OpenDesk.exe`为0.14.0，经Explorer启动PID23588；frontend.ready和阿沐companion.ready到达，Responding=true、0error。原Codex/浅色、桌面宠物选项与全部模块选择保留 |
+
+EXE SHA-256为`eb89cecda4e1c9e414939772e4a2049ac849bf0d2992fb6a6363e2cda5b0d4af`；安装器为`9ec0ea5c0854e1c25c548db9686f4956d2a4df1113e43cb6b04a6d1a819be196`。源码基线`de5c9c0e040f5a882b848d5145af435827dd2a29`、工作树dirty。独立候选`dist/OpenDesk-0.14.0-20261023-121012/`保留；固定目录的原0.13.1完整备份到`.local/pet-menu-launch-20261023-121012/previous-stable-portable/`，只停止已核对路径与启动时间的旧PID55588。
+
+本轮未做原生系统弹出菜单的人工点选/截图验收；原生smoke直接检验持久化与窗口行为，浏览器验收检验菜单选择及组件交互，两者不混同。未做安装器安装/卸载、多屏DPI或长期运行测试。宠物媒体摘要均未变；本次没有Git提交、推送、标签或公开发布。
+
+证据：`.local/pet-menu-check.log`、`.local/companion-menu-native-validation.json`、`.local/pet-menu-build.log`、`.local/pet-menu-preview/{remaining-boundaries.json,final-role-selection-and-menu.jpg,blank-context-suppressed.jpg}`、`.local/pet-menu-native/20261023-121017-843/`、`.local/smoke/20261023-121037-515/`、`.local/pet-menu-launch-20261023-121012/{package.json,launch.json,verification.json}`。本次创建的浏览器预览标签与精确身份匹配的Vite服务已清理；用户新版实例继续运行。
+
+## 2026-10-23：阿沐托腮思考透明修正（本地 0.13.1）
+
+用户指出 0.13.0 的思考动作显示了整幅房间，需要像原骑行一样透出桌面。修正为保留阿沐、显示器、键盘及桌椅前景，去除墙面、天花板和物体间背景空隙。接受半身构图，不补画身体；最终颜色取自原视频，生成首帧仅提供 alpha 轮廓参考，未将生成 RGB 用作视频帧。原阿宝与阿沐骑行的四份运行资源摘要保持不变。
+
+运行时替换为 768×768 VP9 alpha `thinking.webm`，保留全部 145 帧、24 FPS，容器时长 6.042 秒；源时长为精确 145/24 秒。所有帧使用共同源边界 `[0,167,720,1280]`，等比缩放到 453×700，位于画布 `[157,34]`、底线 734，不逐帧居中。透明 APNG 母版单次播放，独立保留；默认骑行和单次 `ended` 返回策略不变。
+
+| 检查 | 本次实际结果 |
+|---|---|
+| 逐帧前景 | 145 帧源 RGB 在归一化前保持原值；固定背景/前景样点、首中尾黑白/棋盘对照检查通过，纠正桌下蓝墙残留和头顶外连墙边 |
+| 视频解码 | 强制 `libvpx-vp9` 解码全部 145 帧：所有源 alpha 0/255 分别保持完全透明/完全不透明，中间 alpha 最大差 1 级；不宣称 RGBA 逐字节无损。帧序/帧数保留，PTS 与 24 FPS 理论值误差不超过 1 ms；RGB 转 YUV420 存在色差 |
+| 透明 APNG | 145 帧、plays=1，Pillow 解码与处理帧逐像素相同，作为独立母版保留 |
+| 实际透明播放 | CUA 可见 Chrome 加载正式 `CompanionPet` 和同摘要 WebM，黑/白/棋盘三底实际播放。外围与原墙面黑底 0、白底 255；物间/桌下空隙黑底不高于 2、白底不低于 254；256px 下无整幅房间矩形或明显块状光晕 |
+| 完成和重播 | 正式视频 duration=6.042，5.902 秒仍在播放，之后回到原骑行；重播 1.968→0.165 秒，新建视频节点，旧节点已断开、暂停并清空 src；无浏览器 warn/error |
+| 版本、类型、边界及自动化 | `npm run check` 通过：46 项版本/分发、119 项前端、69 项 Python，共 234 项；73 个源文件架构检查通过。Rust 逻辑未改，本轮未重复其单元测试 |
+| 本地构建与内容 | Tauri release、NSIS 安装器和 60 文件便携目录完成。Vite 的 `thinking-*.webm` 与生产文件 SHA-256 相同；唯一随附页签仍是塔防 0.1.7 原包，未重新发布或改变摘要 |
+| 原生核心 smoke | 独立数据根中 WebView、IPC、设置往返、冻结 worker 启动/重启/停止通过，worker PID 56336 / 55568，无残留 |
+| 正常桌面启动 | 固定 `dist/OpenDesk/OpenDesk.exe` 已更新为 0.13.1，经 Explorer 启动 PID 55588；frontend/companion.ready、响应正常、0 error。原 Codex/浅色、宠物选项与全部模块选择保持不变，桌面宠物仍启用 |
+
+运行视频 14,061,447 字节，SHA-256 `9a0d6c9cf31a40458ed4d15d62557ed4da841042df705da1dfada3e8b3812449`；透明母版 71,216,736 字节，SHA-256 `69cc304b94b5aedbecb31c9dfe8e57d1fd2963a93b2b4ffe43c2214d1a8fe6eb`；透明静态图 SHA-256 `7568a0d13eea539c28eb72b51d882b141a5d04e7e90bd8a34654e81690de59b4`。
+
+EXE SHA-256 `b8a8f40d104dd31f015a0c7cd4edc7630855b49d1c97ad2a2888f33ff04bd87c`，安装器 SHA-256 `20108cf38f6739954e58f6dae3c62f217fb8bbf9601a4a73b2c70e34811f11e1`。源码基线仍是 `de5c9c0e040f5a882b848d5145af435827dd2a29`、dirty；独立候选目录 `dist/OpenDesk-0.13.1-20261023-114055/` 保留，固定目录中的原 0.12.0 已备份到 `.local/transparent-launch-20261023-114055/previous-stable-portable/`。切换只停止已核对路径、产品名和启动时间的原 OpenDesk PID 24008。
+
+这次没有原生窗口内新动作的实际点击/透明视觉截图、安装器安装卸载、多显示器/DPI或长期运行验收；浏览器透明播放与原生启动分别记录。没有 Git 提交、推送或公开发布。此前用户请求的 0.13.0 重打包也曾生成安装器并启动，属于旧不透明素材的本地执行记录；下节初次 0.13.0 验证仍保留原始时间范围，不改写为透明通过。
+
+本机证据：`.local/amu-thinking-transparent-check.log`、`.local/amu-thinking-transparent-build.log`、`.local/new-companion-video/amu-action-04/transparent-candidate/`、`.local/amu-thinking-alpha-real/{result.json,browser-playback.json,screenshot-pixel-evidence.json,real-alpha-playing-stable.jpg}`、`.local/smoke/20261023-114106-876/`、`.local/transparent-launch-20261023-114055/{package.json,launch.json,verification.json}`。预览服务和标签已清理，用户运行的新版保留。
+
+## 2026-10-23：阿沐托腮思考动作（本地 0.13.0）
+
+用户确认视频 (4) 属于现有阿沐，并接受半身、保留电脑桌场景。新增 `thinking` 动作，不创建新角色、不改写阿宝或阿沐原骑行 `loop.png` / `still.png`。原视频 720×1280、145 帧、24 FPS、精确 145/24 秒；运行时使用去除音轨、字幕/数据轨、章节及用户 metadata 的 H.264 派生视频，通过视频流复制保留每帧画面和时序，不重新编码、插帧、变速、扣像或补身体。
+
+运行时 `thinking.mp4` 为 1,166,241 字节，SHA-256 `07f3a1a7a33c62d11ad971b8c872efd003041c69bf6a051d4533141a96f687c4`。768×768、单次播放的 62,030,218 字节 APNG 另存 `dist/companion-assets/amu-01/thinking/thinking.png`，不加入运行时；其完整场景等比缩放至 394×700，只在画布边距透明。静态首帧单独保留，不替换骑行静态图。
+
+模型以 `primaryAction: thinking` 和独立按钮提供动作。视频在 `loadeddata` 后实际 `play()` 成功才报告就绪，`ended` 是自动返回骑行的依据，6042ms 仅为时长元数据。重复点击建立新视频节点，过期 load/play/error/ended 回调被隔离；暂停、隐藏、减少动效、换角色及卸载清理当前播放。旧图片动作仍兼容原有默认时长，计时从图片加载成功后开始，加载失败不冒充动作完成。
+
+| 验证 | 本次实际结果 |
+|---|---|
+| 视频素材 | 原视频与运行时 MP4 的全部 145 帧解码 SHA-256、时间戳逐项相同；仅一个 H.264 视频轨，原文件摘要未变 |
+| 逐帧导出 | APNG 全 145 帧经 Pillow/FFmpeg 双解码与处理帧完全一致，play count 为 1；完整源场景缩放与透明边距核对通过 |
+| 转换工具 | `scene`、`--plays 0/1`、`--export-scene-video` 正向 CLI 检查通过；错误 profile、预览模式、非 H.264、截取范围及非法次数明确拒绝。旧抠像和归一化函数保持不变，默认 APNG 封装复现已发布的旧资源摘要 |
+| 版本、类型、架构、自动化 | `npm run check` 通过：46 项版本/分发、119 项前端、69 项 Python，共 234 项；73 个源文件架构检查通过。Rust 实现未改，本轮未重复其单元测试 |
+| 浏览器动作 | CUA 可见 Chrome 实测视频自然尺寸 720×1280、duration 6.041667；5.785 秒仍播放，随后回到骑行。重复点击从 2.792 秒返回 0.227 秒，新旧节点不同，旧节点已脱离 DOM、暂停并移除 src |
+| 浏览器取消与尺寸 | 暂停、换角色、收起均移除视频且没有残留错误；初次截图发现视频自然比例撑大网格，改为明确方形尺寸与 `object-fit: contain` 后，160/256px 两档均完整包含在角色框和视口内；修复后结束返回骑行仍通过，无 warn/error |
+| 最终本地构建 | Tauri `build --no-bundle` 成功，最终 60 文件候选位于 `dist/OpenDesk-0.13.0/`；前端和 Tauri 嵌入视频摘要均等于生产 MP4。随附塔防仍为原 0.1.7 字节，没有变更或重发模块 |
+| 最终原生启动 | 隔离数据下阿宝/阿沐初始图像 ready、设置往返、显示/隐藏/重开均通过；宿主 WebView/IPC 与冻结 worker 启动、重启、停止通过，worker PID 30012 / 71652 |
+
+最终 EXE SHA-256 为 `07b08e344dcaa6d6669585f4769b41b3133d5c23d837ab306209d8eab7dd540c`；来源基线 `de5c9c0e040f5a882b848d5145af435827dd2a29`，工作树如实标记 dirty。初次存在视频尺寸问题的候选仅保留在 `.local/previous-builds/amu-thinking-before-video-size-fix/` 作诊断，交付路径已替换为最终重建。
+
+浏览器实际动作验证与原生窗口启动是不同证据：本轮没有执行原生窗口内的新动作点击、实际多显示器/DPI或长期运行验收。未生成 0.13.0 安装器，未提交、推送或公开发布；此前公开版本及其产物保持原记录，新素材不继承 2026-10-22 的发布授权。
+
+本机证据：`.local/new-companion-video/amu-action-04/processed/{verification.json,scene-video-verification.json}`、同级 `video-export-tests/results.json`、`regression/results.json`、`.local/amu-thinking-check.log`、`.local/amu-thinking-build-final.log`、`.local/amu-thinking-local-build.json`、`.local/amu-thinking-review/{browser-evidence.json,sizing-evidence.json,thinking-256-contained.jpg,thinking-160-contained.jpg}`、`.local/amu-thinking-native/20261023-104541-336/`、`.local/smoke/20261023-104546-327/`。浏览器验证使用独立预览，不修改真实设置，两次专用预览进程和标签已清理。
+
 ## 2026-10-22：App 与正式页签分别发布（0.12.0 / tower-assistant 0.1.7）
 
 用户明确要求提交当前代码，并按 App、正式页签各自的版本提供下载；进一步限定主 App 仅随附塔防山贼助手，模块测试台及其他额外导入、非当前开发归属的包不上传。新增显式 `config/distribution.json`；打包及发布准备入口检查精确模块清单、实际目录内容、摘要和来源分支。`test-lab` 源码只用于开发验证，其基线与其他 fixture 由隔离 smoke 显式导入，不进入正式 App 或独立发布附件。

@@ -150,6 +150,7 @@ pub fn show(app: &tauri::AppHandle, settings: &PetSettings) -> Result<(), String
 }
 
 pub fn hide(app: &tauri::AppHandle) -> Result<(), String> {
+    crate::companion_menu::close(app, None)?;
     if let Some(window) = app.get_webview_window(LABEL) {
         window.hide().map_err(|e| e.to_string())?;
         window

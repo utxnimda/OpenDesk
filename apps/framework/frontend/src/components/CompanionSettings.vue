@@ -1,57 +1,94 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { ExternalLink, Heart, PawPrint } from '@lucide/vue';
-import { errorMessage, type HostAdapter } from '../core/host';
+import { computed, onUnmounted, ref } from 'vue';
+import { Check, LoaderCircle, PawPrint, Power } from '@lucide/vue';
+import { errorMessage, type HostAdapter, type Settings } from '../core/host';
 import type { PetSettings } from '../core/personalization';
-import { canDisplayCompanion, companionExtraActions, findCompanion, type CompanionCatalog } from '../companions/contracts';
+import { findCompanion, type CompanionCatalog } from '../companions/contracts';
 
-const props = defineProps<{ host: HostAdapter; catalog?: CompanionCatalog; modelValue: PetSettings; disabled: boolean; savedMode: PetSettings }>();
-const emit = defineEmits<{ 'update:modelValue': [value: PetSettings] }>();
-const error = ref(''); const opening = ref(false); const windowVisible = ref(false);
-let disposed = false; let visibilityRevision = 0; let unsubscribe: (() => void) | undefined;
-const selected = computed(() => findCompanion(props.catalog, props.modelValue.modelId));
-const canShow = computed(() => canDisplayCompanion(props.catalog, props.savedMode, 'desktop'));
-const animationDescription = computed(() => {
-  const labels = selected.value ? companionExtraActions(selected.value).map((action) => ({ walk: '走动', wave: '挥手', sleep: '休息' })[action]) : [];
-  return ['循环动画', ...labels].join('、') + '；暂停时使用静态形象。';
-});
-function update<K extends keyof PetSettings>(key: K, value: PetSettings[K]) { if (!props.disabled) emit('update:modelValue', { ...props.modelValue, [key]: value }); }
-async function show() {
-  if (!canShow.value || !props.host.available || opening.value || props.disabled) return;
-  opening.value = true; error.value = '';
-  try { await props.host.showCompanion(); windowVisible.value = (await props.host.getCompanionState()).visible; }
-  catch (failure) { error.value = errorMessage(failure); }
-  finally { opening.value = false; }
-}
-onMounted(async () => {
-  if (!props.host.available || !props.catalog?.models.length) return;
+const props = defineProps<{ host: HostAdapter; catalog?: CompanionCatalog; modelValue: PetSettings; disabled: boolean }>();
+const emit = defineEmits<{ 'update:modelValue': [value: PetSettings]; saved: [settings: Settings] }>();
+const failure = ref('');
+const notice = ref('');
+const selecting = ref(false);
+const pendingId = ref<string | null>(null);
+const locked = computed(() => props.disabled || selecting.value);
+const selected = computed(() => props.modelValue.enabled ? findCompanion(props.catalog, props.modelValue.modelId) : undefined);
+const unavailable = computed(() => props.modelValue.enabled && !selected.value);
+let disposed = false;
+onUnmounted(() => { disposed = true; });
+
+async function select(modelId: string | null) {
+  if (locked.value) return;
+  failure.value = ''; notice.value = '';
+  if (modelId !== null && !props.catalog?.models.some((model) => model.id === modelId)) {
+    failure.value = '所选宠物资源不可用，请重新选择。';
+    return;
+  }
+  if (!props.host.available) {
+    emit('update:modelValue', { ...props.modelValue, enabled: modelId !== null, modelId, mode: 'in-app' });
+    notice.value = modelId === null ? '已关闭本次预览中的宠物。' : '已在当前浏览器会话预览，未写入桌面设置。';
+    return;
+  }
+  selecting.value = true; pendingId.value = modelId;
   try {
-    const release = await props.host.subscribeCompanionVisibilityChanged((visible) => { visibilityRevision++; windowVisible.value = visible; });
-    if (disposed) { release(); return; }
-    unsubscribe = release;
-    const revision = visibilityRevision;
-    const state = await props.host.getCompanionState();
-    if (!disposed && revision === visibilityRevision) windowVisible.value = state.visible;
-  } catch (failure) { if (!disposed) error.value = errorMessage(failure); }
-});
-onUnmounted(() => { disposed = true; unsubscribe?.(); });
+    // Selecting the same model intentionally reaches the host so it can recall the pet.
+    const settings = await props.host.selectCompanion(modelId);
+    if (disposed) return;
+    emit('saved', settings);
+    notice.value = modelId === null ? '已停用宠物。' : '宠物选择已立即生效。';
+  } catch (error) {
+    if (!disposed) failure.value = errorMessage(error);
+  } finally {
+    if (!disposed) selecting.value = false;
+  }
+}
 </script>
 
 <template>
-  <section class="panel companion-settings">
-    <div class="panel-heading"><div class="panel-title"><PawPrint :size="18" /><h3>桌面陪伴</h3></div><span class="panel-caption">离线 · 由 OpenDesk 管理</span></div>
-    <div v-if="!catalog?.models.length" class="companion-empty-state" role="status"><PawPrint :size="28" :stroke-width="1.5" /><strong>暂无可用宠物资源，等待添加已授权资源</strong><p>添加可用资源后，可选择桌面悬浮或应用内陪伴。</p></div>
-    <template v-else>
-    <div class="companion-introduction"><div class="companion-model-preview"><img v-if="selected" :src="selected.assets.still" :alt="selected.label" /><Heart v-else :size="32" /></div><div><p class="eyebrow">YOUR LITTLE COMPANION</p><h3>{{ selected?.label || '尚未提供宠物资源' }}</h3><p>{{ selected?.description || '当前组合中没有可用的宠物模型。' }}</p><label class="setting-row compact"><span><strong>启用宠物</strong></span><input aria-label="启用宠物" class="switch" type="checkbox" :checked="modelValue.enabled" :disabled="disabled || !selected" @change="update('enabled', ($event.target as HTMLInputElement).checked)" /></label></div></div>
-    <div class="companion-modes" role="group" aria-label="宠物显示模式"><button :aria-pressed="modelValue.mode === 'desktop'" :class="{ selected: modelValue.mode === 'desktop' }" :disabled="disabled" @click="update('mode', 'desktop')"><strong>桌面悬浮</strong><small>独立透明窗口，跟随主程序退出</small></button><button :aria-pressed="modelValue.mode === 'in-app'" :class="{ selected: modelValue.mode === 'in-app' }" :disabled="disabled" @click="update('mode', 'in-app')"><strong>应用内陪伴</strong><small>停留在工作台里，可拖动位置</small></button></div>
-    <div class="personalization-fields"><label><span>宠物角色</span><select aria-label="宠物角色" :value="modelValue.modelId ?? catalog?.defaultId" :disabled="disabled || !catalog?.models.length" @change="update('modelId', ($event.target as HTMLSelectElement).value)"><option v-for="model in catalog?.models ?? []" :key="model.id" :value="model.id">{{ model.label }}</option></select></label></div>
-    <div class="personalization-sliders single"><label><span>角色大小 <output>{{ modelValue.size }} px</output></span><input aria-label="角色大小" type="range" min="96" max="256" step="8" :value="modelValue.size" :disabled="disabled" @input="update('size', Number(($event.target as HTMLInputElement).value))" /></label></div>
-    <label class="setting-row personalization-toggle"><span><strong>播放角色动画</strong><small>{{ animationDescription }}</small></span><input aria-label="播放角色动画" class="switch" type="checkbox" :checked="modelValue.animated" :disabled="disabled" @change="update('animated', ($event.target as HTMLInputElement).checked)" /></label>
-    <label v-if="modelValue.mode === 'desktop'" class="setting-row personalization-toggle"><span><strong>保持在其他窗口上方</strong><small>关闭后可被其他程序覆盖。</small></span><input aria-label="宠物保持置顶" class="switch" type="checkbox" :checked="modelValue.alwaysOnTop" :disabled="disabled" @change="update('alwaysOnTop', ($event.target as HTMLInputElement).checked)" /></label>
-    <p v-if="host.available && canShow" class="inline-note" role="status">{{ windowVisible ? '桌面宠物窗口已显示。' : '桌面宠物目前已收起。' }}</p>
-    <div v-if="error" class="alert alert-error" role="alert">{{ error }}</div>
-    <div class="button-row companion-window-actions"><button class="button button-secondary" :disabled="!host.available || opening || !canShow || disabled" @click="show"><ExternalLink :size="15" />{{ opening ? '正在显示…' : '显示桌面宠物' }}</button><span class="inline-note">{{ !host.available ? '浏览器可以预览应用内模式，桌面悬浮需在桌面应用中使用。' : '保存后应用模式和大小。宠物被暂时收起时，可以在这里重新显示。' }}</span></div>
-    <p class="inline-note">拖动角色可移动。应用内模式只在宠物和控件区域接收操作，位置在本次会话保留；桌面模式使用独立透明窗口，其空白矩形目前也会接收鼠标，可拖到不影响操作的位置。主窗口收起到托盘时继续陪伴，退出 OpenDesk 时一起退出。</p>
-    </template>
+  <section class="panel companion-settings" :aria-busy="selecting">
+    <div class="panel-heading"><div class="panel-title"><PawPrint :size="18" /><h3>选择宠物</h3></div><span class="panel-caption">{{ host.available ? '选择后立即生效' : '仅本次浏览器预览' }}</span></div>
+    <p class="panel-description">选一个伙伴陪伴你。再次点击当前角色可以召回宠物。</p>
+    <div v-if="failure" class="alert alert-error" role="alert"><strong>宠物选择失败</strong><span>{{ failure }}</span></div>
+    <p v-if="notice" class="inline-note companion-selection-notice" role="status">{{ notice }}</p>
+    <p v-if="unavailable" class="inline-note">当前选择的宠物资源不可用，请选择其他角色或停用宠物。</p>
+    <div class="companion-options" role="group" aria-label="宠物角色选择">
+      <button class="companion-choice companion-choice-none" :class="{ selected: !modelValue.enabled }" :aria-pressed="!modelValue.enabled" :disabled="locked" @click="select(null)">
+        <span class="companion-choice-avatar" aria-hidden="true"><Power :size="34" :stroke-width="1.4" /></span>
+        <span class="companion-choice-heading"><strong>不启用宠物</strong><LoaderCircle v-if="selecting && pendingId === null" class="spinning" :size="16" aria-hidden="true" /><Check v-else-if="!modelValue.enabled" :size="16" aria-hidden="true" /></span>
+        <span class="companion-choice-description">关闭宠物显示，保留其他使用设置。</span>
+      </button>
+      <button v-for="model in catalog?.models ?? []" :key="model.id" class="companion-choice" :class="{ selected: selected?.id === model.id }" :aria-pressed="selected?.id === model.id" :disabled="locked" @click="select(model.id)">
+        <span class="companion-choice-avatar"><img :src="model.assets.still" :alt="model.label" /></span>
+        <span class="companion-choice-heading"><strong>{{ model.label }}</strong><LoaderCircle v-if="selecting && pendingId === model.id" class="spinning" :size="16" aria-hidden="true" /><Check v-else-if="selected?.id === model.id" :size="16" aria-hidden="true" /></span>
+        <span class="companion-choice-description">{{ model.description }}</span>
+      </button>
+    </div>
+    <div v-if="!catalog?.models.length" class="companion-empty-state" role="status"><PawPrint :size="28" :stroke-width="1.5" /><strong>暂无可用宠物资源，等待添加已授权资源</strong></div>
+    <p class="inline-note companion-menu-help">右键宠物调整显示位置、动作、大小、置顶和暂停等；收起后可从托盘显示宠物。</p>
+    <p v-if="!host.available" class="inline-note">浏览器只预览应用内宠物，不会写入桌面设置，也不提供系统托盘。</p>
   </section>
 </template>
+
+<style scoped>
+.companion-options { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 14px; margin-top: 18px; }
+.companion-choice { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 16px; text-align: left; border: 1px solid var(--border); border-radius: 14px; color: var(--text); background: var(--surface-soft); }
+.companion-choice:hover:not(:disabled) { border-color: var(--accent); }
+.companion-choice.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent); }
+.companion-choice-avatar { display: grid; place-items: center; width: 100%; height: 136px; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); background: var(--surface); }
+.companion-choice-avatar img { display: block; width: 100%; height: 100%; min-height: 0; padding: 7px; object-fit: contain; }
+.companion-choice-heading { display: flex; align-items: center; justify-content: space-between; gap: 9px; width: 100%; }
+.companion-choice-heading strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.companion-choice-heading > svg { flex-shrink: 0; color: var(--accent); }
+.companion-choice-description { color: var(--muted); font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; }
+.companion-menu-help { margin-top: 20px; }
+.companion-selection-notice { margin-top: 12px; }
+:root[data-ui-style="glass"] .companion-choice,
+:root[data-ui-style="glass"] .companion-choice-avatar { border-radius: 2px; box-shadow: none; border-color: var(--glass-line); background: var(--glass-fill); }
+:root[data-ui-style="glass"] .companion-choice.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: none; }
+:root[data-ui-style="mint"] .companion-options { grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 16px; }
+:root[data-ui-style="mint"] .companion-choice { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 5px 14px; align-content: center; padding: 17px; border-radius: 22px; background: var(--surface-soft); }
+:root[data-ui-style="mint"] .companion-choice-avatar { grid-row: 1 / 3; width: 76px; height: 86px; border: 0; border-radius: 16px; background: transparent; }
+:root[data-ui-style="mint"] .companion-choice-heading { align-self: end; }
+:root[data-ui-style="mint"] .companion-choice-description { align-self: start; }
+:root[data-ui-style="mint"] .companion-choice.selected { border-color: var(--mint-toggle); background: var(--accent-soft); box-shadow: 0 0 0 3px color-mix(in srgb,var(--mint-toggle) 12%,transparent); }
+</style>

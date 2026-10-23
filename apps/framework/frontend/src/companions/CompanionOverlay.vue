@@ -2,11 +2,12 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { PawPrint } from '@lucide/vue';
 import type { PetSettings } from '../core/personalization';
-import CompanionPet from './CompanionPet.vue';
+import type { HostAdapter, Settings } from '../core/host';
+import CompanionSurface from './CompanionSurface.vue';
 import { canDisplayCompanion, clampCompanionPosition, companionBox, findCompanion, type CompanionCatalog, type CompanionPoint } from './contracts';
 
-const props = defineProps<{ catalog: CompanionCatalog; settings: PetSettings }>();
-const emit = defineEmits<{ dismiss: [] }>();
+const props = defineProps<{ host: HostAdapter; catalog: CompanionCatalog; settings: PetSettings; recallKey?: number }>();
+const emit = defineEmits<{ dismiss: []; saved: [settings: Settings]; preview: [settings: PetSettings] }>();
 const dismissed = ref(false);
 const position = ref<CompanionPoint>({ x: 0, y: 0 });
 const viewport = ref({ width: 0, height: 0 });
@@ -33,6 +34,7 @@ function moveDrag(event: PointerEvent) {
 function endDrag() { drag = null; dragging.value = false; }
 function dismiss() { endDrag(); dismissed.value = true; emit('dismiss'); }
 watch([() => props.settings.enabled, () => props.settings.modelId, () => props.settings.mode], () => { dismissed.value = false; void nextTick(measure); });
+watch(() => props.recallKey, () => { dismissed.value = false; void nextTick(measure); });
 watch(box, () => { void nextTick(measure); });
 onMounted(() => { measure(); window.addEventListener('resize', measure); });
 onUnmounted(() => { endDrag(); window.removeEventListener('resize', measure); });
@@ -42,7 +44,7 @@ onUnmounted(() => { endDrag(); window.removeEventListener('resize', measure); })
   <div v-if="enabled" class="companion-overlay" aria-label="应用内宠物">
     <button v-if="dismissed" class="companion-recall" @click="dismissed = false"><PawPrint :size="15" />唤回宠物</button>
     <div v-else-if="model" class="companion-overlay-position" :style="geometry">
-      <CompanionPet :model="model" :size="settings.size" :animated="settings.animated" :dragging="dragging" @drag-start="startDrag" @drag-move="moveDrag" @drag-end="endDrag" @dismiss="dismiss" />
+      <CompanionSurface :host="host" :model="model" :settings="settings" :dragging="dragging" @saved="emit('saved', $event)" @preview="emit('preview', $event)" @drag-start="startDrag" @drag-move="moveDrag" @drag-end="endDrag" @dismiss="dismiss" />
     </div>
   </div>
 </template>

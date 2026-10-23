@@ -11,12 +11,25 @@ const props = defineProps<{ host: HostAdapter; settings: Settings; settingsReady
 const emit = defineEmits<{ saved: [settings: Settings]; previewTheme: [theme: Theme]; previewStyle: [style: UIStyle]; previewPersonalization: [value: Personalization] }>();
 function copySettings(value: Settings): Settings { return { ...value, personalization: clonePersonalization(value.personalization) }; }
 const draft = ref<Settings>(copySettings(props.settings));
+let previousSettings = copySettings(props.settings);
 const saving = ref(false); const failure = ref(''); const saved = ref(false);
 const locked = computed(() => saving.value);
 const section = ref('style');
 const sections = [{ id: 'style', label: '风格与配色' }, { id: 'companion', label: '宠物陪伴' }, { id: 'window', label: '窗口行为' }];
-const dirty = computed(() => JSON.stringify(draft.value) !== JSON.stringify(props.settings));
-watch(() => props.settings, (value) => { draft.value = copySettings(value); });
+const dirty = computed(() => draft.value.theme !== props.settings.theme
+  || draft.value.uiStyle !== props.settings.uiStyle
+  || draft.value.closeToTray !== props.settings.closeToTray);
+function mergeSettings(value: Settings) {
+  const current = draft.value;
+  const incoming = copySettings(value);
+  // Preserve only locally edited appearance fields; pet state always comes from the host.
+  if (current.theme !== previousSettings.theme) incoming.theme = current.theme;
+  if (current.uiStyle !== previousSettings.uiStyle) incoming.uiStyle = current.uiStyle;
+  if (current.closeToTray !== previousSettings.closeToTray) incoming.closeToTray = current.closeToTray;
+  previousSettings = copySettings(value);
+  draft.value = incoming;
+}
+watch(() => props.settings, mergeSettings, { deep: true });
 const themes = [
   { id: 'system', label: '跟随系统', description: '自动适配系统明暗' },
   { id: 'light', label: '浅色', description: '深蓝侧栏，清晰分区' },
@@ -42,10 +55,17 @@ function personalize(value: Personalization) {
   saved.value = false;
   emit('previewPersonalization', clonePersonalization(value));
 }
+function companionSaved(settings: Settings) {
+  mergeSettings(settings);
+  // App receives authoritative settings, while its active preview keeps this form's edits.
+  emit('saved', settings);
+  emit('previewTheme', draft.value.theme);
+  emit('previewStyle', draft.value.uiStyle);
+}
 async function save() {
   if (!props.settingsReady || locked.value) return;
   saving.value = true; failure.value = ''; saved.value = false;
-  try { const settings = await props.host.saveSettings(copySettings(draft.value)); emit('saved', settings); saved.value = true; }
+  try { const settings = await props.host.saveAppearance(copySettings(draft.value)); emit('saved', settings); saved.value = true; }
   catch (error) { failure.value = errorMessage(error); }
   finally { saving.value = false; }
 }
@@ -88,8 +108,12 @@ async function save() {
         </button>
       </div>
     </section>
-    <CompanionSettings v-if="section === 'companion'" :host="host" :catalog="companions" :model-value="draft.personalization.pet" :saved-mode="settings.personalization.pet" :disabled="locked" @update:model-value="personalize({ ...draft.personalization, pet: $event })" />
+    <CompanionSettings v-if="section === 'companion'" :host="host" :catalog="companions" :model-value="draft.personalization.pet" :disabled="locked || (host.available && !settingsReady)" @update:model-value="personalize({ ...draft.personalization, pet: $event })" @saved="companionSaved" />
     <section v-show="section === 'window'" class="panel"><div class="panel-heading"><h3>窗口行为</h3></div><label class="setting-row"><span><strong>关闭窗口时收起到托盘</strong><small>保留应用运行。需要结束应用时，使用托盘菜单中的「退出」。</small></span><input v-model="draft.closeToTray" class="switch" type="checkbox" :disabled="!host.available || !settingsReady || locked" @change="saved = false" /></label></section>
     <div class="settings-footer"><p v-if="!host.available" class="inline-note">风格与配色只在本次浏览器预览中生效，不会写入桌面设置。</p><p v-else-if="!settingsReady" class="inline-note">尚未成功读取本机设置。请先重试读取，再进行保存。</p><p v-else class="inline-note">未保存的外观在离开设置时恢复。设置保存在本机应用数据目录。</p></div>
   </div>
 </template>
+
+<style scoped>
+.settings-page .ui-style-panel .style-options { grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); }
+</style>

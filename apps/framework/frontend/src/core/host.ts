@@ -2,7 +2,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import frameworkDefaults from '../../../../../config/framework/defaults.json';
 import type { PackageCatalog, PackageInstance } from './packages';
-import type { Personalization } from './personalization';
+import type { Personalization, PetPreferenceChange } from './personalization';
 export type { Personalization, PetSettings } from './personalization';
 import type { Appearance, UIStyle } from '../../../module-sdk/src/index';
 
@@ -34,18 +34,30 @@ export interface PingResult {
   pythonVersion: string;
 }
 
+export interface CompanionMenuContext { generation: number; modelId: string; canAnimate: boolean }
+
 export interface HostAdapter {
   readonly available: boolean;
   getInfo(): Promise<HostInfo>;
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<Settings>;
+  saveAppearance(settings: Settings): Promise<Settings>;
+  selectCompanion(modelId: string | null): Promise<Settings>;
+  updateCompanion(change: PetPreferenceChange, menuGeneration?: number): Promise<Settings>;
+  openCompanionApp(): Promise<void>;
+  showCompanionMenu(modelId: string, canAnimate: boolean): Promise<CompanionMenuContext>;
+  getCompanionMenuContext(): Promise<CompanionMenuContext>;
+  closeCompanionMenu(generation: number): Promise<void>;
+  companionMenuReady(generation: number): Promise<void>;
+  subscribeCompanionMenuChanged(callback: () => void): Promise<() => void>;
   showCompanion(): Promise<void>;
-  hideCompanion(): Promise<void>;
+  hideCompanion(menuGeneration?: number): Promise<void>;
   startCompanionDrag(): Promise<void>;
   getCompanionState(): Promise<{ visible: boolean }>;
   companionReady(modelId: string): Promise<void>;
   subscribeSettingsChanged(callback: () => void): Promise<() => void>;
   subscribeCompanionVisibilityChanged(callback: (visible: boolean) => void): Promise<() => void>;
+  subscribeCompanionRecall(callback: () => void): Promise<() => void>;
   callWorker<T>(method: string, params?: Record<string, unknown>): Promise<T>;
   stopWorker(): Promise<void>;
   frontendReady(): Promise<void>;
@@ -81,13 +93,23 @@ export function createHostAdapter(bridge?: InvokeBridge, events?: EventBridge): 
     getInfo: () => request('host_info'),
     getSettings: () => request('settings_get'),
     saveSettings: (settings) => request('settings_save', { settings }),
+    saveAppearance: ({ theme, uiStyle, closeToTray }) => request('settings_save_appearance', { theme, uiStyle, closeToTray }),
+    selectCompanion: (modelId) => request('companion_select', { modelId }),
+    updateCompanion: (change, menuGeneration) => request('companion_update', menuGeneration === undefined ? { change } : { change, menuGeneration }),
+    openCompanionApp: () => request('companion_open_main'),
+    showCompanionMenu: (modelId, canAnimate) => request('companion_menu_show', { modelId, canAnimate }),
+    getCompanionMenuContext: () => request('companion_menu_get_context'),
+    closeCompanionMenu: (generation) => request('companion_menu_close', { generation }),
+    companionMenuReady: (generation) => request('companion_menu_ready', { generation }),
+    subscribeCompanionMenuChanged: (callback) => events ? events('companion-menu-context-changed', callback) : Promise.resolve(() => {}),
     showCompanion: () => request('companion_show'),
-    hideCompanion: () => request('companion_hide'),
+    hideCompanion: (menuGeneration) => request('companion_hide', menuGeneration === undefined ? undefined : { menuGeneration }),
     startCompanionDrag: () => request('companion_start_drag'),
     getCompanionState: () => request('companion_get_state'),
     companionReady: (modelId) => request('companion_ready', { modelId }),
     subscribeSettingsChanged: (callback) => events ? events('settings-changed', callback) : Promise.resolve(() => {}),
     subscribeCompanionVisibilityChanged: (callback) => events ? events('companion-visibility-changed', (value) => { if (typeof value === 'boolean') callback(value); }) : Promise.resolve(() => {}),
+    subscribeCompanionRecall: (callback) => events ? events('companion-recall', callback) : Promise.resolve(() => {}),
     callWorker: (method, params = {}) => request('worker_call', { method, params }),
     stopWorker: () => request('worker_stop'),
     frontendReady: () => request('frontend_ready'),

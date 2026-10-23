@@ -1,10 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "companion-window",
-  "description": "Owned companion surface; read preferences and move or temporarily hide only itself.",
+  "description": "Owned companion surface; read preferences, update one pet field, open its menu and main UI, move or hide itself.",
   "windows": ["companion"],
   "permissions": [
     "allow-settings-get", "allow-companion-hide", "allow-companion-start-drag", "allow-companion-get-state", "allow-companion-ready",
-    "core:event:allow-listen", "core:event:allow-unlisten"
+    "allow-companion-update", "allow-companion-open-main",
+    "core:event:allow-listen", "core:event:allow-unlisten",
+    "allow-companion-menu-show", "allow-companion-menu-close"
   ]
 }

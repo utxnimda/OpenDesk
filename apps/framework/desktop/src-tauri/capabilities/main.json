@@ -5,10 +5,12 @@
   "windows": ["main"],
   "permissions": [
     "allow-host-info", "allow-settings-get", "allow-settings-save",
+    "allow-settings-save-appearance", "allow-companion-select", "allow-companion-update", "allow-companion-open-main",
     "allow-companion-show", "allow-companion-hide", "allow-companion-get-state",
     "allow-worker-call", "allow-worker-stop", "allow-frontend-ready",
     "allow-modules-list", "allow-modules-import", "allow-modules-select",
     "allow-modules-enable", "allow-modules-open", "allow-modules-call", "allow-modules-close",
-    "allow-modules-ui-ready", "allow-modules-load-failed", "core:event:allow-listen", "core:event:allow-unlisten"
+    "allow-modules-ui-ready", "allow-modules-load-failed", "core:event:allow-listen", "core:event:allow-unlisten",
+    "allow-companion-menu-show", "allow-companion-menu-close"
   ]
 }

@@ -25,6 +25,7 @@ const theme = ref<Theme>('system');
 const uiStyle = ref<UIStyle>(DEFAULT_SETTINGS.uiStyle);
 const personalization = ref(clonePersonalization(DEFAULT_SETTINGS.personalization));
 const companionError = ref('');
+const companionRecall = ref(0);
 const resolvedSurfaceEffects = computed(() => surfaceEffects(uiStyle.value));
 let companionDesired = '';
 let companionQueue = Promise.resolve();
@@ -43,6 +44,7 @@ const mountedModules = computed(() => modules.value.filter((module) => visited.v
 const resolvedTheme = ref<Exclude<Theme, 'system'>>('light');
 const unsubscribe: Array<() => void> = [];
 let unmounted = false;
+let settingsRequest = 0;
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 const selectedModule = computed(() => modules.value.find((module) => module.id === currentPage.value));
 const pageLabel = computed(() => ({ workspace: '工作台', packages: '功能管理', diagnostics: '运行诊断', settings: '设置', version: '版本与更新' }[currentPage.value] ?? selectedModule.value?.label ?? '工作台'));
@@ -59,6 +61,7 @@ watch(uiStyle, (value) => { document.documentElement.dataset.uiStyle = value; },
 systemTheme.addEventListener('change', applyTheme);
 onUnmounted(() => {
   unmounted = true;
+  settingsRequest++;
   systemTheme.removeEventListener('change', applyTheme);
   unsubscribe.forEach((dispose) => dispose());
 });
@@ -97,11 +100,16 @@ function updateSettings(value: Settings) {
   // Native save broadcasts may arrive after its response. An identical saved
   // value must not cancel a new preview made while that notification was in flight.
   if (JSON.stringify(settings.value) !== JSON.stringify(value)) {
+    const previous = settings.value;
+    const preserveTheme = currentPage.value === 'settings' && theme.value !== previous.theme && value.theme === previous.theme;
+    const preserveStyle = currentPage.value === 'settings' && uiStyle.value !== previous.uiStyle && value.uiStyle === previous.uiStyle;
     settings.value = { ...value, personalization: clonePersonalization(value.personalization) };
-    theme.value = value.theme; uiStyle.value = value.uiStyle;
+    if (!preserveTheme) theme.value = value.theme;
+    if (!preserveStyle) uiStyle.value = value.uiStyle;
     personalization.value = clonePersonalization(value.personalization);
   }
-  reconcileCompanion(value.personalization.pet);
+  // Native preference commands own companion window effects. Replaying them
+  // from an asynchronous settings mirror can hide a newer menu or window.
 }
 function previewTheme(value: Theme) {
   theme.value = value;
@@ -113,7 +121,10 @@ function previewStyle(value: UIStyle) {
 }
 function previewPersonalization(value: Personalization) {
   personalization.value = clonePersonalization(value);
-  if (!host.available) settings.value = { ...settings.value, personalization: clonePersonalization(value) };
+  if (!host.available) {
+    settings.value = { ...settings.value, personalization: clonePersonalization(value) };
+    if (value.pet.enabled) companionRecall.value++;
+  }
 }
 function updateCatalog(value: PackageCatalog) {
   if (value.hostApi !== 1) { packageError.value = '功能目录的宿主接口版本不匹配。'; return; }
@@ -142,17 +153,24 @@ function navigate(page: string) {
 
 async function loadDesktopState() {
   if (!host.available) return;
+  const request = ++settingsRequest;
   initializing.value = true;
   infoError.value = ''; settingsError.value = '';
   const results = await Promise.allSettled([host.getInfo(), host.getSettings()]);
   if (results[0].status === 'fulfilled') info.value = results[0].value;
   else infoError.value = errorMessage(results[0].reason);
-  if (results[1].status === 'fulfilled') { updateSettings(results[1].value); settingsReady.value = true; }
-  else { settingsError.value = errorMessage(results[1].reason); settingsReady.value = false; }
+  if (!unmounted && request === settingsRequest) {
+    if (results[1].status === 'fulfilled') { updateSettings(results[1].value); settingsReady.value = true; reconcileCompanion(results[1].value.personalization.pet); }
+    else { settingsError.value = errorMessage(results[1].reason); settingsReady.value = false; }
+  }
   initializing.value = false;
 }
 onMounted(async () => {
   if (host.available) {
+    try {
+      const dispose = await host.subscribeCompanionRecall(() => { companionRecall.value++; });
+      if (unmounted) dispose(); else unsubscribe.push(dispose);
+    } catch (error) { companionError.value = '宠物召回订阅失败：' + errorMessage(error); }
     try {
       const dispose = await host.subscribePackagesChanged(() => { void refreshCatalog(); });
       if (unmounted) dispose(); else unsubscribe.push(dispose);
@@ -162,7 +180,8 @@ onMounted(async () => {
   if (host.available) {
     try {
       const dispose = await host.subscribeSettingsChanged(() => {
-        void host.getSettings().then((value) => { if (!unmounted) updateSettings(value); }).catch((error) => { if (!unmounted) settingsError.value = errorMessage(error); });
+        const request = ++settingsRequest;
+        void host.getSettings().then((value) => { if (!unmounted && request === settingsRequest) updateSettings(value); }).catch((error) => { if (!unmounted && request === settingsRequest) settingsError.value = errorMessage(error); });
       });
       if (unmounted) dispose(); else unsubscribe.push(dispose);
     } catch (error) { settingsError.value = '设置订阅失败：' + errorMessage(error); }
@@ -195,7 +214,7 @@ onMounted(async () => {
       <button class="activity-settings" aria-label="设置" title="设置" :class="{ active: currentPage === 'settings' }" @click="navigate('settings')"><Settings2 :size="21" /></button>
     </nav>
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark"><Boxes :size="23" :stroke-width="1.7" /></span><div><strong>OpenDesk</strong><span>LOCAL WORKSPACE</span></div></div>
+      <div class="brand"><span class="brand-mark"><Boxes :size="23" :stroke-width="1.7" /></span><div><strong>OpenDesk</strong><span>{{ uiStyle === 'mint' ? 'MINT WORKSPACE' : 'LOCAL WORKSPACE' }}</span></div></div>
       <div class="sidebar-rule"></div>
       <div class="sidebar-scroll">
       <div class="navigation-label">{{ uiStyle === 'cursor' ? '工作区 · EXPLORER' : uiStyle === 'glass' ? '工作区导航' : '工作空间' }}</div>
@@ -229,7 +248,7 @@ onMounted(async () => {
       <footer v-if="uiStyle === 'cursor' || uiStyle === 'glass'" class="workbench-statusbar"><span><span class="version-dot"></span>{{ host.available ? '桌面工作区' : '界面预览' }}</span><span>{{ pageLabel }}</span><span>OpenDesk v{{ buildVersion.appVersion }}</span></footer>
     </div>
   </div>
-  <CompanionOverlay v-if="companions" :catalog="companions" :settings="personalization.pet" />
+  <CompanionOverlay v-if="companions" :host="host" :catalog="companions" :settings="personalization.pet" :recall-key="companionRecall" @saved="updateSettings" @preview="previewPersonalization({ pet: $event })" />
 </template>
 
 <style scoped>

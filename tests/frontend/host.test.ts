@@ -11,6 +11,9 @@ describe('host adapter boundary', () => {
     await expect(host.hideCompanion()).rejects.toThrow(BROWSER_UNAVAILABLE);
     await expect(host.startCompanionDrag()).rejects.toThrow(BROWSER_UNAVAILABLE);
     await expect(host.getCompanionState()).rejects.toThrow(BROWSER_UNAVAILABLE);
+    await expect(host.showCompanionMenu('example-model', true)).rejects.toThrow(BROWSER_UNAVAILABLE);
+    await expect(host.getCompanionMenuContext()).rejects.toThrow(BROWSER_UNAVAILABLE);
+    await expect(host.closeCompanionMenu(1)).rejects.toThrow(BROWSER_UNAVAILABLE);
     await expect(host.companionReady('example-model')).rejects.toThrow(BROWSER_UNAVAILABLE);
     await expect(host.getSettings()).rejects.toThrow(BROWSER_UNAVAILABLE);
     await expect(host.saveSettings({ schemaVersion: 1, theme: 'dark', uiStyle: 'simple', closeToTray: true, personalization: clonePersonalization() })).rejects.toThrow(BROWSER_UNAVAILABLE);
@@ -36,10 +39,27 @@ describe('host adapter boundary', () => {
     const host = createHostAdapter(vi.fn().mockRejectedValue('worker unavailable') as InvokeBridge);
     await expect(host.callWorker('runtime.ping')).rejects.toBe('worker unavailable');
   });
+  it('binds popup mutations and closure to a menu generation while ordinary pet changes stay narrow', async () => {
+    const bridge = vi.fn().mockResolvedValue({});
+    const host = createHostAdapter(bridge as InvokeBridge);
+    const change = { type: 'animated' as const, value: false };
+    await host.updateCompanion(change);
+    await host.updateCompanion(change, 17);
+    await host.hideCompanion(17);
+    await host.closeCompanionMenu(17);
+    expect(bridge.mock.calls).toEqual([
+      ['companion_update', { change }],
+      ['companion_update', { change, menuGeneration: 17 }],
+      ['companion_hide', { menuGeneration: 17 }],
+      ['companion_menu_close', { generation: 17 }],
+    ]);
+    bridge.mockRejectedValueOnce('Menu generation is no longer active');
+    await expect(host.updateCompanion(change, 16)).rejects.toBe('Menu generation is no longer active');
+  });
   it('keeps the default layout independent of the system color theme', () => {
     expect(DEFAULT_SETTINGS).toEqual({ schemaVersion: 1, theme: 'system', uiStyle: 'simple', closeToTray: true, personalization: clonePersonalization() });
   });
-  it.each<UIStyle>(['simple', 'codex', 'cursor', 'web', 'anime', 'glass'])('passes the %s style and color theme unchanged through settings IPC', async (uiStyle) => {
+  it.each<UIStyle>(['simple', 'codex', 'cursor', 'web', 'anime', 'glass', 'mint'])('passes the %s style and color theme unchanged through settings IPC', async (uiStyle) => {
     const settings: Settings = { schemaVersion: 1, theme: 'ocean', uiStyle, closeToTray: false, personalization: clonePersonalization() };
     const bridge = vi.fn().mockResolvedValue(settings);
     const host = createHostAdapter(bridge as InvokeBridge);

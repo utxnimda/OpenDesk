@@ -11,19 +11,44 @@ export interface CompanionModel {
     walk?: string;
     wave?: string;
     sleep?: string;
+    thinking?: string;
   }>;
+  readonly actionDurationsMs?: Readonly<Partial<Record<CompanionTransientAction, number>>>;
+  readonly actionMediaTypes?: Readonly<Partial<Record<CompanionTransientAction, 'image' | 'video'>>>;
+  readonly primaryAction?: CompanionTransientAction;
 }
 
-export type CompanionAction = 'idle' | 'walk' | 'wave' | 'sleep';
+export type CompanionAction = 'idle' | 'walk' | 'wave' | 'sleep' | 'thinking';
 export type CompanionExtraAction = Exclude<CompanionAction, 'idle'>;
-const EXTRA_ACTIONS: readonly CompanionExtraAction[] = ['walk', 'wave', 'sleep'];
+export type CompanionTransientAction = Exclude<CompanionExtraAction, 'sleep'>;
+export interface CompanionMenuRequest { x: number; y: number; canAnimate: boolean }
+const EXTRA_ACTIONS: readonly CompanionExtraAction[] = ['walk', 'wave', 'sleep', 'thinking'];
+
+export function companionActionDuration(model: CompanionModel, action: CompanionTransientAction): number | undefined {
+  const duration = model.actionDurationsMs?.[action] ?? ({ wave: 1800, walk: 3984, thinking: undefined } as const)[action];
+  return typeof duration === 'number' && Number.isFinite(duration) && duration > 0 && duration <= 2_147_483_647 ? duration : undefined;
+}
+
+export function companionPrimaryAction(model: CompanionModel): CompanionTransientAction | undefined {
+  const action = model.primaryAction ?? 'wave';
+  return companionExtraActions(model).includes(action) ? action : undefined;
+}
+
+export function companionActionMedia(model: CompanionModel, action: CompanionTransientAction): 'image' | 'video' {
+  return model.actionMediaTypes?.[action] ?? 'image';
+}
+
+export function companionSelectedAction(model: CompanionModel, mode: CompanionAction = 'idle'): CompanionAction {
+  return mode === 'idle' || companionExtraActions(model).includes(mode) ? mode : 'idle';
+}
 
 /** An extra action needs its own asset, rather than an alias of another pose. */
 export function companionExtraActions(model: CompanionModel): CompanionExtraAction[] {
   const sources = Object.values(model.assets);
   return EXTRA_ACTIONS.filter((action) => {
     const source = model.assets[action];
-    return typeof source === 'string' && source.trim().length > 0 && sources.filter((value) => value === source).length === 1;
+    return typeof source === 'string' && source.trim().length > 0 && sources.filter((value) => value === source).length === 1
+      && (action === 'sleep' || companionActionDuration(model, action) !== undefined);
   });
 }
 

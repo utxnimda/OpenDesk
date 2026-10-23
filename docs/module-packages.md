@@ -51,9 +51,11 @@ test.echo严格接受 `{text:string}`，最多4096字符且不能含孤立代理
 
 外观消息保留原有 `theme` 的浅色/深色契约，并通过可选 `appearance` 字段传递 `sakura`、`ocean`、`forest`、`sand` 或 `graphite`。支持这些值的新包可同步对应配色。基础 `theme` 始终保持兼容：`graphite` 传递 `dark`，其余彩色外观传递 `light`；旧包忽略自己不认识的外观值，使用基础主题显示。旧版已支持的 `sakura` 仍按该包自己的样式呈现。这是兼容扩展，不提升 hostApi。
 
-连接消息与后续外观消息还可包含 `uiStyle`：`simple`、`codex`、`cursor`、`web`、`anime` 或 `glass`。它独立于配色，控制支持该字段的模块公共表面样式；缺失或未知值在新 SDK 中回退为 `simple`，旧包可以忽略该可选字段。protocol 1、hostApi 1、基础 `theme` 和既有 `nimdadesk:hello` / `nimdadesk:connect` 消息标识均保持不变，应用改名不等于更换消息标识。
+连接消息与后续外观消息还可包含 `uiStyle`：`simple`、`codex`、`cursor`、`web`、`anime`、`glass` 或 `mint`。它独立于配色，控制支持该字段的模块公共表面样式；缺失或未知值在对应 SDK 中回退为 `simple`，旧包可以忽略该可选字段。protocol 1、hostApi 1、基础 `theme` 和既有 `nimdadesk:hello` / `nimdadesk:connect` 消息标识均保持不变，应用改名不等于更换消息标识。
 
 `glass` 当前显示名为“深海透明”，使用深蓝黑半透明、青色细边与低圆角紧凑分区；宿主采用顶部标签栏。显示名调整不改变存储 ID、包身份或消息协议，也不恢复背景图片和氛围调节。建议配色为 `dark`，用户仍可独立选择配色。
+
+本地宿主 0.15.0 新增 `mint`“薄荷奶油”，建议配色 `light`，采用静态浅粉/薄荷柔雾、深青文字、圆角卡片与轻导航。深色与石墨夜继续使用各自语义色，选择风格不强制主题。共享 CSS 与 SDK 更新已对应塔防 manifest 0.1.8、测试台本地 fixture 开发版本 1.0.7。已公开的塔防 0.1.7 保持不可变；App 升级保留用户固定版本，需要在「功能管理」手动选择已安装的 0.1.8，模块内才具备薄荷样式。旧包可以忽略或回退未知 `mint`，不能由宿主强改其内部 DOM。
 
 SDK 保留 0.8.0 引入的可选 `surfaceEffects` 以兼容已有包。当前宿主根据 `uiStyle` 生成固定静态表面，表面动效关闭，没有用户材质、浓度或氛围调节。协议解析范围继续保留：
 
@@ -84,19 +86,19 @@ npm run build:module-fixtures
 
 | 命令 | 输出 | 范围 |
 |---|---|---|
-| `build:modules` | `dist/bundled-modules/app-manifest.json` 和 `tower-assistant-0.1.7.ndpkg` | App 0.12.0 仅随附塔防助手 |
-| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.1.7/` 下的包、manifest 与 SHA256SUMS | 正式页签独立产物 |
+| `build:modules` | `dist/bundled-modules/app-manifest.json` 和 `tower-assistant-0.1.8.ndpkg` | 当前本地 App 0.15.0 仅随附塔防助手 |
+| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.1.8/` 下的包、manifest 与 SHA256SUMS | 按当前 manifest 构建的独立产物，尚未发布 |
 | `build:module-fixtures` | `dist/module-fixtures/fixtures.json`、测试台 baseline 及四个变体 | 仅本机开发验证，不进入 App 或独立 Release |
 
-构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；正式塔防当前版本为 `0.1.7`。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。
+构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；最新公开塔防为 `0.1.7`，本地开发 manifest 为 `0.1.8`。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。
 
-通用宠物属于宿主能力，不是业务页签包。阿宝与阿沐的处理后资源按用户 2026-10-22 的明确公开交付请求纳入本次源码和 App，原视频仍不上传；不附加未提供的第三方许可声明。模块构建不复制角色资源或私人图片，背景能力仍已移除。资源详情见 [宠物资源说明](companion-assets.md)。
+通用宠物属于宿主能力，不是业务页签包。阿宝与阿沐的既有默认资源按用户 2026-10-22 的明确请求纳入当时 0.12.0 交付；该授权不覆盖后续思考动作、菜单或当前 0.15.0 发布。原视频仍不上传，不附加未提供的第三方许可声明。模块构建不复制角色资源或私人图片，背景能力仍已移除。资源详情见 [宠物资源说明](companion-assets.md)。
 
 fixtures输出 `dist/module-fixtures/fixtures.json` 和：
 
 | 包文件 | 身份 | 预期 |
 |---|---|---|
-| test-lab-1.0.6.ndpkg | 当前源码 baseline，marker=v1-baseline | 在独立 smoke 根显式导入并选中，再做版本切换 |
+| test-lab-1.0.7.ndpkg | 当前源码 baseline，marker=v1-baseline | 在独立 smoke 根显式导入并选中，再做版本切换 |
 | test-lab-1.1.0.ndpkg | 同ID，新版本，marker=v1.1-enhanced | 导入更新，前端/worker真实变化 |
 | test-lab-2.0.0-incompatible.ndpkg | hostApi=99 | 保留原件并在执行代码前拒绝 |
 | test-extra-1.0.0.ndpkg | 新ID，marker=extra-module | 导入新增页签 |
@@ -118,14 +120,14 @@ ZIP文件按路径排序并固定时间，PyInstaller使用固定SOURCE_DATE_EPO
 
 ## 公开暂存与独立下载
 
-获得当次公开交付授权后，正式页签按 ID/版本建立独立下载，App 的随附包与独立页签包应核对为相同不可变产物。当前准备的 App 标签为 `v0.12.0`，塔防标签为 `modules/tower-assistant/v0.1.7`；下载目录索引见 [downloads.md](downloads.md)，是否已发布以真实 Release 为准。
+获得当次公开交付授权后，正式页签按 ID/版本建立独立下载，App 的随附包与独立页签包应核对为相同不可变产物。最新公开 App 标签为 `v0.12.0`，塔防标签为 `modules/tower-assistant/v0.1.7`；当前本地 0.15.0 / 0.1.8 尚未获得提交、推送或发布授权，不沿用旧授权自动交付。下载目录索引见 [downloads.md](downloads.md)，是否已发布以真实 Release 为准。
 
 ```powershell
 npm run release:stage -- app
 npm run release:stage -- module tower-assistant
 ```
 
-App 输出到 `dist/releases/app/0.12.0/`，模块输出到 `dist/releases/modules/tower-assistant/0.1.7/`，包含版本清单与 `SHA256SUMS.txt`。暂存只操作本地：要求当前源码已提交且干净；App 构建收据 `dist/app-build.json` 必须对应当前提交、版本和实际文件摘要，模块内部 manifest 与独立 manifest 相同，来源必须是本仓库干净提交且属于当前开发历史。目录或同版本附件已经存在时拒绝覆盖。
+暂存目录由实际版本决定；当前源码若在后续获准提交并完成干净构建，输出位置为 `dist/releases/app/0.15.0/` 和 `dist/releases/modules/tower-assistant/0.1.8/`，包含版本清单与 `SHA256SUMS.txt`。这不是当前已经生成或公开的声明。暂存只操作本地：要求当前源码已提交且干净；App 构建收据 `dist/app-build.json` 必须对应当前提交、版本和实际文件摘要，模块内部 manifest 与独立 manifest 相同，来源必须是本仓库干净提交且属于当前开发历史。目录或同版本附件已经存在时拒绝覆盖。
 
 发布只取这些审核后的目录，禁止上传模块测试台、fixture、本机 imports/installed、私有模块或其他分支的未授权产物。构建缓存只负责复用已验证字节，不能扩大公开白名单；完整文件检查和新包审计仍应在最终构建后执行。
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createSSRApp } from 'vue';
 import { renderToString } from '@vue/server-renderer';
-import { canDisplayCompanion, clampCompanionPosition, companionBox, companionExtraActions, companionFrame, companionSize, findCompanion, type CompanionCatalog, type CompanionModel } from '../../apps/framework/frontend/src/companions/contracts';
+import { canDisplayCompanion, clampCompanionPosition, companionActionDuration, companionActionMedia, companionBox, companionExtraActions, companionFrame, companionPrimaryAction, companionSize, findCompanion, type CompanionCatalog, type CompanionModel } from '../../apps/framework/frontend/src/companions/contracts';
 import CompanionOverlay from '../../apps/framework/frontend/src/companions/CompanionOverlay.vue';
 import CompanionPet from '../../apps/framework/frontend/src/companions/CompanionPet.vue';
 import CompanionSettings from '../../apps/framework/frontend/src/components/CompanionSettings.vue';
@@ -36,11 +36,12 @@ describe('companion selection and visible bounds', () => {
   it('renders a clear empty settings state without enable or show controls', async () => {
     const saved = { ...clonePersonalization().pet, enabled: true, modelId: 'removed-model' };
     const html = await renderToString(createSSRApp(CompanionSettings, {
-      host: createHostAdapter(), catalog: emptyCatalog, modelValue: saved, savedMode: saved, disabled: false,
+      host: createHostAdapter(), catalog: emptyCatalog, modelValue: saved, disabled: false,
     }));
     expect(html).toContain('暂无可用宠物资源，等待添加已授权资源');
     expect(html).not.toContain('<input');
-    expect(html).not.toContain('<button');
+    expect(html).toContain('不启用宠物');
+    expect(html).not.toContain('显示桌面宠物');
     expect(html).not.toContain('<img');
   });
 
@@ -76,6 +77,33 @@ describe('companion selection and visible bounds', () => {
 });
 
 describe('companion assets and action availability', () => {
+  it('exposes the real thinking video with explicit duration and primary interaction', async () => {
+    const thinking: CompanionModel = { ...loopModel, assets: { ...loopModel.assets, thinking: '/thinking.mp4' },
+      actionDurationsMs: { thinking: 6042 }, actionMediaTypes: { thinking: 'video' }, primaryAction: 'thinking' };
+    expect(companionExtraActions(thinking)).toEqual(['thinking']);
+    expect(companionActionDuration(thinking, 'thinking')).toBe(6042);
+    expect(companionActionMedia(thinking, 'thinking')).toBe('video');
+    expect(companionPrimaryAction(thinking)).toBe('thinking');
+    const html = await renderToString(createSSRApp(CompanionPet, { model: thinking, size: 160, animated: true }));
+    expect(html).toContain('aria-label="宠物菜单"');
+    expect(html).not.toContain('aria-label="托腮思考"');
+    expect(html).toContain('点击托腮思考');
+    expect(html).toContain('src="/loop.apng"');
+    expect(html).not.toContain('宠物挥手');
+    expect(html).not.toContain('宠物活动一下');
+  });
+
+  it('keeps legacy timings and wave interaction but never guesses a thinking duration', () => {
+    expect(companionActionDuration(catalog.models[0], 'wave')).toBe(1800);
+    expect(companionActionDuration(catalog.models[0], 'walk')).toBe(3984);
+    expect(companionPrimaryAction(catalog.models[0])).toBe('wave');
+    const missing = { ...loopModel, assets: { ...loopModel.assets, thinking: '/thinking.mp4' } };
+    expect(companionExtraActions(missing)).toEqual([]);
+    for (const duration of [0, -1, Number.NaN, Infinity, 2_147_483_648]) {
+      expect(companionExtraActions({ ...missing, actionDurationsMs: { thinking: duration } })).toEqual([]);
+    }
+  });
+
   it('accepts a single loop with a static frame without inventing extra actions', () => {
     expect(companionExtraActions(loopModel)).toEqual([]);
     expect(companionFrame(loopModel, 'idle', true)).toEqual({ action: 'idle', source: '/loop.apng' });
@@ -105,7 +133,8 @@ describe('companion assets and action availability', () => {
     const html = await renderToString(createSSRApp(CompanionPet, { model: loopModel, size: 160, animated: true }));
     expect(html).toContain('src="/loop.apng"');
     expect(html).toContain('aria-label="暂停宠物动画"');
-    expect(html).toContain('aria-label="暂时收起宠物"');
+    expect(html).toContain('aria-label="宠物菜单"');
+    expect(html).not.toContain('aria-label="暂时收起宠物"');
     for (const unavailable of ['宠物挥手', '宠物活动一下', '让宠物休息', '点击挥手']) expect(html).not.toContain(unavailable);
     expect(html).not.toContain('undefined');
   });
@@ -117,13 +146,16 @@ describe('companion assets and action availability', () => {
     expect(html).not.toContain('src="/loop.apng"');
   });
 
-  it('describes only the supplied actions in pet settings', async () => {
+  it('keeps app settings focused on role selection and sends operation guidance to the pet menu', async () => {
     const settings = { ...clonePersonalization().pet, enabled: true, modelId: loopModel.id };
     const html = await renderToString(createSSRApp(CompanionSettings, {
       host: createHostAdapter(), catalog: { defaultId: loopModel.id, models: [loopModel] },
-      modelValue: settings, savedMode: settings, disabled: false,
+      modelValue: settings, disabled: false,
     }));
-    expect(html).toContain('循环动画；暂停时使用静态形象。');
+    expect(html).toContain('Video fixture');
+    expect(html).toContain(loopModel.description);
+    expect(html).toContain('右键宠物');
+    expect(html).not.toContain('播放角色动画');
     expect(html).not.toContain('走动');
     expect(html).not.toContain('挥手');
   });

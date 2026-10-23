@@ -7,7 +7,7 @@ export const BROWSER_UNAVAILABLE = '此功能需要由 OpenDesk 打开，独立�
 export const SUPPORTED_APPEARANCES = ['light', 'dark', 'sakura', 'ocean', 'forest', 'sand', 'graphite'] as const;
 export type Appearance = typeof SUPPORTED_APPEARANCES[number];
 /** Layout and surface styling are independent from the user's color appearance. */
-export const SUPPORTED_UI_STYLES = ['simple', 'codex', 'cursor', 'web', 'anime', 'glass'] as const;
+export const SUPPORTED_UI_STYLES = ['simple', 'codex', 'cursor', 'web', 'anime', 'glass', 'mint'] as const;
 export type UIStyle = typeof SUPPORTED_UI_STYLES[number];
 
 /** A bounded visual description only. Wallpaper bytes and local paths stay in the host. */

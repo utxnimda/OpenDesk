@@ -1,13 +1,17 @@
-"""Reproducible local matte for a purple- or teal-background character video.
+"""Reproducible local video assets with optional purple or teal background matte.
 
 Requires only NumPy, Pillow, and ffmpeg. This is an image-processing operation:
 no model inference, retargeting, interpolation, or pose generation is used.
 The explicit profiles are tuned for particular clean purple or teal backgrounds.
 The default purple profile is unchanged. This is not general person segmentation.
+The scene profile preserves the entire original frame and background as RGBA;
+only proportional scaling and transparent canvas margins are applied.
 Always inspect the white/dark composites before integrating the generated assets.
 Optional one-based inclusive frame bounds select a continuous default loop.
 Every source frame still defines the common canvas, still.png remains source
 frame 1, and a shortened selection also writes the complete full-cycle.png.
+An explicit scene-video export copies a full H.264 video track without
+re-encoding, audio, subtitles, data streams, chapters or user metadata.
 """
 from __future__ import annotations
 
@@ -181,6 +185,8 @@ def matte_teal(path: Path) -> Image.Image:
 
 
 def matte(path: Path, profile: str = "purple") -> Image.Image:
+    if profile == "scene":
+        return Image.open(path).convert("RGBA")
     if profile == "teal":
         return matte_teal(path)
     rgb = np.asarray(Image.open(path).convert("RGB"), dtype=np.float32)
@@ -243,12 +249,14 @@ def digest(path: Path) -> str:
         return hashlib.file_digest(source, "sha256").hexdigest()
 
 
-def write_apng(frames: list[Path], output: Path, fps: Fraction) -> None:
+def write_apng(frames: list[Path], output: Path, fps: Fraction, plays: int = 0) -> None:
     """Keep exact rational timing and full SOURCE frames, avoiding OVER differences.
 
     Frame PNGs are standard Pillow RGBA output. Reuse their lossless IDAT data;
     animation control/chunk CRCs are written using only Python's standard library.
     """
+    if type(plays) is not int or plays not in (0, 1):
+        raise ValueError("APNG plays must be 0 (infinite) or 1 (once).")
     if fps.numerator > 65535 or fps.denominator > 65535:
         raise ValueError("Frame rate exceeds APNG rational-delay limits")
     with Image.open(frames[0]) as first:
@@ -261,7 +269,7 @@ def write_apng(frames: list[Path], output: Path, fps: Fraction) -> None:
             out.write(kind + data)
             out.write(struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF))
         chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
-        chunk(b"acTL", struct.pack(">II", len(frames), 0))
+        chunk(b"acTL", struct.pack(">II", len(frames), plays))
         sequence = 0
         for i, path in enumerate(frames):
             data = path.read_bytes()
@@ -287,11 +295,11 @@ def write_apng(frames: list[Path], output: Path, fps: Fraction) -> None:
     temporary.replace(output)
 
 
-def verify_apng(path: Path, frames: list[Path]) -> list[float]:
+def verify_apng(path: Path, frames: list[Path], plays: int = 0) -> list[float]:
     """Decode every frame and verify the exact processed RGBA pixels."""
     with Image.open(path) as animation:
-        if animation.n_frames != len(frames) or animation.info.get("loop") != 0:
-            raise RuntimeError("APNG frame count or infinite-loop metadata differs")
+        if animation.n_frames != len(frames) or animation.info.get("loop") != plays:
+            raise RuntimeError("APNG frame count or play-count metadata differs")
         durations = []
         for i, expected_path in enumerate(frames):
             animation.seek(i)
@@ -302,13 +310,55 @@ def verify_apng(path: Path, frames: list[Path]) -> list[float]:
     return durations
 
 
+def export_scene_video(source: Path, output: Path, ffmpeg: str, ffprobe: str) -> dict:
+    """Copy only the complete H.264 video track to a sanitized silent MP4."""
+    creationflags = subprocess.CREATE_NO_WINDOW if platform.system() == "Windows" else 0
+    try:
+        source_probe = json.loads(subprocess.check_output([ffprobe, "-v", "error", "-select_streams", "v:0", "-show_streams", "-of", "json", str(source)], creationflags=creationflags, timeout=30))
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("Scene video source probe timed out after 30 seconds.") from error
+    source_stream = source_probe["streams"][0]
+    if source_stream.get("codec_name") != "h264":
+        raise ValueError("Scene video export requires an H.264 source; transcoding is not performed.")
+    try:
+        subprocess.run([ffmpeg, "-nostdin", "-hide_banner", "-loglevel", "error", "-n",
+                        "-i", str(source), "-map", "0:v:0", "-c:v", "copy", "-an", "-sn", "-dn",
+                        "-map_metadata", "-1", "-map_metadata:s:v:0", "-1", "-map_chapters", "-1",
+                        "-metadata:s:v:0", "language=und", "-metadata:s:v:0", "handler_name=",
+                        "-metadata:s:v:0", "encoder=", "-fflags", "+bitexact", "-movflags", "+faststart",
+                        str(output)], check=True, creationflags=creationflags, timeout=60)
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("Silent scene video remux timed out after 60 seconds.") from error
+    try:
+        probe = json.loads(subprocess.check_output([ffprobe, "-v", "error", "-show_streams", "-show_format", "-show_chapters", "-of", "json", str(output)], creationflags=creationflags, timeout=30))
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("Silent scene video verification probe timed out after 30 seconds.") from error
+    if len(probe["streams"]) != 1 or probe["streams"][0].get("codec_name") != "h264" or probe.get("chapters"):
+        raise RuntimeError("Silent scene export must contain one H.264 video stream and no chapters.")
+    stream = probe["streams"][0]
+    for key in ("width", "height", "avg_frame_rate", "time_base", "start_pts", "duration_ts", "nb_frames"):
+        if stream.get(key) != source_stream.get(key):
+            raise RuntimeError(f"Silent scene export changed video property: {key}")
+    if set(probe["format"].get("tags", {})) - {"major_brand", "minor_version", "compatible_brands"}:
+        raise RuntimeError("Silent scene export retained unexpected container metadata.")
+    if set(stream.get("tags", {})) - {"language", "handler_name", "vendor_id"}:
+        raise RuntimeError("Silent scene export retained unexpected stream metadata.")
+    return {"path": str(output), "bytes": output.stat().st_size, "sha256": digest(output),
+            "codec": "h264", "size": [stream["width"], stream["height"]], "frames": int(stream["nb_frames"]),
+            "fps": stream["avg_frame_rate"], "duration_seconds": float(stream["duration"]),
+            "audio_streams": 0, "subtitle_streams": 0, "data_streams": 0, "chapters": 0,
+            "user_metadata_removed": True, "reencoded": False}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True, help="User-authorized source video; never modified")
     parser.add_argument("--output", type=Path, required=True, help="Local output directory")
     parser.add_argument("--ffmpeg", default="ffmpeg", help="FFmpeg executable or absolute path")
     parser.add_argument("--ffprobe", default="ffprobe", help="FFprobe executable or absolute path")
-    parser.add_argument("--matte-profile", choices=("purple", "teal"), default="purple", help="Explicit background profile; purple is the unchanged default")
+    parser.add_argument("--matte-profile", choices=("purple", "teal", "scene"), default="purple", help="Purple/teal background matte, or scene to preserve the full original frame")
+    parser.add_argument("--plays", type=int, choices=(0, 1), default=0, help="APNG play count: 0 repeats indefinitely (default), 1 plays once")
+    parser.add_argument("--export-scene-video", action="store_true", help="Also export the complete scene as silent H.264 MP4 by stream copy; requires scene profile and all source frames")
     parser.add_argument("--start-frame", type=int, help="First animation frame, one-based inclusive; requires --end-frame")
     parser.add_argument("--end-frame", type=int, help="Last animation frame, one-based inclusive; requires --start-frame")
     parser.add_argument("--canvas", type=int, default=768)
@@ -316,6 +366,10 @@ def main() -> None:
     parser.add_argument("--baseline", type=int, default=734, help="Common source floor baseline on output canvas")
     parser.add_argument("--preview-only", action="store_true")
     args = parser.parse_args()
+    if args.export_scene_video and args.matte_profile != "scene":
+        parser.error("--export-scene-video requires --matte-profile scene.")
+    if args.export_scene_video and args.preview_only:
+        parser.error("--export-scene-video requires full processing, not --preview-only.")
     if (args.start_frame is None) != (args.end_frame is None):
         parser.error("Provide both --start-frame and --end-frame, or neither.")
     if args.start_frame is not None and not 1 <= args.start_frame < args.end_frame <= 600:
@@ -336,6 +390,8 @@ def main() -> None:
         raise RuntimeError("Video metadata probe timed out after 30 seconds.") from error
     probe = json.loads(probe_output)
     stream = probe["streams"][0]
+    if args.export_scene_video and stream.get("codec_name") != "h264":
+        parser.error("--export-scene-video requires an H.264 source; transcoding is not performed.")
     fps = Fraction(stream["avg_frame_rate"])
     if not 0 < fps <= 60 or Fraction(stream["r_frame_rate"]) != fps:
         raise RuntimeError("This deterministic pipeline requires a constant-frame-rate input.")
@@ -355,6 +411,8 @@ def main() -> None:
     end_frame = args.end_frame if args.end_frame is not None else len(times)
     if end_frame > len(times):
         parser.error(f"end-frame exceeds the source's {len(times)} frames.")
+    if args.export_scene_video and (start_frame != 1 or end_frame != len(times)):
+        parser.error("--export-scene-video requires all source frames; a selected frame range is not supported.")
     source_dir = root / "source-frames"
     source_dir.mkdir(exist_ok=False)
     try:
@@ -386,7 +444,8 @@ def main() -> None:
         bounds.append(bbox(frame))
         frame.save(native / source.name)
         if i % 24 == 0:
-            print(f"matted {i + 1}/{len(sources)}", flush=True)
+            phase = "preserved" if args.matte_profile == "scene" else "matted"
+            print(f"{phase} {i + 1}/{len(sources)}", flush=True)
     union = (min(b[0] for b in bounds), min(b[1] for b in bounds), max(b[2] for b in bounds), max(b[3] for b in bounds))
     qa = Image.new("RGB", (4 * 384, 2 * 416), (220, 220, 220))
     qa_ids = np.linspace(0, len(sources) - 1, 8, dtype=int).tolist()
@@ -407,13 +466,13 @@ def main() -> None:
     output = root / "idle-candidate.png"
     animation_sources = sources[start_frame - 1:end_frame]
     animation_frames = [final / source.name for source in animation_sources]
-    write_apng(animation_frames, output, fps)
+    write_apng(animation_frames, output, fps, args.plays)
     full_output = None
     if len(animation_sources) != len(sources):
         full_output = root / "full-cycle.png"
         all_frames = [final / source.name for source in sources]
-        write_apng(all_frames, full_output, fps)
-        verify_apng(full_output, all_frames)
+        write_apng(all_frames, full_output, fps, args.plays)
+        verify_apng(full_output, all_frames, args.plays)
     diffs = []
     first_premul = previous = None
     frame_stats = []
@@ -434,7 +493,7 @@ def main() -> None:
         selected_endpoints.append(np.dstack((frame[:, :, :3] * frame[:, :, 3:4], frame[:, :, 3:4])))
     seam = float(np.abs(selected_endpoints[1] - selected_endpoints[0]).mean())
     selected_diffs = diffs[start_frame - 1:end_frame - 1]
-    encoded_durations = verify_apng(output, animation_frames)
+    encoded_durations = verify_apng(output, animation_frames, args.plays)
     encoded_count = len(encoded_durations)
     try:
         ffmpeg_version = subprocess.check_output([args.ffmpeg, "-version"], creationflags=creationflags, timeout=10).decode().splitlines()[0]
@@ -443,11 +502,14 @@ def main() -> None:
     report = {
         "source": {"name": source_video.name, "bytes": source_video.stat().st_size, "sha256": digest(source_video)},
         "matte_profile": args.matte_profile,
+        "frame_treatment": "preserve-original-scene" if args.matte_profile == "scene" else "chroma-background-matte",
+        "background_preserved": args.matte_profile == "scene", "plays": args.plays,
         "versions": {"python": platform.python_version(), "numpy": np.__version__, "pillow": pillow_version, "ffmpeg": ffmpeg_version},
         "source_frame_count": len(sources), "output_frame_count": encoded_count, "fps": str(fps),
         "animation_frame_range": {"start": start_frame, "end": end_frame, "indexing": "one-based inclusive"},
         "source_duration_seconds": float(len(sources) / fps),
         "duration_seconds": float(encoded_count / fps), "encoded_frame_durations_ms": encoded_durations,
+        "duration_ms_rounded": round(float(encoded_count / fps) * 1000),
         "normalization_source_frame_count": len(sources), "still_source_frame": 1,
         "canvas": [args.canvas, args.canvas], "union_bounds_source": union,
         "source_frame_bounds": bounds, "frame_alpha_stats": frame_stats,
@@ -462,11 +524,13 @@ def main() -> None:
         "source_frame_cadence_preserved": True, "pose_generation_or_interpolation": False,
         "apng": {"path": str(output), "bytes": output.stat().st_size, "sha256": digest(output)},
         "still": {"path": str(root / "still.png"), "sha256": digest(root / "still.png")},
-        "apng_encoding": "lossless PNG IDAT, full SOURCE frames, exact rational timing, infinite loop",
+        "apng_encoding": "lossless PNG IDAT, full SOURCE frames, exact rational timing, " + ("infinite loop" if args.plays == 0 else "one play"),
         "decoded_frames_pixel_identical_to_processed_pngs": True,
     }
     if full_output:
-        report["full_animation"] = {"path": str(full_output), "frames": len(sources), "duration_seconds": float(len(sources) / fps), "bytes": full_output.stat().st_size, "sha256": digest(full_output)}
+        report["full_animation"] = {"path": str(full_output), "frames": len(sources), "duration_seconds": float(len(sources) / fps), "plays": args.plays, "bytes": full_output.stat().st_size, "sha256": digest(full_output)}
+    if args.export_scene_video:
+        report["scene_video"] = export_scene_video(source_video, root / "scene-video.mp4", args.ffmpeg, args.ffprobe)
     (root / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({k: report[k] for k in ["source_frame_count", "output_frame_count", "fps", "duration_seconds", "union_bounds_source", "seam_premultiplied_rgba_mean_absolute_difference", "adjacent_premultiplied_rgba_difference_median", "apng", "still", "versions"]}, ensure_ascii=False), flush=True)
 

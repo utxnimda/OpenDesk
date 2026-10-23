@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "companion-menu-window",
+  "description": "Owned transient pet menu; only read its context and settings, update one pet preference, hide the pet, open main, or close itself.",
+  "windows": ["companion-menu"],
+  "permissions": [
+    "allow-settings-get", "allow-companion-update", "allow-companion-hide", "allow-companion-open-main",
+    "allow-companion-menu-get-context", "allow-companion-menu-close", "allow-companion-menu-ready",
+    "core:event:allow-listen", "core:event:allow-unlisten"
+  ]
+}

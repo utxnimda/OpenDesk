@@ -1,4 +1,5 @@
 mod companion;
+mod companion_menu;
 mod companion_smoke;
 mod diagnostics;
 mod module_packages;
@@ -10,8 +11,9 @@ mod worker;
 
 use diagnostics::Diagnostics;
 use module_packages::ModuleManager;
+use personalization::{CompanionChange, PetMode};
 use serde_json::{json, Value};
-use settings::{Settings, SettingsStore};
+use settings::{Settings, SettingsStore, Theme, UiStyle};
 use std::{
     path::PathBuf,
     sync::{
@@ -37,6 +39,7 @@ struct AppState {
     companion_smoke_started: AtomicBool,
     companion_ready: tokio::sync::Mutex<Option<String>>,
     companion_show_lock: tokio::sync::Mutex<()>,
+    companion_menu: companion_menu::MenuSession,
     module_ui_ready: tokio::sync::Mutex<std::collections::BTreeMap<String, Value>>,
     module_ui_calls: tokio::sync::Mutex<std::collections::BTreeMap<String, Value>>,
     module_ui_closed: tokio::sync::Mutex<std::collections::HashSet<String>>,
@@ -55,13 +58,237 @@ async fn host_info(state: State<'_, AppState>) -> Result<Value, String> {
 fn settings_get(state: State<'_, AppState>) -> Result<Settings, String> {
     state.settings.load()
 }
+
+fn validate_command_request(
+    label: &str,
+    allowed_windows: &[&str],
+    body: &tauri::ipc::InvokeBody,
+    fields: &[&str],
+) -> Result<(), String> {
+    if !allowed_windows.contains(&label) {
+        return Err(
+            "This window is not allowed to perform the requested settings operation.".into(),
+        );
+    }
+    let tauri::ipc::InvokeBody::Json(Value::Object(arguments)) = body else {
+        return Err("Command arguments must be a JSON object.".into());
+    };
+    if arguments
+        .keys()
+        .any(|field| !fields.contains(&field.as_str()))
+    {
+        return Err("Unknown command argument; settings were not changed.".into());
+    }
+    if fields.iter().any(|field| !arguments.contains_key(*field)) {
+        return Err("Missing command argument; settings were not changed.".into());
+    }
+    Ok(())
+}
+
+fn validate_companion_action_request(
+    label: &str,
+    body: &tauri::ipc::InvokeBody,
+    fields: &[&str],
+    generation: Option<u64>,
+) -> Result<(), String> {
+    if label == companion_menu::LABEL {
+        let mut menu_fields = fields.to_vec();
+        menu_fields.push("menuGeneration");
+        validate_command_request(label, &[companion_menu::LABEL], body, &menu_fields)?;
+        if generation.is_none() {
+            return Err("A companion menu generation is required.".into());
+        }
+        Ok(())
+    } else {
+        validate_command_request(label, &["main", companion::LABEL], body, fields)
+    }
+}
+
+async fn authorize_companion_menu_action(
+    app: &tauri::AppHandle,
+    state: &AppState,
+    generation: Option<u64>,
+) -> Result<(), String> {
+    if let Some(generation) = generation {
+        let pet = state.settings.load()?.personalization.pet;
+        let ready = state.companion_ready.lock().await;
+        companion_menu::authorize(app, generation, &pet, ready.as_deref())?;
+    }
+    Ok(())
+}
+
+fn record_settings_write(
+    state: &AppState,
+    operation: &str,
+    result: Result<Settings, String>,
+) -> Result<Settings, String> {
+    state.diagnostics.record(
+        if result.is_ok() { "info" } else { "error" },
+        operation,
+        if result.is_ok() {
+            "saved"
+        } else {
+            "save failed; existing data preserved"
+        },
+    );
+    result
+}
+
+fn complete_settings_change(
+    app: &tauri::AppHandle,
+    state: &AppState,
+    saved: Settings,
+    applied: Result<(), String>,
+) -> Result<Settings, String> {
+    let menu_effect = companion_menu::reconcile(app, &saved.personalization.pet);
+    // Notify after every committed change, even when a native window effect fails.
+    let notification = app.emit("settings-changed", ()).map_err(|error| {
+        state
+            .diagnostics
+            .record("error", "settings.notification", &error.to_string());
+        format!("Settings were saved, but window notification failed: {error}")
+    });
+    if let Err(error) = applied.and(menu_effect) {
+        state
+            .diagnostics
+            .record("error", "companion.apply_settings", &error);
+        return Err(format!(
+            "Settings were saved, but the companion window could not be updated: {error}"
+        ));
+    }
+    notification?;
+    Ok(saved)
+}
+
+fn recall_saved_companion(app: &tauri::AppHandle, settings: &Settings) -> Result<(), String> {
+    let pet = &settings.personalization.pet;
+    if !pet.enabled {
+        companion::hide(app)?;
+        return show_main_result(app);
+    }
+    match pet.mode {
+        PetMode::Desktop => companion::show(app, pet),
+        PetMode::InApp => {
+            companion::hide(app)?;
+            show_main_result(app)?;
+            app.emit_to("main", "companion-recall", ())
+                .map_err(|error| error.to_string())
+        }
+    }
+}
+
 #[tauri::command]
-fn settings_save(
-    settings: Settings,
+async fn companion_select(
+    model_id: Option<String>,
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
     app: tauri::AppHandle,
     state: State<'_, AppState>,
 ) -> Result<Settings, String> {
+    validate_command_request(window.label(), &["main"], request.body(), &["modelId"])?;
+    let _guard = state.companion_show_lock.lock().await;
+    let saved = record_settings_write(
+        &state,
+        "companion.select",
+        state.settings.select_companion(model_id),
+    )?;
+    let applied = if saved.personalization.pet.enabled {
+        recall_saved_companion(&app, &saved)
+    } else {
+        companion::hide(&app)
+    };
+    complete_settings_change(&app, &state, saved, applied)
+}
+
+#[tauri::command]
+async fn companion_update(
+    change: CompanionChange,
+    menu_generation: Option<u64>,
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<Settings, String> {
+    validate_companion_action_request(
+        window.label(),
+        request.body(),
+        &["change"],
+        menu_generation,
+    )?;
+    let recall_in_app = matches!(change, CompanionChange::Mode(PetMode::InApp));
+    let _guard = state.companion_show_lock.lock().await;
+    authorize_companion_menu_action(&app, &state, menu_generation).await?;
+    let saved = record_settings_write(
+        &state,
+        "companion.update",
+        state.settings.update_companion(change),
+    )?;
+    let pet = &saved.personalization.pet;
+    let applied = if recall_in_app {
+        recall_saved_companion(&app, &saved)
+    } else if !pet.enabled {
+        companion::hide(&app)
+    } else if pet.mode == PetMode::Desktop {
+        companion::show(&app, pet)
+    } else {
+        companion::hide(&app)
+    };
+    complete_settings_change(&app, &state, saved, applied)
+}
+
+#[tauri::command]
+fn settings_save_appearance(
+    theme: Theme,
+    ui_style: UiStyle,
+    close_to_tray: bool,
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<Settings, String> {
+    validate_command_request(
+        window.label(),
+        &["main"],
+        request.body(),
+        &["theme", "uiStyle", "closeToTray"],
+    )?;
+    let saved = record_settings_write(
+        &state,
+        "settings.save_appearance",
+        state
+            .settings
+            .save_appearance(theme, ui_style, close_to_tray),
+    )?;
+    complete_settings_change(&app, &state, saved, Ok(()))
+}
+
+#[tauri::command]
+fn companion_open_main(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    validate_command_request(
+        window.label(),
+        &["main", companion::LABEL, companion_menu::LABEL],
+        request.body(),
+        &[],
+    )?;
+    show_main_result(&app)
+}
+
+#[tauri::command]
+async fn settings_save(
+    settings: Settings,
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<Settings, String> {
+    if window.label() != "main" {
+        return Err("Only the main window may save complete settings.".into());
+    }
     settings.validate()?;
+    let _guard = state.companion_show_lock.lock().await;
     let result = state.settings.save(settings);
     state.diagnostics.record(
         if result.is_ok() { "info" } else { "error" },
@@ -79,7 +306,9 @@ fn settings_save(
                 .record("warn", "settings.notification", &error.to_string());
         }
     }
-    result
+    let saved = result?;
+    companion_menu::reconcile(&app, &saved.personalization.pet)?;
+    Ok(saved)
 }
 #[tauri::command]
 async fn companion_show(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<(), String> {
@@ -87,8 +316,106 @@ async fn companion_show(app: tauri::AppHandle, state: State<'_, AppState>) -> Re
     companion::show(&app, &state.settings.load()?.personalization.pet)
 }
 #[tauri::command]
-fn companion_hide(app: tauri::AppHandle) -> Result<(), String> {
+async fn companion_hide(
+    menu_generation: Option<u64>,
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    validate_companion_action_request(window.label(), request.body(), &[], menu_generation)?;
+    let _guard = state.companion_show_lock.lock().await;
+    authorize_companion_menu_action(&app, &state, menu_generation).await?;
     companion::hide(&app)
+}
+
+#[tauri::command]
+async fn companion_menu_show(
+    model_id: String,
+    can_animate: bool,
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<companion_menu::MenuContext, String> {
+    validate_command_request(
+        window.label(),
+        &["main", companion::LABEL],
+        request.body(),
+        &["modelId", "canAnimate"],
+    )?;
+    let _guard = state.companion_show_lock.lock().await;
+    let pet = state.settings.load()?.personalization.pet;
+    if !companion::state(&app)?.visible {
+        return Err("Show the desktop companion before opening its menu.".into());
+    }
+    let ready = state.companion_ready.lock().await;
+    companion_menu::show(&app, &pet, ready.as_deref(), model_id, can_animate)
+}
+
+#[tauri::command]
+async fn companion_menu_get_context(
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    state: State<'_, AppState>,
+) -> Result<companion_menu::MenuContext, String> {
+    validate_command_request(
+        window.label(),
+        &[companion_menu::LABEL],
+        request.body(),
+        &[],
+    )?;
+    let _guard = state.companion_show_lock.lock().await;
+    let context = state.companion_menu.context()?;
+    let pet = state.settings.load()?.personalization.pet;
+    let ready = state.companion_ready.lock().await;
+    if companion_menu::effective_model(&pet, ready.as_deref())? != context.model_id
+        || state.companion_menu.changed_selection(&pet)?
+    {
+        return Err("The companion changed; reopen its menu.".into());
+    }
+    Ok(context)
+}
+
+#[tauri::command]
+async fn companion_menu_close(
+    generation: u64,
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    validate_command_request(
+        window.label(),
+        &["main", companion::LABEL, companion_menu::LABEL],
+        request.body(),
+        &["generation"],
+    )?;
+    let _guard = state.companion_show_lock.lock().await;
+    companion_menu::close(&app, Some(generation))
+}
+
+#[tauri::command]
+async fn companion_menu_ready(
+    generation: u64,
+    window: tauri::WebviewWindow,
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    validate_command_request(
+        window.label(),
+        &[companion_menu::LABEL],
+        request.body(),
+        &["generation"],
+    )?;
+    let _guard = state.companion_show_lock.lock().await;
+    authorize_companion_menu_action(&app, &state, Some(generation)).await?;
+    state.companion_menu.mark_ready(generation)?;
+    state
+        .diagnostics
+        .record("info", "companion.menu_ready", &generation.to_string());
+    Ok(())
 }
 #[tauri::command]
 fn companion_start_drag(window: tauri::WebviewWindow) -> Result<(), String> {
@@ -336,17 +663,20 @@ async fn frontend_ready(app: tauri::AppHandle, state: State<'_, AppState>) -> Re
     Ok(())
 }
 
+fn show_main_result(app: &tauri::AppHandle) -> Result<(), String> {
+    let window = app
+        .get_webview_window("main")
+        .ok_or("The main window is not available.")?;
+    window.show().map_err(|error| error.to_string())?;
+    window.unminimize().map_err(|error| error.to_string())?;
+    window.set_focus().map_err(|error| error.to_string())
+}
+
 fn show_main(app: &tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window("main") {
-        for result in [window.show(), window.unminimize(), window.set_focus()] {
-            if let Err(error) = result {
-                app.state::<AppState>().diagnostics.record(
-                    "warn",
-                    "window.activate",
-                    &error.to_string(),
-                );
-            }
-        }
+    if let Err(error) = show_main_result(app) {
+        app.state::<AppState>()
+            .diagnostics
+            .record("warn", "window.activate", &error);
     }
 }
 
@@ -439,6 +769,164 @@ fn startup_mode(
 }
 
 #[cfg(test)]
+mod command_boundary_tests {
+    use super::*;
+    use tauri::ipc::InvokeBody;
+
+    #[test]
+    fn local_commands_enforce_window_labels_and_exact_argument_keys() {
+        let selection = InvokeBody::Json(json!({"modelId": "sample-role"}));
+        assert!(validate_command_request("main", &["main"], &selection, &["modelId"]).is_ok());
+        for label in ["companion", "module-tower-assistant", "unknown"] {
+            assert!(validate_command_request(label, &["main"], &selection, &["modelId"]).is_err());
+        }
+        let change = InvokeBody::Json(json!({"change": {"type":"size","value":208}}));
+        for label in ["main", "companion"] {
+            assert!(
+                validate_command_request(label, &["main", "companion"], &change, &["change"])
+                    .is_ok()
+            );
+        }
+        assert!(validate_command_request(
+            "module-tower-assistant",
+            &["main", "companion"],
+            &change,
+            &["change"]
+        )
+        .is_err());
+        for body in [
+            InvokeBody::Json(json!({})),
+            InvokeBody::Json(json!({"modelId":null,"enabled":true})),
+            InvokeBody::Json(json!({"modelId":null,"change":{"type":"size","value":208}})),
+            InvokeBody::Json(json!(null)),
+            InvokeBody::Raw(vec![1, 2]),
+        ] {
+            assert!(validate_command_request("main", &["main"], &body, &["modelId"]).is_err());
+        }
+        assert!(validate_command_request(
+            "companion",
+            &["main", "companion"],
+            &InvokeBody::Json(json!({})),
+            &[]
+        )
+        .is_ok());
+        assert!(validate_command_request(
+            "companion",
+            &["main", "companion"],
+            &InvokeBody::Json(json!({"target":"other"})),
+            &[]
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn companion_capability_never_grants_full_settings_or_role_selection() {
+        let main: Value = serde_json::from_str(include_str!("../capabilities/main.json")).unwrap();
+        let companion: Value =
+            serde_json::from_str(include_str!("../capabilities/companion.json")).unwrap();
+        let main_permissions = main["permissions"].as_array().unwrap();
+        let pet_permissions = companion["permissions"].as_array().unwrap();
+        for forbidden in [
+            "allow-settings-save",
+            "allow-settings-save-appearance",
+            "allow-companion-select",
+        ] {
+            assert!(!pet_permissions.contains(&json!(forbidden)));
+            assert!(main_permissions.contains(&json!(forbidden)));
+        }
+        for permission in [
+            "allow-companion-update",
+            "allow-companion-open-main",
+            "allow-companion-menu-show",
+            "allow-companion-menu-close",
+        ] {
+            assert!(pet_permissions.contains(&json!(permission)));
+            assert!(main_permissions.contains(&json!(permission)));
+        }
+        let menu: Value =
+            serde_json::from_str(include_str!("../capabilities/companion-menu.json")).unwrap();
+        assert_eq!(menu["windows"], json!(["companion-menu"]));
+        let menu_permissions = menu["permissions"].as_array().unwrap();
+        let expected = [
+            "allow-settings-get",
+            "allow-companion-update",
+            "allow-companion-hide",
+            "allow-companion-open-main",
+            "allow-companion-menu-get-context",
+            "allow-companion-menu-close",
+            "allow-companion-menu-ready",
+            "core:event:allow-listen",
+            "core:event:allow-unlisten",
+        ];
+        assert_eq!(menu_permissions.len(), expected.len());
+        for permission in expected {
+            assert!(menu_permissions.contains(&json!(permission)));
+        }
+        for permission in [
+            "core:menu:allow-new",
+            "core:menu:allow-popup",
+            "core:resources:allow-close",
+        ] {
+            assert!(!menu_permissions.contains(&json!(permission)));
+            assert!(!pet_permissions.contains(&json!(permission)));
+            assert!(!main_permissions.contains(&json!(permission)));
+        }
+    }
+
+    #[test]
+    fn menu_updates_require_a_generation_and_other_windows_cannot_supply_one() {
+        use tauri::ipc::InvokeBody;
+        let change = json!({"type":"size","value":160});
+        let body = InvokeBody::Json(json!({"change":change,"menuGeneration":7}));
+        assert!(validate_companion_action_request(
+            companion_menu::LABEL,
+            &body,
+            &["change"],
+            Some(7)
+        )
+        .is_ok());
+        for label in ["main", "companion", "module-tower-assistant"] {
+            assert!(validate_companion_action_request(label, &body, &["change"], Some(7)).is_err());
+        }
+        assert!(validate_companion_action_request(
+            companion_menu::LABEL,
+            &InvokeBody::Json(json!({"change":change})),
+            &["change"],
+            None
+        )
+        .is_err());
+        assert!(validate_companion_action_request(
+            companion_menu::LABEL,
+            &InvokeBody::Json(json!({"change":change,"menuGeneration":null})),
+            &["change"],
+            None
+        )
+        .is_err());
+        assert!(validate_companion_action_request(
+            companion_menu::LABEL,
+            &InvokeBody::Json(json!({"menuGeneration":7})),
+            &[],
+            Some(7)
+        )
+        .is_ok());
+        assert!(validate_companion_action_request(
+            companion_menu::LABEL,
+            &InvokeBody::Json(json!({})),
+            &[],
+            None
+        )
+        .is_err());
+        assert!(validate_companion_action_request(
+            "companion",
+            &InvokeBody::Json(json!({})),
+            &[],
+            None
+        )
+        .is_ok());
+    }
+}
+
+#[cfg(test)]
 mod startup_tests {
     use super::*;
 
@@ -507,6 +995,7 @@ mod startup_tests {
                     size: 208,
                     always_on_top: false,
                     animated: false,
+                    action_mode: personalization::PetActionMode::Idle,
                 },
             },
             ..Settings::default()
@@ -590,11 +1079,19 @@ pub fn run() {
             host_info,
             settings_get,
             settings_save,
+            settings_save_appearance,
+            companion_select,
+            companion_update,
+            companion_open_main,
             companion_show,
             companion_hide,
             companion_start_drag,
             companion_get_state,
             companion_ready,
+            companion_menu_show,
+            companion_menu_get_context,
+            companion_menu_close,
+            companion_menu_ready,
             worker_call,
             worker_stop,
             modules_list,
@@ -648,6 +1145,7 @@ pub fn run() {
                 companion_smoke_started: AtomicBool::new(false),
                 companion_ready: tokio::sync::Mutex::new(None),
                 companion_show_lock: tokio::sync::Mutex::new(()),
+                companion_menu: companion_menu::MenuSession::default(),
                 module_ui_ready: tokio::sync::Mutex::new(std::collections::BTreeMap::new()),
                 module_ui_calls: tokio::sync::Mutex::new(std::collections::BTreeMap::new()),
                 module_ui_closed: tokio::sync::Mutex::new(std::collections::HashSet::new()),
@@ -657,8 +1155,11 @@ pub fn run() {
                 tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
             };
             let show = MenuItem::with_id(app, "show", "打开 OpenDesk", true, None::<&str>)?;
+            // Always available: with no selected/enabled pet it opens the main UI.
+            let show_companion =
+                MenuItem::with_id(app, "show-companion", "显示宠物", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show, &quit])?;
+            let menu = Menu::with_items(app, &[&show, &show_companion, &quit])?;
             TrayIconBuilder::with_id("main-tray")
                 .icon(tauri::image::Image::from_bytes(include_bytes!(
                     "../icons/icon.png"
@@ -668,6 +1169,22 @@ pub fn run() {
                 .show_menu_on_left_click(false)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => show_main(app),
+                    "show-companion" => {
+                        let app = app.clone();
+                        tauri::async_runtime::spawn(async move {
+                            let state = app.state::<AppState>();
+                            let _guard = state.companion_show_lock.lock().await;
+                            let result = state
+                                .settings
+                                .load()
+                                .and_then(|settings| recall_saved_companion(&app, &settings));
+                            if let Err(error) = result {
+                                state
+                                    .diagnostics
+                                    .record("error", "companion.recall", &error);
+                            }
+                        });
+                    }
                     "quit" => request_exit(app),
                     _ => {}
                 })
@@ -733,6 +1250,41 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if window.label() == companion_menu::LABEL {
+                match event {
+                    tauri::WindowEvent::CloseRequested { api, .. } => {
+                        if !window.state::<AppState>().exiting.load(Ordering::SeqCst) {
+                            api.prevent_close();
+                        }
+                    }
+                    tauri::WindowEvent::Focused(false) => {
+                        match (
+                            window.is_focused(),
+                            window.state::<AppState>().companion_menu.is_visible(),
+                        ) {
+                            (Ok(false), Ok(true)) => {}
+                            (Ok(_), Ok(_)) => return,
+                            (focused, visible) => {
+                                window.state::<AppState>().diagnostics.record(
+                                    "error",
+                                    "companion.menu_focus",
+                                    &format!("focus={focused:?}; visible={visible:?}"),
+                                );
+                                return;
+                            }
+                        }
+                    }
+                    _ => return,
+                }
+                if let Err(error) = companion_menu::close(window.app_handle(), None) {
+                    window.state::<AppState>().diagnostics.record(
+                        "error",
+                        "companion.menu_close",
+                        &error,
+                    );
+                }
+                return;
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let state = window.state::<AppState>();
                 if state.exiting.load(Ordering::SeqCst) {

@@ -1,5 +1,13 @@
 import frameworkDefaults from '../../../../../config/framework/defaults.json';
 
+export type PetActionMode = 'idle' | 'walk' | 'wave' | 'sleep' | 'thinking';
+export type PetPreferenceChange =
+  | { type: 'mode'; value: PetSettings['mode'] }
+  | { type: 'size'; value: number }
+  | { type: 'always-on-top'; value: boolean }
+  | { type: 'animated'; value: boolean }
+  | { type: 'action-mode'; value: PetActionMode };
+
 export interface PetSettings {
   enabled: boolean;
   mode: 'desktop' | 'in-app';
@@ -7,6 +15,7 @@ export interface PetSettings {
   size: number;
   alwaysOnTop: boolean;
   animated: boolean;
+  actionMode: PetActionMode;
 }
 
 export interface Personalization {

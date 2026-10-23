@@ -61,6 +61,13 @@ const copyByStyle: Record<UIStyle, {
     description: '从左侧选择功能，或在这里查看和管理可用工具。',
     moduleTitle: '可用功能',
   },
+  mint: {
+    eyebrow: 'MINT WORKSPACE',
+    title: '留一点从容，',
+    subtitle: '给今天要做的事。',
+    description: '常用工具和你的伙伴，都在熟悉的位置。选一个功能，轻松开始。',
+    moduleTitle: '你的工具',
+  },
 };
 const copy = computed(() => copyByStyle[props.uiStyle]);
 const shortcuts = [

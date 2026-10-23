@@ -10,7 +10,8 @@
       "modelId": null,
       "size": 160,
       "alwaysOnTop": true,
-      "animated": true
+      "animated": true,
+      "actionMode": "idle"
     }
   }
 }

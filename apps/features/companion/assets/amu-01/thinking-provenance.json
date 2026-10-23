@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "modelId": "amu-01",
+  "actionId": "thinking",
+  "label": "托腮思考",
+  "source": {
+    "kind": "user-provided-video",
+    "fileName": "生成指定动作的循环视频 (4).mp4",
+    "sha256": "6b22da5c7cbda5ff08f75f6c0b45a804c32d313335178cbdd6d30d014461be48",
+    "includedInPackage": false
+  },
+  "authorization": {
+    "date": "2026-10-23",
+    "scope": "Local transparency correction, packaging and startup: retain the person, computer, desk and chair; remove the room and wall background.",
+    "priorReleaseAuthorizationInherited": false,
+    "publicDistributionAuthorized": false,
+    "sourceCommitAuthorized": true,
+    "sourceCommitRequestDate": "2026-10-23",
+    "sourceCommitScope": "The user requested committing the existing OpenDesk code and accompanying resources, excluding the locally imported deployment workbench. Remote push and Release execution remain separate steps."
+  },
+  "processing": {
+    "tool": "scripts/prepare-companion-foreground.py",
+    "toolSha256": "ff22fa5fc5945df114a54a78252eaa59e5b8f344a5aa35859e4aad4deeb73b3d",
+    "helper": "scripts/companion_foreground_matte.py",
+    "helperSha256": "a2a6858a4faee3910e9160731f4b1cd8ce29a0cd87704e9b223932959b9f4e19",
+    "matteProfile": "amu-thinking-foreground-v1",
+    "backgroundPreserved": false,
+    "foregroundPreserved": [
+      "person",
+      "computer displays",
+      "keyboard",
+      "desk and supports",
+      "chair"
+    ],
+    "backgroundRemoved": [
+      "room walls",
+      "monitor-to-person gap",
+      "monitor-to-desk gap",
+      "open wall under the desk",
+      "exterior-connected crown wall remnants"
+    ],
+    "sourceBodyCoverage": "Partial body as provided; no missing body parts were generated.",
+    "sourceFrames": 145,
+    "animationSourceFrameRange": [
+      1,
+      145
+    ],
+    "sourceFramesPerSecond": 24,
+    "sourceDurationSeconds": 6.041666666666667,
+    "durationMs": 6042,
+    "outputSize": [
+      768,
+      768
+    ],
+    "constantSourceCrop": [
+      0,
+      167,
+      720,
+      1280
+    ],
+    "normalizedForegroundSize": [
+      453,
+      700
+    ],
+    "normalizedOrigin": [
+      157,
+      34
+    ],
+    "constantBaseline": 734,
+    "sourceRgbPreservedAtNativeResolution": true,
+    "sourceFrameOrderPreserved": true,
+    "generatedRgbUsed": false,
+    "frameInterpolation": false,
+    "missingBodyGenerated": false,
+    "audioIncluded": false,
+    "alphaSeed": {
+      "file": "authoring/thinking-alpha-seed.png",
+      "sha256": "4f722f0ba6f9fa3ee6f3a4e5e4177789dd77a2f080fab13ce98d8779bd964789",
+      "usage": "Only grayscale alpha from the generated first-frame cutout reference; never its RGB."
+    },
+    "outlineConfiguration": {
+      "file": "authoring/thinking-outline.json",
+      "sha256": "8c88123ad4f4cf99ee60a68577575e01bc40d3663b743ad318582774b36064ea"
+    },
+    "method": "Sequential small-displacement optical flow, per-frame source-image GrabCut refinement, measured static-prop cores and stable background samples, source-color-constrained open-wall cleanup, common foreground union normalization.",
+    "versions": {
+      "python": "3.12.14",
+      "numpy": "2.3.5",
+      "pillow": "12.3.0",
+      "opencvPythonHeadless": "4.13.0.92",
+      "ffmpeg": "8.1-full_build-www.gyan.dev"
+    }
+  },
+  "runtimeEncoding": {
+    "codec": "libvpx-vp9",
+    "pixelFormat": "yuva420p",
+    "losslessCodecMode": true,
+    "autoAltRef": 0,
+    "rgbLossless": false,
+    "rgbExplanation": "RGB to YUV420 conversion and chroma subsampling alter RGB values even when VP9 uses lossless codec mode.",
+    "encodedActualDurationSeconds": 6.042,
+    "encodedNominalFps": "24/1",
+    "timeBase": "1/1000",
+    "maxFramePtsQuantizationErrorMs": 0.33333333333340764,
+    "intendedPlayback": "once; completion follows the video ended event"
+  },
+  "assets": [
+    {
+      "file": "thinking.webm",
+      "mediaType": "video/webm",
+      "codec": "vp9",
+      "alpha": true,
+      "bytes": 14061447,
+      "sha256": "9a0d6c9cf31a40458ed4d15d62557ed4da841042df705da1dfada3e8b3812449"
+    },
+    {
+      "file": "thinking-still.png",
+      "mediaType": "image/png",
+      "alpha": true,
+      "sourceFrame": 1,
+      "bytes": 457081,
+      "sha256": "7568a0d13eea539c28eb72b51d882b141a5d04e7e90bd8a34654e81690de59b4"
+    }
+  ],
+  "standaloneMaster": {
+    "repositoryRelativePath": "dist/companion-assets/amu-01/thinking/thinking.png",
+    "includedInApp": false,
+    "file": "thinking.png",
+    "mediaType": "image/apng",
+    "frames": 145,
+    "plays": 1,
+    "bytes": 71216736,
+    "sha256": "69cc304b94b5aedbecb31c9dfe8e57d1fd2963a93b2b4ffe43c2214d1a8fe6eb"
+  },
+  "verification": {
+    "sourceRgbExactEveryNativeFrame": true,
+    "stableBackgroundSamples": 14,
+    "stableForegroundSamples": 11,
+    "allSampleChecksPassed145Frames": true,
+    "apngPillowPixelExact145Frames": true,
+    "webmForcedDecoder": "libvpx-vp9",
+    "webmFramesVerified": 145,
+    "webmAlphaExact": false,
+    "maxAlphaDifference8bit": 1,
+    "meanAbsoluteAlphaDifference8bit": 0.00535707437215637,
+    "transparentZeroAndOpaque255PreservedEveryFrame": true,
+    "alphaWeightedRgbMae8bit": 1.558145280823845,
+    "opaqueRgbMae8bit": 1.541927130015586,
+    "maxRgbDifferenceAtNonzeroAlpha": 235,
+    "formalToolMigration": {
+      "selectedFrames": [
+        1,
+        73,
+        145
+      ],
+      "nativeRgbaAndRawPropagationMaskPixelExact": true,
+      "algorithmAstMechanicallyEquivalent": true,
+      "invalidInputCasesPassed": 6,
+      "full145FrameFormalCliRerunPerformed": false
+    },
+    "existingRideAssetsUnchanged": true
+  },
+  "sourcePermissionNote": "The original transparency correction was local-only. The user's subsequent 2026-10-23 request authorizes including the current processed runtime assets and authoring inputs in the reviewed Git source commit. This record does not assert a remote push, published Release, or separate third-party distribution license."
+}

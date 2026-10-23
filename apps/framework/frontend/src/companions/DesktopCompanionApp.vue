@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { errorMessage, host as desktopHost, type HostAdapter, type Settings } from '../core/host';
-import CompanionPet from './CompanionPet.vue';
-import { canDisplayCompanion, findCompanion, type CompanionCatalog } from './contracts';
+import CompanionSurface from './CompanionSurface.vue';
+import { findCompanion, type CompanionCatalog } from './contracts';
 
 const props = defineProps<{ catalog: CompanionCatalog; adapter?: HostAdapter }>();
 const host = props.adapter ?? desktopHost;
@@ -27,13 +27,15 @@ function applyTheme() {
   document.documentElement.dataset.theme = settings.value.theme === 'system' ? (systemTheme.matches ? 'dark' : 'light') : settings.value.theme;
   document.documentElement.dataset.uiStyle = settings.value.uiStyle;
 }
+function acceptSettings(value: Settings) { settings.value = value; applyTheme(); }
 async function refresh() {
   const revision = ++request;
   try {
     const value = await host.getSettings();
     if (!disposed && revision === request) {
       settings.value = value; failure.value = ''; applyTheme();
-      if (!canDisplayCompanion(props.catalog, value.personalization.pet, 'desktop')) await dismiss();
+      // The native preference command already reconciles window visibility.
+      // Do not hide a new window using a delayed snapshot from an earlier mode.
     }
   }
   catch (error) { if (!disposed && revision === request) failure.value = errorMessage(error); }
@@ -72,7 +74,6 @@ async function connect() {
     const visibilityChanged = await host.subscribeCompanionVisibilityChanged((value) => {
       visibilityRevision++; visible.value = value;
       if (!value) endDrag();
-      else if (!loading.value && settings.value && !canDisplayCompanion(props.catalog, settings.value.personalization.pet, 'desktop')) void dismiss();
     });
     if (disposed) { visibilityChanged(); return; } disposers.push(visibilityChanged);
     const revision = visibilityRevision;
@@ -94,6 +95,6 @@ onUnmounted(() => { disposed = true; request++; endDrag(); systemTheme.removeEve
   <main v-if="catalog.models.length" class="desktop-companion" aria-label="OpenDesk 桌面宠物">
     <div v-if="failure" class="desktop-companion-message" role="alert"><strong>宠物暂时不可用</strong><p>{{ failure }}</p><div><button :disabled="loading" @click="connect">重试连接</button><button v-if="host.available" @click="dismiss">暂时收起</button></div></div>
     <div v-else-if="loading" class="desktop-companion-message" role="status">正在打开宠物…</div>
-    <CompanionPet v-else-if="model && pet && pet.enabled && pet.mode === 'desktop'" :model="model" :size="pet.size" :animated="pet.animated" :active="visible" :dragging="dragging" @drag-start="startDrag" @drag-move="moveDrag" @drag-end="endDrag" @dismiss="dismiss" @asset-ready="reportAssetReady" />
+    <CompanionSurface v-else-if="model && pet && pet.enabled && pet.mode === 'desktop'" :host="host" :model="model" :settings="pet" :active="visible" :dragging="dragging" @saved="acceptSettings" @drag-start="startDrag" @drag-move="moveDrag" @drag-end="endDrag" @dismiss="dismiss" @asset-ready="reportAssetReady" />
   </main>
 </template>
