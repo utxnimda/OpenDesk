@@ -13,7 +13,9 @@
     "date": "2026-10-23",
     "scope": "Local transparency correction, packaging and startup: retain the person, computer, desk and chair; remove the room and wall background.",
     "priorReleaseAuthorizationInherited": false,
-    "publicDistributionAuthorized": false,
+    "publicDistributionAuthorized": true,
+    "publicDistributionRequestDate": "2026-10-23",
+    "publicDistributionScope": "The user subsequently requested executing the documented OpenDesk release workflow, including the reviewed source, processed runtime resources, App and formal module packages, while excluding the locally imported deployment workbench. Original video and full APNG master remain excluded.",
     "sourceCommitAuthorized": true,
     "sourceCommitRequestDate": "2026-10-23",
     "sourceCommitScope": "The user requested committing the existing OpenDesk code and accompanying resources, excluding the locally imported deployment workbench. Remote push and Release execution remain separate steps."
@@ -160,5 +162,5 @@
     },
     "existingRideAssetsUnchanged": true
   },
-  "sourcePermissionNote": "The original transparency correction was local-only. The user's subsequent 2026-10-23 request authorizes including the current processed runtime assets and authoring inputs in the reviewed Git source commit. This record does not assert a remote push, published Release, or separate third-party distribution license."
+  "sourcePermissionNote": "The original transparency correction was local-only. The user's subsequent 2026-10-23 requests authorize committing the reviewed assets and executing the OpenDesk release workflow. This authorization record does not itself assert completed publication or a separate third-party distribution license; actual delivery evidence is recorded in the repository release documentation."
 }

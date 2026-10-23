@@ -36,7 +36,7 @@ flowchart TB
 
 `config/version.json` 保留宿主/core 与已有发布历史；包内 `manifest.json` 描述独立模块版本；App 索引说明本次默认随附内容；本机选择及成功激活状态说明用户实际使用版本。旧中央业务历史不能冒充当前包版本。
 
-正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定，当前只含 `tower-assistant`。已公开的 0.12.0 App 随附塔防助手 0.1.7；当前本地 manifest 为塔防 0.1.8、测试台 1.0.7。`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
+正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定，当前只含 `tower-assistant`。已公开的 0.12.0 App 随附塔防助手 0.1.7；本轮正式 manifest 为塔防 0.1.9、测试台本地开发版本为 1.0.7。`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
 
 模块前端由自己的 `frontend/index.html` 启动，使用相对路径资源。通过 `apps/framework/module-sdk` 的 `createModuleBridge()` 完成身份握手后访问 `bridge.host`。页面不直接导入 Tauri API，宿主核对当前包及其 manifest 业务方法。旧页面的消息不能被当作新版本结果。
 
@@ -72,7 +72,7 @@ OpenDesk 0.9.0 移除背景导入、背景显示、粒子和氛围调节，设�
 
 既有六种风格保留，新增 `mint`“薄荷奶油”，建议浅色，以静态浅粉/薄荷渐变、深青文字、圆角卡片、中心内容列与轻导航呈现；选择风格不改主题，深色与石墨夜保留各自语义色。`glass` 仍显示为“深海透明”，采用深蓝黑半透明、青色细边、低圆角紧凑分区和顶部标签栏。`surfaceEffects` 继续作为 protocol 1 的可选兼容字段，当前宿主仅按风格生成固定材质与透明度描述，关闭表面动效；没有用户背景图片、材质、浓度或氛围设置。消息不含图片 ID、路径、data URL 或图片字节。
 
-七种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。薄荷布局和公共控件样式放在既有 `workbench-styles.css`，随模块构建指纹变化，因此塔防使用新包版本 0.1.8，不覆盖公开 0.1.7。App 升级仍保留用户固定选择，模块内部采用新风格需要手动选中已安装的 0.1.8。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
+七种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。薄荷布局和公共控件样式放在既有 `workbench-styles.css`，随模块构建指纹变化，因此正式塔防使用新包版本 0.1.9，不覆盖公开 0.1.7。App 升级仍保留用户固定选择，模块内部采用新风格需要手动选中已安装的 0.1.9。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
 
 模块 iframe 固定填满主内容区的剩余空间，内部 body 自行滚动；宿主不测量业务 DOM。设置变化不改变模块身份、版本选择或业务数据。
 
@@ -96,7 +96,7 @@ App 设置只显示角色卡和「不启用宠物」，不复制宠物菜单。�
 
 `--smoke-test`、`--module-smoke`、`--companion-smoke` 仅在显式提供绝对 `OPENDESK_DATA_DIR` 时跳过单实例，允许与用户实例并存。变量缺失、空值、相对路径或重复/混用 smoke 模式时，启动阶段退出 2；调用方仍负责选择不与用户数据重叠的测试目录。WebView2 缓存仍使用默认应用缓存位置，不因此获得完整浏览器隔离。
 
-`--companion-smoke` 使用真实设置、所选角色图片就绪与窗口事件，写入 `companion-smoke-result.json` 后退出；无资源或模型不存在时不能换用其他形象冒充成功。两个循环均采用原视频连续完整帧，未 AI 重画、插帧或变速；短循环默认选择可逆，不宣称严格无缝。来源与产物参数在各自的 `SOURCES.md` / `provenance.json` 记录。既有默认素材在 0.12.0 交付时已按用户 2026-10-22 的请求纳入公开范围；该历史授权不覆盖本次新动作。原视频仍不上传，不虚构第三方许可证。
+`--companion-smoke` 使用真实设置、所选角色图片就绪与窗口事件，写入 `companion-smoke-result.json` 后退出；无资源或模型不存在时不能换用其他形象冒充成功。两个循环均采用原视频连续完整帧，未 AI 重画、插帧或变速；短循环默认选择可逆，不宣称严格无缝。来源与产物参数在各自的 `SOURCES.md` / `provenance.json` 记录。既有默认素材在 0.12.0 交付时已按用户 2026-10-22 的请求纳入公开范围；该历史授权不自动覆盖本次新动作；2026-10-23 用户另行明确授权执行包含已审阅运行资源的当前发布流程。原视频仍不上传，不虚构第三方许可证。
 
 ## 动作模式、主点击与加载生命周期
 
@@ -106,15 +106,15 @@ App 设置只显示角色卡和「不启用宠物」，不复制宠物菜单。�
 
 组合根的 `assets.thinking` 已指向正式 `thinking.webm`，保留 `actionMediaTypes.thinking: "video"`、`actionDurationsMs.thinking: 6042` 与 `primaryAction: "thinking"`。时长字段只参与契约校验，完成由 `ended` 决定。透明来自媒体实际 alpha，不通过假棋盘或降低整个矩形透明度模拟；阿宝和阿沐既有循环/静态图未改。
 
-0.13.1 的正式素材强制 VP9 解码检查覆盖全部 145 帧：alpha 0 与 255 区域保持，中间 alpha 与母版最大差为 1；这不是 RGBA 无损声明。首帧生成 alpha 仅作轮廓参考，前景颜色基于原视频，VP9/YUV420 色彩转换仍可能造成颜色差异。当时完成真实 WebM 在 Chrome 三种底色中的透明与播放检查，以及 Tauri/NSIS、本地核心 smoke 和正常启动，但原生新动作点击和透明视觉未测。0.13.0、0.13.1 与 0.14.0 历史记录不改写，也不能代替当前 0.15.0 风格及菜单窗口验收；具体状态见 [验证记录](verification.md)。用户后续已要求先提交当前代码及资源；提交与远端推送、Release 执行仍分别记录。
+0.13.1 的正式素材强制 VP9 解码检查覆盖全部 145 帧：alpha 0 与 255 区域保持，中间 alpha 与母版最大差为 1；这不是 RGBA 无损声明。首帧生成 alpha 仅作轮廓参考，前景颜色基于原视频，VP9/YUV420 色彩转换仍可能造成颜色差异。当时完成真实 WebM 在 Chrome 三种底色中的透明与播放检查，以及 Tauri/NSIS、本地核心 smoke 和正常启动，但原生新动作点击和透明视觉未测。0.13.0、0.13.1 与 0.14.0 历史记录不改写，也不能代替当前 0.15.0 风格及菜单窗口验收；具体状态见 [验证记录](verification.md)。用户随后于 2026-10-23 明确要求提交当前代码及资源、完善发布文档并执行发布；提交、推送与 Release 的实际结果仍分别记录。
 
 ## 构建与扩展
 
 `scripts/module-pack.mjs` 负责独立 Vite 构建、worker 冻结、真实冻结 worker 验证和 ZIP 打包，`module-pack-archive.py` 只封装普通文件。摘要放在外部索引，不进入包内自引用。
 
-`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.1.8/`；App 构建写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
+`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.1.9/`；App 构建写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
 
-`scripts/release-artifacts.mjs` 只在本地按版本准备 `dist/releases/app/<App版本>/` 和 `dist/releases/modules/<模块ID>/<模块版本>/`，核对干净提交、App 构建收据、正式模块来源和摘要，并拒绝重复版本目录。已公开的 App `v0.12.0` 与模块 `modules/tower-assistant/v0.1.7` 分别对应独立 Release。当前 0.15.0 / 0.1.8 开发包不是可直接发布的干净产物；提交后需按版本维护中的规则处理 dirty 缓存与重新构建，不能把旧包改来源字段冒充新构建。下载索引为 [downloads.md](downloads.md)，本地提交或暂存不意味着已上传或已可下载。
+`scripts/release-artifacts.mjs` 只在本地按版本准备 `dist/releases/app/<App版本>/` 和 `dist/releases/modules/<模块ID>/<模块版本>/`，核对干净提交、App 构建收据、正式模块来源和摘要，并拒绝重复版本目录。已公开的 App `v0.12.0` 与模块 `modules/tower-assistant/v0.1.7` 分别对应独立 Release。本地 0.15.0 / 0.1.8 开发产物为 dirty 来源，不能直接发布。本轮正式塔防升到 0.1.9，保留旧包和缓存，从干净提交构建 0.15.0 / 0.1.9；不能把旧包改来源字段冒充新构建。完整步骤见[发布手册](releasing.md)。下载索引为 [downloads.md](downloads.md)，本地提交或暂存不意味着已上传或已可下载。
 
 包构建固定 ZIP 元数据与 SOURCE_DATE_EPOCH，并按模块、SDK、worker、锁文件和工具链指纹复用已生成包，保留原来源身份；不承诺跨所有机器逐字节重建。构建事实与运行验证分别记录。
 

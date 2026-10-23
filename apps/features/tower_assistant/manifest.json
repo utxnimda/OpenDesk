@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "tower-assistant",
   "label": "塔防山贼助手",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "hostApi": 1,
   "target": "windows-x64",
   "frontend": "frontend/index.html",
