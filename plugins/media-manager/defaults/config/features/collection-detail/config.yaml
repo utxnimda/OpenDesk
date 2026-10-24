@@ -1,0 +1,6 @@
+# All relative paths resolve from the external workspace, not the source tree.
+version: 1
+paths:
+  filesystem_root: data/features/collection-detail/db
+  resource_roots: []
+  shortcut_root: ""

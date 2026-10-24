@@ -1,0 +1,63 @@
+# Browser Features
+
+Each top-level browser tab is a feature directory.
+
+The application provides four tabs: `catalog-library` for local-first work cards,
+classification aggregation and explicit metadata-source imports; `collection-detail` for work records, shortcut
+indexes and resource-library browsing, and `collection-info` for collection
+status, plus `directory-organizer` for disk-first per-child organizing previews
+and confirmed execution. The replacement organizer does not restore the retired
+`media-directory-organizer` APIs or maintain a separate work database.
+
+The library reuses the collection catalog and editor rather than introducing a
+parallel work store. Each root record remains an independent work. Series are
+typed classification references; changing a classification never moves media,
+merges records, or regenerates shortcuts. Provider search/snapshot requests run
+on the network queue; only confirmed imports use the shared catalog writer.
+Cover previews share this confirmation flow. Downloaded covers are validated
+with Pillow and stored in the workspace as content-addressed local assets; normal
+card/detail rendering never contacts Bangumi. A cover-only update preserves the
+existing subject/episode snapshot and resource bindings.
+
+Within the preserved standalone application, feature modules register through
+`window.JpTvBrowseFeatureRegistry`. This is an internal compatibility API, not an
+OpenDesk plugin API; the host only sees the `nimda-workspace` module contract:
+
+```js
+window.JpTvBrowseFeatureRegistry.register({
+  id: "example",
+  label: "示例功能",
+  tabId: "tab-example",
+  viewId: "example-view",
+  order: 30,
+  init(ctx) {},
+  activate(ctx) {},
+  deactivate(ctx) {},
+  refreshAfterConfig(ctx) {},
+});
+```
+
+The Vue shell starts from `apps/framework/frontend/src/main.js`. Shared
+`appearance.js` manages theme/font preferences and `feature-host.js` manages
+registration, tab switching and lifecycle callbacks. Feature directories own
+their page-specific state and behavior: the collection table controller lives in
+`collection-detail/frontend/table-controller.js`, while its sibling `index.js`
+owns shortcut and resource-library views. Shared modules receive explicit
+callbacks and do not import collection-table state.
+
+Reusable primitives belong to framework-owned `common`, not a sibling feature:
+`apps/framework/frontend/src/common/` and
+`apps/framework/backend/work_catalog_yaml/common/`. Features use
+`window.NimdaCommon` for registration, escaping, preferences and request helpers;
+backend adapters use `common.http.error_response` so handled exceptions retain
+their diagnostic stack in the operation log. Domain rules remain in the feature.
+
+Use `ctx.fetchJson` for API operations and `ctx.setStatus` for visible results /
+validation errors. Both feed the shared operation-details panel. Persistent
+logs live in the external workspace under `data/framework/logs/operations/`.
+HTTP routes and static mounts are assembled in
+`apps/composition/backend/media_manager_app/application.py`.
+
+Tab labels and order come from the workspace app config first:
+`<workspace>/config/framework/app.yaml` → `app.features`.
+The feature module's `label` and `order` are only defaults.

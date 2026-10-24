@@ -1,0 +1,5 @@
+version: 1
+paths:
+  database_path: data/features/collection-info/db/collection-info.yaml
+  history_root: data/features/collection-info/history
+  finish_dir: data/finished

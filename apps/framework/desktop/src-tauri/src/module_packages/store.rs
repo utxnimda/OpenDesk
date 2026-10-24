@@ -8,7 +8,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-pub const HOST_API: u32 = 1;
+pub const HOST_API: u32 = 2;
 const MAX_ZIP: u64 = 128 * 1024 * 1024;
 const MAX_FILE: u64 = 128 * 1024 * 1024;
 const MAX_TOTAL: u64 = 512 * 1024 * 1024;
@@ -31,12 +31,18 @@ pub struct Manifest {
     pub label: String,
     pub version: String,
     pub host_api: u32,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub web_app: bool,
     pub target: String,
     pub frontend: String,
     pub worker: Option<String>,
     pub methods: Vec<String>,
     pub data_schema: u32,
     pub source: Source,
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -210,11 +216,14 @@ impl Manifest {
                 "PACKAGE_MANIFEST_INVALID: identity, label, schema or version is invalid".into(),
             );
         }
-        if self.host_api != HOST_API || self.target != "windows-x64" {
+        if !matches!(self.host_api, 1 | 2) || self.target != "windows-x64" {
             return Err(format!(
                 "PACKAGE_INCOMPATIBLE: package requires hostApi={} target={}; this host supports hostApi={} target=windows-x64",
                 self.host_api, self.target, HOST_API
             ));
+        }
+        if self.web_app != (self.host_api == 2) || (self.web_app && self.worker.is_none()) {
+            return Err("PACKAGE_WEB_APP_INVALID: webApp requires hostApi=2 and a worker; hostApi=1 retains the static module contract".into());
         }
         safe_relative(&self.frontend)?;
         if !self.frontend.starts_with("frontend/") || !self.frontend.ends_with(".html") {
@@ -855,6 +864,44 @@ fn extract_archive(path: &Path, staging: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn web_apps_require_explicit_api_two_and_worker_without_changing_legacy_manifests() {
+        let base = serde_json::json!({"schemaVersion":1,"id":"demo","label":"Demo","version":"1.0.0","hostApi":1,"target":"windows-x64","frontend":"frontend/index.html","worker":null,"methods":[],"dataSchema":1,"source":{"commit":null,"dirty":true}});
+        let legacy: Manifest = serde_json::from_value(base.clone()).unwrap();
+        legacy.validate().unwrap();
+        assert!(!legacy.web_app);
+        assert!(serde_json::to_value(legacy)
+            .unwrap()
+            .get("webApp")
+            .is_none());
+        let mut web = base.clone();
+        web["webApp"] = serde_json::json!(true);
+        assert!(serde_json::from_value::<Manifest>(web.clone())
+            .unwrap()
+            .validate()
+            .is_err());
+        web["hostApi"] = serde_json::json!(2);
+        assert!(serde_json::from_value::<Manifest>(web.clone())
+            .unwrap()
+            .validate()
+            .is_err());
+        web["worker"] = serde_json::json!("worker/module-worker.exe");
+        serde_json::from_value::<Manifest>(web.clone())
+            .unwrap()
+            .validate()
+            .unwrap();
+        web["webApp"] = serde_json::json!(false);
+        assert!(serde_json::from_value::<Manifest>(web.clone())
+            .unwrap()
+            .validate()
+            .is_err());
+        web["webApp"] = serde_json::json!(true);
+        web["methods"] = serde_json::json!(["module.webapp"]);
+        assert!(serde_json::from_value::<Manifest>(web)
+            .unwrap()
+            .validate()
+            .is_err());
+    }
     fn temporary() -> PathBuf {
         let root =
             std::env::temp_dir().join(format!("opendesk-module-test-{}", uuid::Uuid::new_v4()));

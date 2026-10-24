@@ -1,0 +1,568 @@
+[
+  {
+    "path": "/browse",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/browse/catalog",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/browse/default",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/browse/save",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/assets/{filename}",
+    "methods": [
+      "GET",
+      "HEAD"
+    ]
+  },
+  {
+    "path": "/catalog-library/browse",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/characters/materialize/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/characters/materialize/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/characters/merge/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/characters/merge/candidates",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/characters/merge/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/classification-edits/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/classifications",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/catalog-library/classifications",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/detail",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/display-settings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/display-settings/save",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/douban/browser/cancel",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/douban/browser/start",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/douban/browser/step",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/edits/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/edits/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/identities/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/identities/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/browse",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/clear-apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/clear-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/detail",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/edit-apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/edit-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/image-apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/image-candidates",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/image-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/source-apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people-library/source-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/assets/{filename}",
+    "methods": [
+      "GET",
+      "HEAD"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/birthdays/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/birthdays/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/retry",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/selection-target",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/people/wikipedia-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/playback/open",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/playback/save",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/playback/scan",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/playback/select",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/provider/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/provider/binding-update",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/provider/cover-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/provider/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/provider/search",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/provider/sync-apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/provider/sync-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/work-details/clear-apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/catalog-library/work-details/clear-preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/library-status",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/fixes/apply",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/generate",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/generate-files",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/open",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/resolve",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/save",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/link-index/validate",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/press/open",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/resource-libraries/cache",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/collection-detail/resource-libraries/config",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/resource-libraries/node",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/collection-detail/resource-libraries/scan",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-detail/resource-libraries/search",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/collection-detail/work/detail",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-info",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/collection-info",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/collection-records",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/collection-records",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/config",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/config/enum-edits",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/directory-organizer/catalog",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/directory-organizer/choose-directory",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/directory-organizer/completion",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/directory-organizer/execute",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/directory-organizer/preview",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/directory-organizer/scan",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/directory-organizer/shortcuts",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/health",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/operations",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/operations/client-events",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/operations/{operation_id}",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/operations/{operation_id}/log",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/operations/{operation_id}/log/file",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "path": "/operations/{operation_id}/log/open",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "path": "/operations/{operation_id}/log/search",
+    "methods": [
+      "GET"
+    ]
+  }
+]

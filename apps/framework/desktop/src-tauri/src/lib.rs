@@ -1,6 +1,7 @@
 mod companion;
 mod companion_menu;
 mod companion_smoke;
+mod data_location;
 mod diagnostics;
 mod module_packages;
 mod module_smoke;
@@ -31,6 +32,8 @@ struct AppState {
     diagnostics: Arc<Diagnostics>,
     worker: WorkerManager,
     modules: Result<ModuleManager, String>,
+    // Pending cleanup does not grant permission to leave the event loop.
+    exit_requested: AtomicBool,
     exiting: AtomicBool,
     smoke_test: bool,
     module_smoke: bool,
@@ -680,16 +683,47 @@ fn show_main(app: &tauri::AppHandle) {
     }
 }
 
+fn claim_exit_request(exiting: &AtomicBool, requested: &AtomicBool) -> bool {
+    !exiting.load(Ordering::SeqCst)
+        && requested
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+}
+
+fn report_exit_failure(app: &tauri::AppHandle, error: &str) {
+    let state = app.state::<AppState>();
+    state.exiting.store(false, Ordering::SeqCst);
+    state.exit_requested.store(false, Ordering::SeqCst);
+    state
+        .diagnostics
+        .record("error", "host.exit_blocked", error);
+    let _ = app.emit("modules-changed", ());
+    show_main(app);
+    let description = format!(
+        "后台任务尚未确认安全结束，OpenDesk 已保留运行。请检查功能状态，待任务完成后重试退出。\n\n{error}"
+    );
+    tauri::async_runtime::spawn_blocking(move || {
+        rfd::MessageDialog::new()
+            .set_title("OpenDesk 暂未退出")
+            .set_description(description)
+            .set_level(rfd::MessageLevel::Error)
+            .show();
+    });
+}
+
 fn request_exit(app: &tauri::AppHandle) {
     let state = app.state::<AppState>();
-    if state.exiting.swap(true, Ordering::SeqCst) {
+    if !claim_exit_request(&state.exiting, &state.exit_requested) {
         return;
     }
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         let state = app.state::<AppState>();
         if let Ok(manager) = &state.modules {
-            manager.shutdown().await;
+            if let Err(error) = manager.shutdown().await {
+                report_exit_failure(&app, &error);
+                return;
+            }
         }
         match state.worker.stop().await {
             Ok(()) => state
@@ -699,6 +733,7 @@ fn request_exit(app: &tauri::AppHandle) {
                 .diagnostics
                 .record("error", "host.exit_cleanup", &error),
         }
+        state.exiting.store(true, Ordering::SeqCst);
         app.exit(0);
     });
 }
@@ -772,6 +807,20 @@ fn startup_mode(
 mod command_boundary_tests {
     use super::*;
     use tauri::ipc::InvokeBody;
+
+    #[test]
+    fn repeated_exit_requests_cannot_bypass_pending_cleanup_and_failure_allows_retry() {
+        let exiting = AtomicBool::new(false);
+        let requested = AtomicBool::new(false);
+        assert!(claim_exit_request(&exiting, &requested));
+        assert!(!exiting.load(Ordering::SeqCst));
+        assert!(!claim_exit_request(&exiting, &requested));
+        assert!(!exiting.load(Ordering::SeqCst));
+        requested.store(false, Ordering::SeqCst);
+        assert!(claim_exit_request(&exiting, &requested));
+        exiting.store(true, Ordering::SeqCst);
+        assert!(!claim_exit_request(&exiting, &requested));
+    }
 
     #[test]
     fn local_commands_enforce_window_labels_and_exact_argument_keys() {
@@ -1106,13 +1155,11 @@ pub fn run() {
             frontend_ready
         ])
         .setup(move |app| {
-            let data_root = match data_root_override.clone() {
-                Some(path) => {
-                    if !path.is_absolute() {
-                        return Err("OPENDESK_DATA_DIR must be absolute".into());
-                    }
-                    path
-                }
+            let data_root = match data_location::configured_root(
+                data_root_override.clone(),
+                &std::env::current_exe()?,
+            )? {
+                Some(path) => path,
                 None => app.path().app_data_dir()?,
             };
             std::fs::create_dir_all(&data_root)?;
@@ -1137,6 +1184,7 @@ pub fn run() {
                 modules,
                 data_root,
                 diagnostics,
+                exit_requested: AtomicBool::new(false),
                 exiting: AtomicBool::new(false),
                 smoke_test,
                 module_smoke,
@@ -1227,7 +1275,18 @@ pub fn run() {
                     }))
                     .await;
                     let state = app.state::<AppState>();
-                    if !state.exiting.load(Ordering::SeqCst) {
+                    if claim_exit_request(&state.exiting, &state.exit_requested) {
+                        // This state belongs only to this explicit smoke process and its
+                        // isolated data root. Never enumerate or stop unrelated processes.
+                        let cleanup = if let Ok(manager) = &state.modules {
+                            manager.shutdown().await
+                        } else {
+                            Ok(())
+                        };
+                        let report = match &cleanup {
+                            Ok(()) => json!({"status":"failed","error":"Frontend ready timeout"}),
+                            Err(error) => json!({"status":"failed","error":"Frontend ready timeout","cleanupError":error}),
+                        };
                         let _ = std::fs::write(
                             state.data_root.join(if companion_smoke {
                                 "companion-smoke-result.json"
@@ -1236,11 +1295,14 @@ pub fn run() {
                             } else {
                                 "smoke-result.json"
                             }),
-                            r#"{"status":"failed","error":"Frontend ready timeout"}"#,
+                            serde_json::to_vec_pretty(&report).unwrap_or_default(),
                         );
-                        let _ = state.worker.stop().await;
-                        if let Ok(manager) = &state.modules {
-                            manager.shutdown().await;
+                        if let Err(error) = cleanup {
+                            report_exit_failure(&app, &error);
+                            return;
+                        }
+                        if let Err(error) = state.worker.stop().await {
+                            state.diagnostics.record("error", "smoke.exit_cleanup", &error);
                         }
                         state.exiting.store(true, Ordering::SeqCst);
                         app.exit(1);

@@ -44,6 +44,32 @@
   ],
   "releases": [
     {
+      "version": "0.17.0",
+      "date": "2026-10-25",
+      "summary": "支持工程目录内统一管理本地状态，并纳入作品管理工具的独立构建。",
+      "changes": [
+        {
+          "featureId": "core.module-packages",
+          "version": "0.6.0",
+          "type": "changed",
+          "description": "支持可执行文件旁的本地数据目录标记；外部结构的正式插件接入统一构建、来源校验和发布清单，公开产物拒绝携带本地状态。作品管理工具代码归入主仓，保持独立包版本与外部 SVN 数据。"
+        }
+      ]
+    },
+    {
+      "version": "0.16.0",
+      "date": "2026-10-25",
+      "summary": "支持保留原界面的本地 Web 应用页签，并在停用与退出时等待进行中的操作完成。",
+      "changes": [
+        {
+          "featureId": "core.module-packages",
+          "version": "0.5.0",
+          "type": "changed",
+          "description": "新增可选 hostApi 2 本地 Web 应用接入契约，校验回环地址并限定嵌套页面来源；支持模块安全排空后停止、失败恢复后重建页面及退出失败重试。原 hostApi 1 静态页签继续兼容，外部应用与私人数据不进入默认分发。"
+        }
+      ]
+    },
+    {
       "version": "0.15.0",
       "date": "2026-10-23",
       "summary": "新增薄荷奶油界面风格，并升级宠物浮层菜单。",

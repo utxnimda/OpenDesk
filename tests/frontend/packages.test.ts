@@ -3,12 +3,25 @@ import { createSSRApp } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import PackagesPage from '../../apps/framework/frontend/src/components/PackagesPage.vue';
 import { createHostAdapter } from '../../apps/framework/frontend/src/core/host';
-import { canOpenPackage, canSelectPackage, packageKey, safeRepositoryLink, type InstalledModule, type PackageVersion } from '../../apps/framework/frontend/src/core/packages';
+import { canOpenPackage, canSelectPackage, packageKey, packageSandbox, safeRepositoryLink, type InstalledModule, type PackageVersion } from '../../apps/framework/frontend/src/core/packages';
 
 const oldVersion: PackageVersion = { version: '1.0.0', digest: 'old-digest', source: 'bundled', compatible: true, error: null };
 const newVersion: PackageVersion = { version: '1.1.0', digest: 'new-digest', source: 'imported', compatible: true, error: null };
 const module: InstalledModule = { id: 'test-lab', label: '测试', enabled: true, selectedVersion: '1.1.0', selectedDigest: 'new-digest', state: 'ready', error: null, versions: [oldVersion, newVersion] };
 describe('package selection contract', () => {
+  it('grants forms, dialogs and separate popup windows only to verified web-app instances', () => {
+    const staticSandbox = 'allow-scripts allow-same-origin allow-downloads';
+    expect(packageSandbox(null)).toBe(staticSandbox);
+    expect(packageSandbox({})).toBe(staticSandbox);
+    expect(packageSandbox({ webApp: false })).toBe(staticSandbox);
+    expect(packageSandbox({ webApp: true })).toBe(`${staticSandbox} allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox`);
+  });
+  it('remounts a restored web-app origin without remounting on the first open or status changes', () => {
+    const initial = packageKey(module);
+    expect(packageKey({ ...module, uiRevision: 0, state: 'running' })).toBe(initial);
+    expect(packageKey({ ...module, uiRevision: 1 })).not.toBe(initial);
+    expect(packageKey({ ...module, uiRevision: 1, state: 'running' })).toBe(packageKey({ ...module, uiRevision: 1, state: 'ready' }));
+  });
   it('shows the retained failed-load reason alongside the restored current version', async () => {
     const restored = { ...module, selectedVersion: oldVersion.version, selectedDigest: oldVersion.digest, error: null, lastError: 'v1.1.0 UI identity mismatch; restored v1.0.0' };
     const html = await renderToString(createSSRApp(PackagesPage, {

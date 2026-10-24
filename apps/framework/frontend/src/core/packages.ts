@@ -3,6 +3,7 @@ export interface PackageVersion {
   digest: string;
   source: 'bundled' | 'imported';
   compatible: boolean;
+  webApp?: boolean;
   error: string | null;
   sourceCommit?: string | null;
   sourceRepository?: string | null;
@@ -17,6 +18,7 @@ export interface InstalledModule {
   state: string;
   error: string | null;
   lastError?: string | null;
+  uiRevision?: number;
   versions: PackageVersion[];
 }
 export interface PackageImport {
@@ -30,7 +32,7 @@ export interface PackageImport {
   digest: string | null;
   createdAt: number;
 }
-export interface PackageCatalog { hostApi: 1; modules: InstalledModule[]; imports: PackageImport[] }
+export interface PackageCatalog { hostApi: 1 | 2; modules: InstalledModule[]; imports: PackageImport[] }
 export interface PackageInstance {
   moduleId: string;
   version: string;
@@ -38,6 +40,7 @@ export interface PackageInstance {
   generation: string;
   url: string;
   token: string;
+  webApp?: boolean;
 }
 export const EMPTY_CATALOG: PackageCatalog = { hostApi: 1, modules: [], imports: [] };
 export function selectedPackage(module: InstalledModule): PackageVersion | undefined {
@@ -47,7 +50,13 @@ export function canOpenPackage(module: InstalledModule): boolean {
   return module.enabled && selectedPackage(module)?.compatible === true;
 }
 export function packageKey(module: InstalledModule): string {
-  return `${module.id}:${module.selectedVersion ?? ''}:${module.selectedDigest ?? ''}`;
+  return `${module.id}:${module.selectedVersion ?? ''}:${module.selectedDigest ?? ''}:${module.uiRevision ?? 0}`;
+}
+export function packageSandbox(instance: Pick<PackageInstance, 'webApp'> | null): string {
+  const base = 'allow-scripts allow-same-origin allow-downloads';
+  return instance?.webApp === true
+    ? `${base} allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox`
+    : base;
 }
 export function canSelectPackage(module: InstalledModule, version: PackageVersion): boolean {
   return version.compatible && !(module.selectedVersion === version.version && module.selectedDigest === version.digest);

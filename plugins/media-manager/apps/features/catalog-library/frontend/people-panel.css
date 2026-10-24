@@ -1,0 +1,55 @@
+.library-people-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 18px; }
+.library-people-toolbar select { max-width: 100%; }
+.library-cast-group { margin: 0 0 24px; min-width: 0; }
+.library-cast-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr)); gap: 12px; min-width: 0; }
+.library-cast-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.library-cast-character { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.library-cast-actors { line-height: 1.7; font-size: 12px; overflow-wrap: anywhere; }
+.library-cast-actors > .library-person-name { font-weight: 400; }
+.library-actor-role { color: var(--muted); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.library-people-source { max-width: 100%; }
+.library-person-portrait { width: 64px; aspect-ratio: 4 / 5; display: grid; place-items: center; overflow: hidden; border-radius: 5px; background: var(--panel); border: 1px solid var(--border); }
+.library-person-portrait img { width: 100%; height: 100%; object-fit: cover; grid-area: 1 / 1; }
+.library-person-photo-fallback { grid-area: 1 / 1; font-size: 11px; color: var(--muted); text-align: center; }
+.library-person-portrait [hidden], .library-staff-entry[hidden] { display: none; }
+.library-person-name, .library-person-expand { padding: 0; border: 0; border-radius: 2px; background: none; font: inherit; text-align: left; text-decoration: none; color: var(--accent); cursor: pointer; overflow-wrap: anywhere; }
+.library-person-name { font-weight: 600; }
+.library-person-name:hover, .library-person-expand:hover { color: var(--text); text-decoration: none; }
+.library-person-name:focus-visible, .library-person-expand:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.library-person-separator { color: var(--muted); }
+.library-person-expand { display: inline-block; margin-left: 10px; font-size: 12px; white-space: nowrap; }
+.library-person-profile { padding: 10px 0 4px; min-width: 0; font-size: 13px; }
+.library-person-summary { white-space: pre-wrap; line-height: 1.7; overflow-wrap: anywhere; margin: 6px 0; }
+.library-person-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin: 10px 0; }
+.library-person-facts dt { color: var(--muted); }
+.library-person-facts dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.library-staff-list { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: stretch; column-gap: 16px; min-width: 0; margin-bottom: 20px; font-size: 13px; line-height: 1.8; }
+.library-staff-row { display: contents; }
+.library-staff-row > .library-staff-role, .library-staff-row > .library-staff-names { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.library-staff-role { color: var(--muted); white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.library-staff-names { min-width: 0; overflow-wrap: anywhere; }
+.library-staff-names .library-person-name { font-weight: 400; }
+.library-person-dialog { box-sizing: border-box; width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; padding: 22px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 10px; font: 13px/1.6 var(--app-font-family, sans-serif); }
+.library-person-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.library-person-dialog :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.library-person-dialog-header { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.library-person-dialog-name { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
+.library-person-dialog-header > .library-button { align-self: start; }
+.library-people-preview { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+.library-people-preview > .library-people-toolbar:last-child { margin: 18px 0 0; }
+.library-person-differences { margin: 10px 0 16px; font-size: 13px; }
+.library-person-differences summary { cursor: pointer; }
+.library-source-people-preview { margin: 16px 0; }
+.library-source-people-preview > summary { cursor: pointer; color: var(--accent); font-size: 13px; }
+.library-source-people-preview > .library-people-preview { margin: 12px 0 0; }
+.library-source-people-preview > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.library-people-changes { padding-left: 22px; line-height: 1.8; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .library-cast-list { grid-template-columns: minmax(0, 1fr); }
+  .library-staff-list { column-gap: 8px; }
+  .library-person-dialog { padding: 16px; }
+  .library-person-dialog-header { gap: 10px; }
+  .library-person-dialog-name { font-size: 17px; }
+  .library-person-facts { grid-template-columns: minmax(0, 1fr); gap: 3px; }
+  .library-person-facts dd { margin-bottom: 8px; }
+}

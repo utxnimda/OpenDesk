@@ -351,7 +351,7 @@ async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, Stri
             json!({"text":"new module"}),
         )
         .await?;
-    manager.shutdown().await;
+    manager.shutdown().await?;
     let bundled_root = if cfg!(debug_assertions) {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../../dist/bundled-modules")
     } else {
@@ -371,7 +371,7 @@ async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, Stri
     {
         return Err("Selections did not survive manager restart".into());
     }
-    restarted.shutdown().await;
+    restarted.shutdown().await?;
     Ok(
         json!({"status":"passed","appVersion":env!("CARGO_PKG_VERSION"),"initialBundleOnlyTower":true,"baselineImportedFromFixture":true,"baselineFixtureSha256":original_digest,"realIframeVersions":[baseline_version,"1.1.0",baseline_version],"realIframeWorkerRoundTrip":true,"baseline":first,"updated":second,"reverted":third,"recoveredAfterUiFailure":recovered_reply,"newModule":extra_reply,"incompatibleOriginalRetained":true,"staleSessionRejected":true,"disabledExecutionRejected":true,"independentModuleUnchanged":true,"selectionPersisted":true}),
     )
@@ -379,15 +379,21 @@ async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, Stri
 
 pub async fn run(app: tauri::AppHandle) {
     let fixtures = std::env::var_os("OPENDESK_MODULE_FIXTURES").map(PathBuf::from);
-    let result = match fixtures {
+    let mut result = match fixtures {
         Some(path) if path.is_absolute() => exercise(&app, &path).await,
         _ => Err("OPENDESK_MODULE_FIXTURES must name an absolute test fixture directory".into()),
     };
     let state = app.state::<AppState>();
-    if let Ok(manager) = &state.modules {
-        manager.shutdown().await;
+    let cleanup = if let Ok(manager) = &state.modules {
+        manager.shutdown().await
+    } else {
+        Ok(())
+    };
+    if let Err(error) = &cleanup {
+        result = Err(format!("Module smoke cleanup was not confirmed: {error}"));
+    } else if let Err(error) = state.worker.stop().await {
+        result = Err(format!("Module smoke host worker cleanup failed: {error}"));
     }
-    let _ = state.worker.stop().await;
     let report = match &result {
         Ok(value) => value.clone(),
         Err(error) => json!({"status":"failed","error":error}),
@@ -401,6 +407,10 @@ pub async fn run(app: tauri::AppHandle) {
         "modules.smoke",
         &report.to_string(),
     );
+    if let Err(error) = cleanup {
+        super::report_exit_failure(&app, &error);
+        return;
+    }
     state.exiting.store(true, Ordering::SeqCst);
     app.exit(if result.is_ok() && saved.is_ok() {
         0

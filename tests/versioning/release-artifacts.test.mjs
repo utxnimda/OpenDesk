@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
-import { inventory, assertInventory } from '../../scripts/release-artifacts.mjs';
+import { inventory, assertInventory, assertPortableDataAbsent } from '../../scripts/release-artifacts.mjs';
 
 function fixture(action) {
   const parent = realpathSync(tmpdir());
@@ -39,4 +39,15 @@ test('release receipt rejects a missing runtime file', () => fixture((directory)
   const receipt = inventory(directory);
   rmSync(runtime);
   assert.throws(() => assertInventory(inventory(directory), receipt), /inventory changed/);
+}));
+
+test('release staging refuses a local portable marker or user data without removing it', () => fixture((directory) => {
+  assert.doesNotThrow(() => assertPortableDataAbsent(directory));
+  for (const name of ['opendesk.portable.json', 'runtime', 'data']) {
+    const path = join(directory, name);
+    writeFileSync(path, 'local-only');
+    assert.throws(() => assertPortableDataAbsent(directory), /cannot be published/);
+    assert.equal(inventory(directory)[0].file, name);
+    rmSync(path);
+  }
 }));

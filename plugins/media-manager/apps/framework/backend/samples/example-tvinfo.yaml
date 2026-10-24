@@ -1,0 +1,15 @@
+# 全部条目和组别均为虚构的格式示例，不代表实际收藏。
+# 平面目录范例（files + content）；结构化 TV schema 见 example-jp-tv-2015.yaml
+# CLI: python -m work_catalog_yaml materialize -i ...
+version: 1
+metadata:
+  title: JP TV 数据片段示例
+root: Data
+files:
+  - path: Animation/Japan/TV/[JP][TVInfo][2020].txt
+    content: |
+      [20200101][20200301][-BDRip][DEMO][-BDRip][DEMB]               |架空の山道
+      [20200101][20200302][--720p][----][-BDRip][----]               |架空のアトリエ
+      [20200103][20200303][--720p][DEMC][-BDRip][DEMC][-BDRip][DEMB] | Example Music Club
+                          [-BDRip][DEMD]
+      [20200104][20200304]                                           |Example Journey

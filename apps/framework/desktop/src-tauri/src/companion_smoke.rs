@@ -50,7 +50,7 @@ fn menu_is_closed(app: &tauri::AppHandle) -> Result<bool, String> {
 
 pub async fn run(app: tauri::AppHandle) {
     let state = app.state::<AppState>();
-    let result = async {
+    let mut result = async {
         let settings = state.settings.load()?;
         if !settings.personalization.pet.enabled
             || settings.personalization.pet.mode != PetMode::Desktop
@@ -222,6 +222,20 @@ pub async fn run(app: tauri::AppHandle) {
         }))
     }
     .await;
+    let cleanup = if let Ok(manager) = &state.modules {
+        manager.shutdown().await
+    } else {
+        Ok(())
+    };
+    if let Err(error) = &cleanup {
+        result = Err(format!(
+            "Companion smoke module cleanup was not confirmed: {error}"
+        ));
+    } else if let Err(error) = state.worker.stop().await {
+        result = Err(format!(
+            "Companion smoke host worker cleanup failed: {error}"
+        ));
+    }
     let report = match &result {
         Ok(value) => value.clone(),
         Err(error) => json!({"status":"failed","error":error}),
@@ -235,10 +249,10 @@ pub async fn run(app: tauri::AppHandle) {
             .diagnostics
             .record("error", "companion.smoke_report", error);
     }
-    if let Ok(manager) = &state.modules {
-        manager.shutdown().await;
+    if let Err(error) = cleanup {
+        super::report_exit_failure(&app, &error);
+        return;
     }
-    let _ = state.worker.stop().await;
     state.exiting.store(true, Ordering::SeqCst);
     app.exit(if result.is_ok() && written.is_ok() {
         0

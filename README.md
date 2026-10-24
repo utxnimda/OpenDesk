@@ -10,9 +10,24 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 ## 正式页签与本地开发测试
 
-当前公开 App 0.15.0 只随附「塔防山贼助手 0.1.9」，该页签已[独立发布](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)，支持薄荷奶油风格。此前 App 0.12.0 / 塔防 0.1.7 与本地开发 0.1.8 保留。`config/distribution.json` 的 `bundledModules` 与 `publicModules` 仍只列出 `tower-assistant`。模块测试台 1.0.7 和 fixture 源码保留用于开发验证，其二进制包没有进入 App 或独立 Release。本机导入的部署工作台及其他私有模块的源码、配置、运行数据和包均未进入本次公开交付。旧公开产物保持不可变，新版不能覆盖其摘要。
+当前公开 App 0.15.0 只随附「塔防山贼助手 0.1.9」，该页签已[独立发布](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)，支持薄荷奶油风格。旧公开产物保持不可变。本地开发分发清单继续只随附 `tower-assistant`；允许独立发布的源码模块另增加 `nimda-workspace`（作品管理器）。模块测试台和 fixture 仅用于开发验证，部署工作台及其他私有模块不在公开清单内。
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
+
+本地开发版 **0.17.0** 延续 0.16.0 的 [本地 Web 应用接入](docs/module-web-apps.md)，并支持工程内统一管理状态、外部结构插件的统一构建。作品管理器 **0.3.1** 已纳入本仓库源码，保留原应用界面、嵌入与完整弹出窗口；真实数据在 Git 忽略的独立 SVN 工作副本中。宿主在停用、切换版本和退出前等待已开始的操作结束，旧 `hostApi: 1` 继续兼容。这两个开发版本尚未公开发布，实际验证见[验证记录](docs/verification.md)。
+
+## 作品管理器与统一工程
+
+原 Nimda 的当前代码位于 [`plugins/media-manager`](plugins/media-manager/README.md)，稳定模块 ID 继续使用 `nimda-workspace`，避免改名丢失旧设置。代码、测试、空配置模板和发布元数据由 OpenDesk Git 管理；SVN 数据在 OpenDesc 下按插件分目录，作品管理器使用 OpenDesc/media-manager；`workspaces/media-manager` 的真实资料与配置由独立 SVN 工作副本管理，凭据、日志和缓存不提交。
+
+本机工程入口为 `E:\OpenDesk`。 双击根目录 `OpenDesk.lnk` 启动工具台，`plugins/media-manager/作品管理器.lnk` 启动独立窗口；两者连接同一个工作区，单实例锁避免同时写入。宿主放在 `run/OpenDesk`，其 `opendesk.portable.json` 指向 `../../runtime`；导入的插件运行包、版本选择和设置集中到 `runtime`。公开产物仍输出到 `dist`，不能含此本机标记、运行状态或私人资料。WebView2 缓存沿用系统目录。目录与迁移边界见[统一工程说明](docs/media-manager.md)。
+
+```powershell
+# 在 OpenDesk 根目录构建独立插件；依赖初始化见插件 README
+npm run build:module -- media-manager
+# 原应用的独立启动入口，默认连接工程下的 SVN 工作区
+& ./plugins/media-manager/scripts/run-desktop.ps1
+```
 
 模块测试台的本地测试包由 `npm run build:module-fixtures` 生成，不属于公开下载清单：
 
@@ -36,7 +51,7 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 |---|---|---|---|
 | `core.workbench` | 七种界面风格，新增薄荷奶油；独立配色、分类设置与外观保存 | 0.8.0 | 0.15.0 |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
-| `core.module-packages` | 显式分发范围、App随附清单与正式页签按ID/版本独立交付 | 0.4.0 | 0.12.0 |
+| `core.module-packages` | 独立页签分发、Web 应用接入、工程内运行目录 | 0.6.0 | 0.17.0 |
 | `core.personalization` | 已移除：背景图片、材质与氛围调节；保留历史 ID | 0.2.0 | 0.9.0 |
 | `core.companion` | 双模式宠物、共享菜单面板、受控独立菜单窗口与即时角色选择 | 0.6.0 | 0.15.0 |
 | `tower.save-reader` | 存档与仓库读取 | 0.1.0 | 0.2.0 |
@@ -223,7 +238,7 @@ npm run release:stage -- module tower-assistant
 
 ## 配置与运行数据
 
-默认数据根由应用标识 `net.nimda.opendesk` 对应的 Tauri `app_data_dir` 决定，运行诊断页显示实际路径。OpenDesk 不自动读取、迁移或清理旧应用的数据和包选择。可用绝对路径环境变量 `OPENDESK_DATA_DIR` 显式覆盖，适合隔离测试。相对路径会拒绝；原应用的环境变量不作为兼容别名。
+数据根优先级为绝对路径环境变量 `OPENDESK_DATA_DIR`、EXE 旁 `opendesk.portable.json` 的相对 `dataDirectory`、默认 Tauri `app_data_dir`。标记格式为 `{"schemaVersion":1,"dataDirectory":"../../runtime"}`；无效配置拒绝启动，诊断页显示实际路径。应用不会自动扫描、迁移或清理旧数据；本次迁移是用户明确授权的一次性操作。
 
 该覆盖值控制本框架当前使用的设置、导入模块、诊断日志和 smoke 结果的数据根；调用方仍需选择独立测试目录。旧壁纸文件不再读取或删除。WebView2 缓存仍使用 Tauri 默认 `app_local_data_dir`，不宣称完全隔离所有运行缓存。
 
@@ -270,4 +285,4 @@ docs/                             工程规范、架构和验证
 
 仅补充文档、没有功能行为变化时，使用 `docs:` 提交，保留现有应用和功能版本，不重复创建版本标签。CI 当前覆盖版本、类型、架构边界、自动化测试及前端构建；桌面与安装验收另见验证记录。
 
-NimdaClaw 只提供分层参考，dyd2 只提供组件化界面参考，没有迁移两者的业务代码。具体已执行检查和未验证项目见 [验证记录](docs/verification.md)，不要用一次编译成功代替桌面或安装验收。
+作品管理器按本次授权迁入，旧 Nimda Git 历史不合并，私人数据不随源码发布。具体已执行检查和未验证项目见 [验证记录](docs/verification.md)，不要用一次编译成功代替桌面或安装验收。

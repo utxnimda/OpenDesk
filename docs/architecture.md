@@ -36,7 +36,7 @@ flowchart TB
 
 `config/version.json` 保留宿主/core 与已有发布历史；包内 `manifest.json` 描述独立模块版本；App 索引说明本次默认随附内容；本机选择及成功激活状态说明用户实际使用版本。旧中央业务历史不能冒充当前包版本。
 
-正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定，当前只含 `tower-assistant`。当前公开的 0.15.0 App 随附已独立发布的塔防助手 0.1.9；此前 0.12.0 App 随附 0.1.7 的事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
+正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定：默认随附仍只有 `tower-assistant`，允许独立发布的源码另含 `nimda-workspace`（作品管理器，见 [统一工程说明](media-manager.md)）。当前公开的 0.15.0 App 随附已独立发布的塔防助手 0.1.9；此前 0.12.0 App 随附 0.1.7 的事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
 
 模块前端由自己的 `frontend/index.html` 启动，使用相对路径资源。通过 `apps/framework/module-sdk` 的 `createModuleBridge()` 完成身份握手后访问 `bridge.host`。页面不直接导入 Tauri API，宿主核对当前包及其 manifest 业务方法。旧页面的消息不能被当作新版本结果。
 

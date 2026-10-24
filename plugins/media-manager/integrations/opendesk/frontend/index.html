@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>作品管理器</title>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="toolbar">
+        <strong>作品管理器</strong>
+        <nav aria-label="展示模式">
+          <button id="embedded" type="button" disabled>嵌入页签</button>
+          <button id="popup" type="button" disabled>弹出窗口</button>
+        </nav>
+        <span id="state" role="status">正在连接…</span>
+        <button id="retry" type="button" hidden>重试连接</button>
+      </header>
+      <p id="error" class="error" role="alert" hidden></p>
+      <section id="setup" class="setup" hidden>
+        <h1>连接你的 作品管理器 工作区</h1>
+        <p>选择原工程中包含 config 和 data 的目录，继续使用现有资料。</p>
+        <form id="configuration">
+          <label for="workspace">工作区路径</label>
+          <div class="path-row"><input id="workspace" type="text" autocomplete="off" spellcheck="false" placeholder="粘贴 作品管理器 工作区的完整路径" required /><button id="configure" type="submit">连接工作区</button></div>
+        </form>
+      </section>
+      <section id="detached" class="detached" hidden>
+        <h1>作品管理器 已在独立窗口中打开</h1>
+        <p>关闭独立窗口即可回到此页签。两个视图共用资料，各自保留未保存的输入。</p>
+        <button id="return" type="button">返回嵌入模式</button>
+      </section>
+      <section id="viewport" class="viewport" aria-label="作品管理器 工作区"></section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

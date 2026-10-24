@@ -1,0 +1,56 @@
+.chapter-player { min-width: 0; }
+.chapter-player-toolbar { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chapter-player-current-resource { flex: 1 1 140px; min-width: 0; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chapter-player-list { list-style: none; margin: 0; padding: 0; }
+.chapter-player-row { display: grid; grid-template-columns: 66px minmax(0, 1fr) 88px 54px 42px; align-items: center; gap: 9px; min-width: 0; padding: 9px 6px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.chapter-player-list > .chapter-player-row:nth-child(odd) { background-color: transparent; }
+.chapter-player-list > .chapter-player-row:nth-child(even) { background-color: color-mix(in srgb, var(--text) 4%, var(--bg)); }
+.chapter-player.has-continuous-numbering .chapter-player-row { grid-template-columns: 110px minmax(0, 1fr) 88px 54px 42px; }
+.chapter-player-head { padding: 6px; color: var(--muted); font-size: 11px; font-weight: 500; }
+.chapter-player-head > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chapter-player-episode { display: flex; align-items: center; justify-content: space-between; gap: 5px; min-width: 0; }
+.chapter-player-number, .chapter-player-title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.chapter-player-number, .chapter-player-date, .chapter-player-duration { color: var(--muted); font-variant-numeric: tabular-nums; }
+.chapter-player-date, .chapter-player-duration { white-space: nowrap; }
+.chapter-player .chapter-player-play, .chapter-player .chapter-player-setting { flex-shrink: 0; --ui-control-height: 28px; --ui-control-padding: 3px 6px; --ui-control-font-size: 11px; }
+.chapter-player .chapter-player-play:disabled, .chapter-player .chapter-player-play:disabled:hover { color: var(--muted); background: transparent; border-color: transparent; opacity: .45; cursor: not-allowed; }
+.chapter-player-duration { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.chapter-player-empty { padding: 30px 0; color: var(--muted); text-align: center; }
+.chapter-player-dialog { width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 48px); box-sizing: border-box; padding: 20px; color: var(--text); background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+.chapter-player-dialog::backdrop { background: rgb(0 0 0 / 42%); }
+.chapter-player-match-form { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.chapter-player-match-form h2 { margin: 0; font-size: 16px; }
+.chapter-player-match-field { display: flex; min-width: 0; flex-direction: column; gap: 6px; font-size: 12px; }
+.chapter-player-match-field input, .chapter-player-match-field select { box-sizing: border-box; width: 100%; min-width: 0; }
+.chapter-player-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.chapter-player-dialog :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chapter-player-validation { margin: 0; color: var(--danger, var(--accent)); font-size: 12px; }
+.chapter-player-dialog [hidden] { display: none !important; }
+.chapter-batch-dialog { width: min(1040px, calc(100vw - 32px)); }
+.chapter-batch-form { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.chapter-batch-form h2 { margin: 0; font-size: 16px; }
+.chapter-batch-pickers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+.chapter-batch-picker, .chapter-batch-content { min-width: 0; }
+.chapter-batch-picker-heading, .chapter-batch-pager { display: flex; align-items: center; gap: 6px; }
+.chapter-batch-picker-heading h3 { flex: 1; margin: 0; font-size: 13px; }
+.chapter-batch-pager { justify-content: flex-end; margin: 8px 0; }
+.chapter-batch-options { display: flex; flex-direction: column; }
+.chapter-batch-option { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 12px; cursor: pointer; }
+.chapter-batch-option input { flex: 0 0 auto; width: 15px; height: 15px; }
+.chapter-batch-option-name, .chapter-batch-pair-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chapter-batch-selection-summary { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+.chapter-batch-pair { display: grid; grid-template-columns: 22px minmax(0, 1fr) 16px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 48px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.chapter-batch-pair-cell, .chapter-batch-order { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.chapter-batch-pair-text { flex: 1; min-width: 0; }
+.chapter-batch-pair-name { display: block; }
+.chapter-batch-existing { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chapter-batch-pair-number, .chapter-batch-pair-arrow { color: var(--muted); }
+.chapter-batch-order { flex-shrink: 0; }
+.chapter-batch-dialog .library-button { --ui-control-height: 28px; --ui-control-padding: 3px 8px; --ui-control-font-size: 12px; }
+.chapter-batch-order .library-button { --ui-control-padding: 2px 6px; }
+.chapter-batch-dialog .chapter-player-dialog-actions { flex-wrap: wrap; }
+@media (max-width: 640px) { .chapter-batch-pickers { grid-template-columns: minmax(0, 1fr); gap: 14px; } .chapter-batch-pair { grid-template-columns: 20px minmax(0, 1fr); } .chapter-batch-pair-arrow { display: none; } .chapter-batch-pair-cell:last-child { grid-column: 2; padding-bottom: 8px; } }
+@media (max-width: 920px) { .chapter-player-row { grid-template-columns: 62px minmax(0, 1fr) 78px 44px 40px; gap: 6px; } }
+@media (max-width: 580px) { .chapter-player-row { grid-template-columns: 54px minmax(0, 1fr) 68px 38px 38px; gap: 4px; font-size: 11px; } .chapter-player-dialog { padding: 16px; } }
+@media (max-width: 920px) { .chapter-player.has-continuous-numbering .chapter-player-row { grid-template-columns: 104px minmax(0, 1fr) 78px 44px 40px; } }
+@media (max-width: 580px) { .chapter-player.has-continuous-numbering .chapter-player-row { grid-template-columns: 98px minmax(0, 1fr) 68px 38px 38px; } }

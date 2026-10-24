@@ -1,0 +1,67 @@
+.library-people-selection { display: grid; gap: 10px; min-width: 0; }
+.library-people-retry { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.library-people-retry-heading { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.library-people-retry-heading h4 { margin: 0 auto 0 0; }
+.library-people-retry-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding-top: 8px; border-top: 1px solid var(--border); }
+.library-people-retry-row > div { min-width: 0; overflow-wrap: anywhere; }
+.library-people-retry-row p { margin: 4px 0; }
+.library-people-group-cards { display: grid; gap: 10px; min-width: 0; }
+.library-people-manual-group > h4 { margin: 2px 0 8px; }
+.library-people-auto-group > summary { cursor: pointer; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted, var(--text)); }
+.library-people-auto-group[open] > summary { margin-bottom: 10px; }
+.library-people-manual-group[hidden], .library-people-auto-group[hidden] { display: none; }
+.library-person-merge-state { margin-left: auto; text-align: right; font-size: 12px; }
+.library-person-relation-state { margin-left: auto; font-size: 12px; color: var(--accent); }
+.library-person-selection { padding: 12px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.library-person-selection-head { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
+.library-person-selection-head::-webkit-details-marker { display: none; }
+.library-person-selection-head::before { content: "▸"; flex: 0 0 auto; color: var(--text-muted, var(--text)); }
+.library-person-selection[open] > .library-person-selection-head::before { transform: rotate(90deg); }
+.library-person-selection-identity { min-width: 0; overflow-wrap: anywhere; }
+.library-person-selection-state { margin-left: auto; flex: 0 1 auto; min-width: 0; max-width: 60%; overflow-wrap: anywhere; text-align: right; font-size: 12px; }
+.library-person-selection-head:focus-visible, .library-person-auto-fields > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+.library-person-selection-body { margin-top: 10px; }
+.library-person-selection:not([open]) > .library-person-selection-body { display: none; }
+.library-person-selection-metadata p { margin: 4px 0; }
+.library-person-selection-controls { margin-top: 8px; }
+.library-person-selection-head strong { margin-right: 10px; }
+.library-person-localized-names dd, .library-person-localized-summary { min-width: 0; overflow-wrap: anywhere; }
+.library-person-localized-summary h3 { margin: 12px 0 4px; font-weight: 600; }
+.library-person-localized-summary .library-person-summary { margin-top: 0; white-space: pre-wrap; }
+.person-library-language-fields { grid-column: 1 / -1; min-width: 0; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.person-library-language-fields > summary { cursor: pointer; font-weight: 600; }
+.person-library-language-fields[open] > summary { margin-bottom: 8px; }
+.person-library-language-fields > .person-library-field { margin-top: 8px; }
+.library-person-selection-head p { margin: 4px 0; }
+.library-person-selection-controls { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
+.library-person-selection-controls select, .library-person-selection-controls input { width: 220px; max-width: 100%; min-width: 0; }
+.library-person-selection-fields { display: grid; gap: 8px; }
+.library-person-auto-fields { min-width: 0; border-top: 1px solid var(--border); padding-top: 8px; }
+.library-person-auto-fields > summary { cursor: pointer; color: var(--text-muted, var(--text)); padding: 5px 0; }
+.library-person-auto-fields:not([open]) > div { display: none; }
+.library-person-selection-details[hidden] { display: none; }
+.library-person-selection-field { border-top: 1px solid var(--border); padding-top: 8px; min-width: 0; }
+.library-person-selection-check { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.library-person-selection-check input { flex: 0 0 auto; }
+.library-person-selection-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 6px 0; }
+.library-person-selection-values > div { min-width: 0; }
+.library-person-selection-values pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: none; overflow: visible; margin: 4px 0; }
+.library-person-selection-editor { margin-top: 8px; }
+.library-person-selection-editor[hidden] { display: none; }
+.library-person-selection-editor input, .library-person-selection-editor textarea { width: 100%; box-sizing: border-box; }
+.library-person-selection-editor textarea { min-height: 80px; resize: vertical; }
+.library-person-selection-error { color: var(--danger, #b42332); margin: 4px 0; }
+.library-person-selection-relations { margin-top: 8px; }
+.library-person-selection-relations h4 { margin: 8px 0; font-size: inherit; }
+.library-wikipedia-people-form { margin: 8px 0 14px; }
+.library-wikipedia-people-form summary { cursor: pointer; }
+.library-wikipedia-people-row { display: grid; grid-template-columns: minmax(160px, 2fr) minmax(80px, 1fr) minmax(100px, 1fr) auto; align-items: end; gap: 8px; margin: 8px 0; }
+.library-wikipedia-people-row input { width: 100%; min-width: 0; box-sizing: border-box; }
+@media (max-width: 680px) {
+  .library-person-selection-state { flex-shrink: 1; text-align: right; }
+  .library-people-retry-row { grid-template-columns: minmax(0, 1fr); }
+  .library-person-selection-values { grid-template-columns: 1fr; }
+  .library-person-selection-controls { width: 100%; }
+  .library-person-selection-controls select, .library-person-selection-controls input { flex: 1 1 160px; }
+  .library-wikipedia-people-row { grid-template-columns: minmax(0, 1fr); }
+}

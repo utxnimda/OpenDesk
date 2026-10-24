@@ -1,0 +1,21 @@
+/* Collection status uses shared controls; deletion remains visually explicit. */
+body.nimda-ui .collection-record-delete {
+  min-height: var(--ui-control-height, 30px);
+  padding: var(--ui-control-padding, 4px 9px);
+  border: 1px solid transparent;
+  border-radius: var(--ui-radius, 5px);
+  background: transparent;
+  color: var(--status-err);
+  font: inherit;
+  font-size: var(--ui-control-font-size, 13px);
+  cursor: pointer;
+}
+
+body.nimda-ui .collection-record-delete:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--status-err) 9%, transparent);
+}
+
+body.nimda-ui .collection-record-delete:focus-visible {
+  outline: 2px solid var(--status-err);
+  outline-offset: 2px;
+}

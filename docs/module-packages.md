@@ -2,6 +2,8 @@
 
 目标：App 包含宿主与默认页签包；用户可导入新页签/更新；不兼容时保留原包和错误；同页签多版本并存并选择。范围不包含市场、远程自动更新或安全沙箱。
 
+0.16.0 开发版新增可选 `hostApi: 2`，为已有 HTTP 服务的完整应用提供受控嵌套页面及安全停用协议，详见[本地 Web 应用接入](module-web-apps.md)。本文的静态模块示例继续使用 `hostApi: 1`，原包无需升级。
+
 ## 包格式
 
 .ndpkg 是真实 ZIP，根为 manifest.json，只写普通文件，不写显式目录 entry，不允许链接、穿越或大小写冲突：
@@ -74,7 +76,7 @@ SDK 保留 0.8.0 引入的可选 `surfaceEffects` 以兼容已有包。当前宿
 
 ## 分发范围与构建
 
-`config/distribution.json` 是正式分发范围的权威配置：`bundledModules` 指定 App 随附页签，`publicModules` 指定可独立公开的页签；前者必须是后者的子集。当前两项仅含 `tower-assistant`。构建定义中的 `test-lab` 标为 `testFixture`，禁止进入这两个列表。源码开发测试归属与二进制分发范围分别管理：测试台源码保留，但产物不上传。
+`config/distribution.json` 是正式分发范围的权威配置：`bundledModules` 指定 App 随附页签，`publicModules` 指定可独立公开的页签；前者必须是后者的子集。当前默认随附仅含 `tower-assistant`，可独立公开清单另含作品管理器 `nimda-workspace`。构建定义中的 `test-lab` 标为 `testFixture`，禁止进入这两个列表。源码开发测试归属与二进制分发范围分别管理：测试台源码保留，但产物不上传。
 
 先按 README 配置 Python venv 和锁定依赖；以下命令只构建本地文件，不提交、打标签或上传：
 

@@ -1,0 +1,160 @@
+/* Shared interaction vocabulary. Feature styles own layout, not button themes.
+ * All action buttons have a quiet outline; selection uses accent text + border.
+ * Dense cells, tree hit targets and whole-card buttons keep feature geometry.
+ * Use aria-pressed / aria-selected / aria-current for persistent selection;
+ * data-filter-active marks applied filters, never unsubmitted input drafts.
+ * Features can override --ui-control-* for compact rows without new skins.
+ * [data-ui-custom] opts a structural control out of shared visual geometry. */
+:root {
+  --ui-control-height: 30px;
+  --ui-control-padding: 4px 9px;
+  --ui-control-font-size: 13px;
+  --ui-radius: 5px;
+  --ui-panel-radius: 8px;
+  --ui-action-border: color-mix(in srgb, var(--muted) 40%, var(--panel));
+  --ui-active-border: var(--accent);
+  --ui-active-bg: color-mix(in srgb, var(--accent) 6%, var(--panel));
+  --ui-hover-bg: color-mix(in srgb, var(--accent) 8%, var(--panel));
+  --ui-focus-ring: var(--accent);
+  --browse-btn-py: 4px;
+  --browse-btn-px: 9px;
+  --browse-btn-fs: var(--ui-control-font-size);
+  --browse-btn-min-h: var(--ui-control-height);
+  --browse-btn-radius: var(--ui-radius);
+  --border-color: var(--border);
+  --surface-color: var(--panel);
+  --surface-muted: var(--thead-bg);
+  --surface-hover: var(--ui-hover-bg);
+  --text-color: var(--text);
+  --text-secondary: var(--muted);
+}
+
+body.nimda-ui :is(button, input, select, textarea):not(:where([data-ui-custom], .organizer-json-editor)) { font-family: var(--app-font-family); }
+body.nimda-ui button:not(:where(
+  [data-ui-custom], table.sheet *, .library-card-link, .library-person-link, .organizer-child-name,
+  .library-person-name, .library-person-expand, .library-character-name, .people-name-button,
+  .nimda-directory-toggle, .nimda-directory-select, .nimda-directory-enter,
+  .link-tree-toggle, .link-tree-folder-row, .link-tree-link, .link-index-file-name,
+  .sheet-work-name-link, .sheet-edit-trigger, .press-open-folder-btn, .sheet-th-sort,
+  .sheet-filter-trigger, .operation-launcher, .operation-history-item, .operation-log-match
+)),
+body.nimda-ui .btn:not(:where([data-ui-custom])) {
+  box-sizing: border-box;
+  min-height: var(--ui-control-height);
+  padding: var(--ui-control-padding);
+  border: 1px solid var(--ui-action-border);
+  border-radius: var(--ui-radius);
+  background: transparent;
+  color: var(--muted);
+  -webkit-text-fill-color: currentColor;
+  box-shadow: none;
+  font-family: var(--app-font-family);
+  font-size: var(--ui-control-font-size);
+  font-weight: 400;
+  line-height: 1.35;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+body.nimda-ui :is(.btn.primary, .is-primary, .ui-primary, .organizer-primary-action) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  -webkit-text-fill-color: currentColor;
+  background-color: transparent;
+}
+body.nimda-ui :is(button, .btn):not(:where([data-ui-custom], .library-card-link, .operation-launcher, .operation-history-item, .operation-log-match)):hover:not(:where(:disabled, [aria-disabled="true"])) {
+  color: var(--accent);
+  border-color: var(--accent);
+  -webkit-text-fill-color: currentColor;
+  background-color: var(--ui-hover-bg);
+}
+
+body.nimda-ui :is(
+  button[aria-pressed="true"], button[aria-selected="true"], button[aria-current="page"],
+  .app-tab.is-active, .app-tab.on, .nimda-section-tab.is-active,
+  .sheet-filter-trigger-active, .ui-filter-active, [data-filter-active="true"]
+) {
+  color: var(--accent);
+  -webkit-text-fill-color: currentColor;
+  border-color: var(--ui-active-border);
+  background-color: var(--ui-active-bg);
+  box-shadow: none;
+}
+body.nimda-ui :is(button, .btn, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
+}
+body.nimda-ui :is(button, .btn):disabled,
+body.nimda-ui :is(button, .btn)[aria-disabled="true"] {
+  opacity: .48;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+body.nimda-ui .library-pagination button[aria-current="page"]:disabled { opacity: 1; cursor: default; }
+body.nimda-ui :is(.danger, .is-danger, .icon-btn-danger, .row-delete-btn, .press-item-delete-btn, .enum-row-delete-btn, .press-editor-danger, .collection-record-delete) {
+  color: var(--status-err);
+  -webkit-text-fill-color: currentColor;
+  background: transparent;
+  border-color: color-mix(in srgb, var(--status-err) 35%, var(--panel));
+}
+body.nimda-ui :is(.danger, .is-danger, .icon-btn-danger, .row-delete-btn, .press-item-delete-btn, .enum-row-delete-btn, .press-editor-danger, .collection-record-delete):hover:not(:where(:disabled, [aria-disabled="true"])) {
+  color: var(--status-err);
+  background: color-mix(in srgb, var(--status-err) 8%, var(--panel));
+  border-color: color-mix(in srgb, var(--status-err) 55%, var(--border));
+}
+body.nimda-ui :is(.danger, .is-danger, .icon-btn-danger, .row-delete-btn, .press-item-delete-btn, .enum-row-delete-btn, .press-editor-danger, .collection-record-delete):focus-visible { outline-color: var(--status-err); }
+
+/* Forms opt into the common surface. Editable table cells retain compact pills. */
+body.nimda-ui :is(input:not([type]), input[type="text"], input[type="search"], input[type="number"], input[type="date"], input[type="url"], input[type="password"], select, textarea):not(:where(table.sheet *, [data-ui-custom], .organizer-json-editor)) {
+  box-sizing: border-box;
+  min-height: var(--ui-control-height);
+  padding: var(--ui-control-padding);
+  border: 1px solid var(--border);
+  border-radius: var(--ui-radius);
+  color: var(--text);
+  -webkit-text-fill-color: currentColor;
+  background-color: var(--panel);
+  font-size: var(--ui-control-font-size);
+  line-height: 1.4;
+}
+body.nimda-ui :is(input, select, textarea)[data-filter-active="true"] {
+  border-color: var(--ui-active-border);
+  color: var(--accent);
+  -webkit-text-fill-color: currentColor;
+  background-color: var(--ui-active-bg);
+}
+body.nimda-ui :is(input, select, textarea):disabled { opacity: .6; cursor: not-allowed; }
+body.nimda-ui :is(input, textarea)::placeholder { color: var(--muted); opacity: .8; }
+body.nimda-ui :is(input[type="checkbox"], input[type="radio"]) { accent-color: var(--accent); }
+body.nimda-ui select option { color: var(--select-option-fg, var(--text)); background: var(--select-option-bg, var(--panel)); }
+body.nimda-ui .library-maintenance[open] > .library-button { background: var(--panel); box-shadow: 0 4px 14px rgb(0 0 0 / 12%); }
+body.nimda-ui .library-maintenance > summary { box-sizing: border-box; min-height: var(--ui-control-height); padding: var(--ui-control-padding); border: 1px solid var(--ui-action-border); border-radius: var(--ui-radius); }
+body.nimda-ui .library-maintenance > summary:hover { color: var(--accent); border-color: var(--accent); background: var(--ui-hover-bg); }
+
+body.nimda-ui .top { gap: 8px 22px; padding-block: 12px; }
+body.nimda-ui .app-brand-name { color: var(--text); font-size: 22px; font-weight: 500; letter-spacing: 0; }
+body.nimda-ui :is(h1, h2, h3) { font-weight: 500; }
+body.nimda-ui .app-tabs { flex-wrap: wrap; gap: 5px; padding-block: 8px; overflow-x: visible; }
+body.nimda-ui .app-tab { border: 1px solid var(--ui-action-border); border-radius: var(--ui-radius); }
+body.nimda-ui .toolbar-row { gap: 8px 12px; }
+body.nimda-ui :is(dialog, .cfg-panel, .yaml-pick-panel, .enum-editor-panel) { border-radius: var(--ui-panel-radius); }
+body.nimda-ui .collection-year-chip { border-radius: var(--ui-radius); }
+body.nimda-ui .collection-year-chip:has(input:checked) { color: var(--accent); border-color: var(--ui-active-border); background: var(--ui-active-bg); box-shadow: none; }
+body.nimda-ui select.theme-select { border-color: var(--border); padding-right: 1.75rem; min-height: 28px; }
+
+/* Compact table actions are not toolbar buttons. Do not inflate row height. */
+body.nimda-ui :is(.sheet-filter-trigger, .press-open-folder-btn, .sheet-edit-trigger) { color: var(--muted); -webkit-text-fill-color: currentColor; background: transparent; border-color: var(--ui-action-border); box-shadow: none; }
+/* Text-sized edit hit targets keep their existing dimensions. */
+body.nimda-ui button.sheet-edit-trigger { box-shadow: inset 0 0 0 1px var(--ui-action-border); border-radius: var(--ui-radius); }
+body.nimda-ui .sheet-filter-trigger-active { color: var(--accent); -webkit-text-fill-color: currentColor; border-color: var(--accent); background: var(--ui-active-bg); box-shadow: none; }
+body.nimda-ui .sheet-work-name-link { color: var(--accent); }
+body.nimda-ui .operation-history-item { border-color: var(--ui-action-border); }
+body.nimda-ui .operation-history-item[aria-pressed="true"] { border-color: var(--ui-active-border); }
+
+@media (pointer: coarse) {
+  body.nimda-ui :is(.app-tab, .btn, .library-button, .nimda-section-tab, .organizer-button, .nimda-directory-tool):not(:where([data-ui-custom], .organizer-child-name, .library-card-link, .library-person-name, .library-person-expand)) { min-height: 44px; }
+  body.nimda-ui :is(input, select, textarea):not(:where(table.sheet *, [type="checkbox"], [type="radio"])) { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.nimda-ui :is(button, input, select, textarea) { transition: none; }
+}

@@ -127,7 +127,7 @@ function previewPersonalization(value: Personalization) {
   }
 }
 function updateCatalog(value: PackageCatalog) {
-  if (value.hostApi !== 1) { packageError.value = '功能目录的宿主接口版本不匹配。'; return; }
+  if (value.hostApi !== 1 && value.hostApi !== 2) { packageError.value = '功能目录的宿主接口版本不匹配。'; return; }
   const available = new Set(value.modules.filter(canOpenPackage).map((module) => module.id));
   for (const id of visited.value) if (!available.has(id)) visited.value.delete(id);
   catalog.value = value;

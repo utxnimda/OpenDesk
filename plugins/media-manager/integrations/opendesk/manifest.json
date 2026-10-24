@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "nimda-workspace",
+  "label": "作品管理器",
+  "version": "0.3.1",
+  "hostApi": 2,
+  "webApp": true,
+  "target": "windows-x64",
+  "frontend": "frontend/index.html",
+  "worker": "worker/module-worker.exe",
+  "methods": [
+    "nimda.status",
+    "nimda.presentation",
+    "nimda.configure"
+  ],
+  "dataSchema": 1,
+  "source": {
+    "commit": null,
+    "dirty": true,
+    "repository": null
+  }
+}

@@ -5,8 +5,8 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { readGitIdentity } from './build-version.mjs';
-import { pythonExecutable, root, run, worker } from './environment.mjs';
-import { MODULE_DEFINITIONS as definitions, assertBundleDirectory, assertOutputDirectory, parseModulePackArgs, readDistribution, sha256, writeImmutableFiles } from './distribution.mjs';
+import { localConfig, pythonExecutable, root, run, worker } from './environment.mjs';
+import { MODULE_DEFINITIONS as definitions, assertBundleDirectory, assertOutputDirectory, moduleSourceDirectory, parseModulePackArgs, readDistribution, sha256, writeImmutableFiles } from './distribution.mjs';
 
 function underRoot(...parts) {
   const path = resolve(root, ...parts);
@@ -22,11 +22,12 @@ function underRoot(...parts) {
 }
 
 export function validateManifest(manifest) {
-  const keys = ['schemaVersion', 'id', 'label', 'version', 'hostApi', 'target', 'frontend', 'worker', 'methods', 'dataSchema', 'source'].sort();
+  const keys = ['schemaVersion', 'id', 'label', 'version', 'hostApi', 'target', 'frontend', 'worker', 'methods', 'dataSchema', 'source', ...(Object.hasOwn(manifest ?? {}, 'webApp') ? ['webApp'] : [])].sort();
   if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest) || Object.keys(manifest).sort().join('|') !== keys.join('|')) throw new Error('Unexpected module manifest fields.');
   if (manifest.schemaVersion !== 1 || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(manifest.id) || typeof manifest.label !== 'string' || !manifest.label.trim() || manifest.label.length > 100) throw new Error('Invalid module identity.');
   if (!/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(manifest.version)) throw new Error('Module version must be a three-part semantic version.');
   if (!Number.isSafeInteger(manifest.hostApi) || manifest.hostApi < 1 || manifest.target !== 'windows-x64' || manifest.frontend !== 'frontend/index.html' || ![null, 'worker/module-worker.exe'].includes(manifest.worker)) throw new Error('Unsupported package entry contract.');
+  if ((Object.hasOwn(manifest, 'webApp') && typeof manifest.webApp !== 'boolean') || (manifest.webApp === true && (manifest.hostApi !== 2 || manifest.worker === null)) || (manifest.hostApi === 2 && manifest.webApp !== true)) throw new Error('Web applications require hostApi 2, webApp true and a worker.');
   if (!Number.isSafeInteger(manifest.dataSchema) || manifest.dataSchema < 1 || !Array.isArray(manifest.methods) || new Set(manifest.methods).size !== manifest.methods.length || manifest.methods.some((method) => typeof method !== 'string' || !/^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9]*)+$/.test(method) || /^(runtime|module)\./.test(method))) throw new Error('Invalid data schema or business methods.');
   if (manifest.worker === null && manifest.methods.length) throw new Error('Frontend-only packages cannot declare worker methods.');
   const source = manifest.source;
@@ -147,8 +148,12 @@ function verifyFrozenWorker(executable, manifest, marker) {
 async function buildPackage(sourceId, destination, override = {}) {
   const definition = definitions[sourceId];
   if (!definition) throw new Error('Unknown build source module.');
-  const source = underRoot('apps/features', definition.folder);
+  const source = underRoot(moduleSourceDirectory(root, sourceId));
   const original = sourceManifest(sourceId);
+  if (definition.externalBuilder) {
+    if (Object.keys(override).length) throw new Error('External builders do not accept fixture overrides.');
+    return buildExternalPackage(sourceId, destination, original);
+  }
   const { marker = definition.marker, filename, ...fields } = override;
   const manifest = validateManifest({ ...original, ...fields, source: provenance() });
   const archive = join(destination, filename ?? `${manifest.id}-${manifest.version}.ndpkg`);
@@ -206,9 +211,57 @@ async function buildPackage(sourceId, destination, override = {}) {
 function sourceManifest(id) {
   const definition = definitions[id];
   if (!definition) throw new Error('Unknown build source module.');
-  const manifest = validateManifest(JSON.parse(readFileSync(underRoot('apps/features', definition.folder, 'manifest.json'), 'utf8')));
+  const manifest = validateManifest(JSON.parse(readFileSync(underRoot(moduleSourceDirectory(root, id), 'manifest.json'), 'utf8')));
   if (manifest.id !== id) throw new Error('Source manifest does not match its registered module ID: ' + id);
   return manifest;
+}
+
+export function externalPython(definition, env = process.env, config = localConfig()) {
+  const builder = definition?.externalBuilder;
+  if (!builder) throw new Error('Module does not use an external builder.');
+  // Environment overrides configuration; within each source the current name
+  // wins over compatibility aliases. A present but invalid value never falls back.
+  const candidates = [
+    ...[builder.pythonEnv, ...(builder.pythonEnvAliases ?? [])].map((key) => [env, key]),
+    ...[builder.pythonConfig, ...(builder.pythonConfigAliases ?? [])].map((key) => [config, key]),
+  ];
+  const selected = candidates.find(([values, key]) => Object.hasOwn(values, key));
+  const python = selected?.[0][selected[1]];
+  if (typeof python !== 'string' || !isAbsolute(python) || !existsSync(python) || !lstatSync(python).isFile()) throw new Error(`Configure an absolute build Python in ${builder.pythonEnv} or .local/dev.json ${builder.pythonConfig}.${selected ? ' Invalid setting: ' + selected[1] + '.' : ''}`);
+  return python;
+}
+
+export function externalBuildArguments(projectRoot, id, python, output) {
+  if (!Object.hasOwn(definitions, id) || !definitions[id].externalBuilder) throw new Error('Module does not use an external builder.');
+  const definition = definitions[id];
+  const builder = definition.externalBuilder;
+  return [join(moduleSourceDirectory(projectRoot, id), builder.script), '--opendesk', projectRoot,
+    '--project', join(projectRoot, builder.projectPath), '--python', python, '--output', output,
+    '--work', join(projectRoot, builder.workDirectory)];
+}
+
+function buildExternalPackage(id, destination, requested) {
+  const definition = definitions[id];
+  const python = externalPython(definition);
+  const args = externalBuildArguments(root, id, python, destination);
+  underRoot(args[0]);
+  underRoot(root, definition.externalBuilder.projectPath);
+  run(process.execPath, args);
+  const file = `${id}-${requested.version}.ndpkg`;
+  assertOutputDirectory(destination, [file, 'manifest.json', 'SHA256SUMS']);
+  const archive = join(destination, file);
+  const checked = spawnSync(python, ['-X', 'utf8', join(root, 'scripts/release-archive.py'), 'inspect-module', archive], { encoding: 'utf8', windowsHide: true, timeout: 180_000, maxBuffer: 4 * 1024 * 1024 });
+  if (checked.error || checked.status !== 0) throw new Error('External module archive verification failed: ' + (checked.error?.message ?? checked.stderr));
+  const manifest = validateManifest(JSON.parse(checked.stdout));
+  for (const key of new Set([...Object.keys(requested), ...Object.keys(manifest)])) {
+    if (key !== 'source' && JSON.stringify(requested[key]) !== JSON.stringify(manifest[key])) throw new Error('External module identity differs from its source manifest.');
+  }
+  if (JSON.stringify(JSON.parse(readFileSync(join(destination, 'manifest.json'), 'utf8'))) !== JSON.stringify(manifest)) throw new Error('External module manifest sidecar differs from the archive.');
+  const bytes = readFileSync(archive);
+  if (bytes.length > 128 * 1024 * 1024) throw new Error('External module exceeds the host package size limit.');
+  const digest = sha256(bytes);
+  if (readFileSync(join(destination, 'SHA256SUMS'), 'utf8').trim() !== `${digest}  ${file}`) throw new Error('External module checksum sidecar differs from the archive.');
+  return { entry: { id, version: manifest.version, file, sha256: digest }, manifest };
 }
 
 export function validateCachedPackage(fingerprint, requested, saved, bytes) {
@@ -263,7 +316,7 @@ async function main() {
     assertOutputDirectory(destination, ['fixtures.json', 'test-lab-1.2.0-ui-failure.ndpkg', ...previous.packages.map((entry) => entry.file)]);
   }
   if (process.platform !== 'win32' || process.arch !== 'x64') throw new Error('Module packages currently target Windows x64.');
-  const python = pythonExecutable();
+  const python = selected && definitions[moduleId].externalBuilder ? externalPython(definitions[moduleId]) : pythonExecutable();
   run(python, ['-X', 'utf8', '-c', "import platform, struct, sys; assert sys.platform == 'win32' and struct.calcsize('P') == 8 and platform.machine().lower() in ('amd64','x86_64') and sys.version_info >= (3,11), 'Windows x64 Python 3.11+ required'"]);
   mkdirSync(destination, { recursive: true });
   if (mode === 'bundled') {

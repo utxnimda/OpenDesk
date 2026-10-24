@@ -1,0 +1,15 @@
+# Source templates live in defaults/config; actual workspaces live outside this tree.
+/config/
+/data/
+/build/
+/dist/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+**/providers.local.yaml
+*.lnk
+*.tmp

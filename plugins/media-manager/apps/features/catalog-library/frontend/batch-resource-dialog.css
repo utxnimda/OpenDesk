@@ -1,0 +1,24 @@
+.library-batch-resource-dialog { width: min(960px, calc(100vw - 32px)); max-height: calc(100vh - 40px); box-sizing: border-box; padding: 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); }
+.library-batch-resource-dialog::backdrop { background: rgb(0 0 0 / 35%); }
+.library-batch-resource-header, .library-batch-resource-footer, .library-batch-resource-actions, .library-batch-resource-defaults { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.library-batch-resource-header, .library-batch-resource-footer { justify-content: space-between; }
+.library-batch-resource-header h2 { font-size: 17px; margin: 0; }
+.library-batch-resource-body { display: grid; gap: 14px; padding: 12px 0; }
+.library-batch-resource-body p { margin: 0; }
+.library-batch-resource-defaults { align-items: end; }
+.library-batch-resource-defaults > .library-field { flex: 1 1 160px; }
+.library-batch-resource-dialog .library-field { min-width: 0; display: grid; gap: 5px; font-size: 12px; }
+.library-batch-resource-dialog input:not([type=checkbox]), .library-batch-resource-dialog textarea { width: 100%; box-sizing: border-box; }
+.library-batch-resource-dialog textarea { resize: vertical; min-height: 76px; }
+.library-batch-resource-error { color: var(--status-err); white-space: pre-wrap; overflow-wrap: anywhere; }
+.library-batch-resource-existing { font-size: 12px; }
+.library-batch-resource-existing summary { cursor: pointer; }
+.library-batch-resource-existing ul { padding-left: 18px; line-height: 1.7; }
+.library-batch-resource-pending h3 { font-size: 13px; margin: 0 0 8px; }
+.library-batch-resource-row { display: grid; grid-template-columns: minmax(160px, 2fr) minmax(100px, 1fr) minmax(100px, 1fr) auto; align-items: end; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.library-batch-resource-directory { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.library-batch-resource-directory .library-button { overflow-wrap: anywhere; text-align: left; }
+.library-batch-resource-browser { border: 1px solid var(--border); border-radius: 4px; padding: 10px; }
+.library-batch-resource-discard { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.library-batch-resource-dialog [hidden] { display: none !important; }
+@media (max-width: 600px) { .library-batch-resource-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; } .library-batch-resource-row > .library-path { grid-column: 1 / -1; } }

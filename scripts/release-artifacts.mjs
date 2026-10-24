@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { root, desktop, pythonExecutable } from './environment.mjs';
 import { readGitIdentity } from './build-version.mjs';
-import { readDistribution, assertPublicModule, assertBundleDirectory, MODULE_DEFINITIONS } from './distribution.mjs';
+import { readDistribution, assertPublicModule, assertBundleDirectory, moduleSourceDirectory } from './distribution.mjs';
 import { validateManifest } from './module-pack.mjs';
 
 const repository = 'https://github.com/utxnimda/OpenDesk';
@@ -53,6 +53,12 @@ export function assertInventory(actual, recorded) {
   }
 }
 
+export function assertPortableDataAbsent(directory) {
+  for (const name of ['opendesk.portable.json', 'runtime', 'data']) {
+    if (existsSync(join(directory, name))) throw new Error(`Local portable configuration or data cannot be published: ${name}. Use a separate run directory; existing files were preserved.`);
+  }
+}
+
 function cleanIdentity() {
   const source = readGitIdentity(root);
   if (!source.commit || source.dirty !== false) throw new Error('Release staging requires a committed, clean working tree. Build after committing the reviewed sources.');
@@ -93,6 +99,7 @@ function finish(directory, metadata) {
 function recordBuild() {
   const version = readJson(join(root, 'package.json')).version;
   const portable = workspacePath('dist/OpenDesk');
+  assertPortableDataAbsent(portable);
   const bundle = assertBundleDirectory(root, join(portable, 'bundled-modules'), version);
   const installer = workspacePath('apps/framework/desktop/src-tauri/target/release/bundle/nsis', `OpenDesk_${version}_x64-setup.exe`);
   writeJson(workspacePath('dist/app-build.json'), { schemaVersion: 1, version, source: { repository, ...readGitIdentity(root) }, modules: bundle.modules, portableFiles: inventory(portable), installer: fileRecord(installer) });
@@ -103,6 +110,7 @@ function stageApp() {
   const source = cleanIdentity();
   const version = readJson(join(root, 'package.json')).version;
   const portable = workspacePath('dist/OpenDesk');
+  assertPortableDataAbsent(portable);
   const receipt = readJson(workspacePath('dist/app-build.json'));
   if (receipt.schemaVersion !== 1 || receipt.version !== version || receipt.source.commit !== source.commit || receipt.source.dirty !== false) throw new Error('App build does not belong to the current clean source commit; rebuild.');
   assertInventory(inventory(portable), receipt.portableFiles);
@@ -124,7 +132,7 @@ function stageModule(id) {
   cleanIdentity();
   const distribution = readDistribution(root);
   assertPublicModule(distribution, id);
-  const template = validateManifest(readJson(join(root, 'apps/features', MODULE_DEFINITIONS[id].folder, 'manifest.json')));
+  const template = validateManifest(readJson(join(moduleSourceDirectory(root, id), 'manifest.json')));
   const origin = workspacePath('dist/modules', id, template.version);
   const filename = `${id}-${template.version}.ndpkg`;
   const path = join(origin, filename);

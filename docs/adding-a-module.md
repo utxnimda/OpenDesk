@@ -32,7 +32,7 @@
 
 构建组合显式导入模块注册入口并注册烘焙的 `module.identity`。每包 worker 及依赖一同冻结，不依赖使用者安装 Python。
 
-模块定义在 `scripts/distribution.mjs`，构建由 `scripts/module-pack.mjs` 执行。新增正式模块先增加受审阅的源码目录/后台入口，再明确加入 `config/distribution.json` 的 `publicModules`；需要随 App 分发时另加入 `bundledModules`。当前仅塔防助手是正式模块，测试台标为 `testFixture`，源码用于开发验证，产物禁止进入两份公开列表。不要从本机导入、已安装或其他分支目录扫描待发布模块。
+模块定义在 `scripts/distribution.mjs`，构建由 `scripts/module-pack.mjs` 执行。新增正式模块先增加受审阅的源码目录/后台入口，再明确加入 `config/distribution.json` 的 `publicModules`；需要随 App 分发时另加入 `bundledModules`。当前正式源码包含塔防助手与 `plugins/media-manager` 的作品管理器；后者通过明确的外部 builder 接入主仓构建。测试台标为 `testFixture`，源码用于开发验证，产物禁止进入两份公开列表。不要从本机导入、已安装或其他分支目录扫描待发布模块。
 
 宠物资源扩展属于宿主组合，不遵循业务页签包注册流程。通用渲染器消费 `CompanionCatalog`，当前组合根注册阿宝 `traveler-01` 和阿沐 `amu-01`。模型需要稳定 `id`、必需的 `still` 与 `idle`；`walk`、`wave`、`sleep` 是可选独立资源，没有素材或使用重复路径时不显示入口。两只各装配 `loop.png` 与 `still.png`；阿沐完整动作仅保存在本机产物目录，不重复加入运行时。新增素材须按 [宠物资源说明](companion-assets.md) 记录来源、帧区间、帧率、摘要和授权。当前处理后角色按用户 2026-10-22 的明确公开交付请求纳入源码与 App，原视频不上传；这不为未来新素材产生自动授权，也不附加未提供的第三方许可。
 

@@ -2,6 +2,14 @@
 
 本手册描述可重复执行的公开交付流程，命令块供后续发布参考，不应原样重复创建已发布版本。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
 
+## 2026-10-25 发布准备
+
+用户本轮明确授权提交 Git/SVN 并执行打包发布。目标为 OpenDesk 0.17.0 与作品管理器 nimda-workspace 0.3.1；App 仍只随附已公开且字节不变的塔防 0.1.9。作品管理器 0.3.0 是已安装的本地开发包，保留原件；0.3.1 从本次审阅后的干净提交构建。真实资料迁移已在 SVN r196 提交，当前工作副本没有新变更；不创建空提交。
+
+本轮独立作品管理器的公开交付为标准 .ndpkg 及 manifest、发布清单、校验和。原本机 MediaManager.exe ZIP 带本机工作区启动配置，不纳入公开附件；不会直接上传旧 dirty 包或私人配置。当前 GitHub Actions 模块标签检查使用统一模块源目录解析，支持插件目录中的 hostApi 2 包。
+
+构建 App 时先验证现有塔防包与已公开附件摘要相同，复用原包。因通用构建脚本变更可能使缓存指纹变化，不为同一已发布版本重新生成不同字节；本次 Tauri 通过本地临时配置只运行 build:web / build:worker，之后仍执行标准便携打包、App 收据及 release:stage 校验。全部最终附件暂存、远端上传和下载核对完成后，另提交发布结果和下载索引；本节为准备记录，不代表已经发布。
+
 ## 1. 当次目标与授权
 
 每次先确定 App 版本、更新页签的 ID/版本、随附范围、源码提交以及 Git/远端操作授权。历史授权不自动覆盖下次发布。
@@ -12,7 +20,7 @@
 
 ## 2. 公开范围以白名单为准
 
-`config/distribution.json` 是正式分发权威：`bundledModules` 表示 App 随附页签，`publicModules` 表示可独立公开页签，前者必须为后者子集。当前两项均只有 `tower-assistant`。实际文件必须与该清单相符，不能只检查 manifest 中声明的名称。
+`config/distribution.json` 是正式分发权威：`bundledModules` 表示 App 随附页签，`publicModules` 表示可独立公开页签，前者必须为后者子集。当前 `bundledModules` 只有 `tower-assistant`，`publicModules` 另含作品管理器 `nimda-workspace`。实际文件必须与该清单相符，不能只检查 manifest 中声明的名称。
 
 | 内容 | Git 源码 | App Release | 独立页签 Release |
 |---|---|---|---|

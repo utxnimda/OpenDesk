@@ -10,7 +10,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
     },
 };
@@ -19,15 +19,63 @@ use store::{Installed, Selection, Store};
 #[derive(Default)]
 struct Slot {
     session: Option<Session>,
+    // Failed, uncommitted candidates still own live HTTP work. Never drop them
+    // until their control channel confirms a safe shutdown.
+    retained: Vec<Session>,
     error: Option<String>,
     last_error: Option<String>,
     awaiting_ui: bool,
     ui_fallback: Option<Selection>,
 }
+impl Slot {
+    async fn finish_retained(&mut self) -> Result<(), String> {
+        while let Some(session) = self.retained.last_mut() {
+            if let Err(error) = session.stop_worker().await {
+                self.error = Some(error.clone());
+                return Err(error);
+            }
+            self.retained.pop();
+        }
+        Ok(())
+    }
+    async fn discard_candidate(&mut self, candidate: Session) -> Result<(), String> {
+        self.retained.push(candidate);
+        self.finish_retained().await
+    }
+    async fn initialize_candidate(&mut self, candidate: Session) -> Result<Session, String> {
+        self.retained.push(candidate);
+        if let Err(error) = self
+            .retained
+            .last_mut()
+            .ok_or("MODULE_SESSION_STALE")?
+            .initialize_web_app()
+            .await
+        {
+            self.error = Some(error.clone());
+            return Err(error);
+        }
+        self.retained.pop().ok_or("MODULE_SESSION_STALE".into())
+    }
+    async fn stop_candidate(&mut self, candidate: Session) -> Result<Session, String> {
+        self.retained.push(candidate);
+        if let Err(error) = self
+            .retained
+            .last_mut()
+            .ok_or("MODULE_SESSION_STALE")?
+            .stop_worker()
+            .await
+        {
+            self.error = Some(error.clone());
+            return Err(error);
+        }
+        self.retained.pop().ok_or("MODULE_SESSION_STALE".into())
+    }
+}
 #[derive(Default)]
 struct Cell {
     slot: tokio::sync::Mutex<Slot>,
     transition: AtomicBool,
+    ui_revision: AtomicU64,
 }
 struct Transition(Arc<Cell>);
 impl Transition {
@@ -82,16 +130,15 @@ impl ModuleManager {
         }
     }
     fn insert_token(&self, session: &Session) -> Result<(), String> {
-        self.tokens
-            .lock()
-            .map_err(|_| "MODULE_LOCK_UNAVAILABLE")?
-            .insert(
-                session.token.clone(),
-                (
-                    session.installed.manifest.id.clone(),
-                    session.generation.clone(),
-                ),
-            );
+        let mut tokens = self.tokens.lock().map_err(|_| "MODULE_LOCK_UNAVAILABLE")?;
+        tokens.retain(|_, (id, _)| id != &session.installed.manifest.id);
+        tokens.insert(
+            session.token.clone(),
+            (
+                session.installed.manifest.id.clone(),
+                session.generation.clone(),
+            ),
+        );
         Ok(())
     }
     fn revoke(&self, session: &Session) {
@@ -154,13 +201,18 @@ impl ModuleManager {
             };
             let mut error = None;
             let mut last_error = None;
+            let mut ui_revision = 0;
             if let Some(cell) = cells.get(&id) {
+                ui_revision = cell.ui_revision.load(Ordering::SeqCst);
                 if cell.transition.load(Ordering::SeqCst) {
                     runtime_state = "switching";
                 } else if let Ok(mut slot) = cell.slot.try_lock() {
                     last_error = slot.last_error.clone();
                     if let Some(session) = slot.session.as_mut() {
                         session.check_health();
+                        ui_revision = session.ui_revision;
+                        cell.ui_revision.store(ui_revision, Ordering::SeqCst);
+                        self.insert_token(session)?;
                     }
                     error = slot.error.clone().or_else(|| {
                         slot.session
@@ -184,9 +236,9 @@ impl ModuleManager {
                 let schema_error = state.data_schemas.get(&id)
                     .filter(|schema| **schema != item.manifest.data_schema)
                     .map(|schema| format!("MODULE_DATA_SCHEMA_INCOMPATIBLE: package requires dataSchema={}; existing module data uses dataSchema={schema}. This host requires identical schemas and does not migrate data.", item.manifest.data_schema));
-                json!({"version":item.manifest.version,"digest":item.digest,"source":item.source,"sourceCommit":item.manifest.source.commit,"sourceDirty":item.manifest.source.dirty,"sourceRepository":item.manifest.source.repository,"compatible":schema_error.is_none(),"error":schema_error})
+                json!({"version":item.manifest.version,"digest":item.digest,"webApp":item.manifest.web_app,"source":item.source,"sourceCommit":item.manifest.source.commit,"sourceDirty":item.manifest.source.dirty,"sourceRepository":item.manifest.source.repository,"compatible":schema_error.is_none(),"error":schema_error})
             }).collect::<Vec<_>>();
-            modules.push(json!({"id":id,"label":label,"enabled":enabled,"selectedVersion":selection.map(|s| &s.version),"selectedDigest":selection.map(|s| &s.digest),"state":runtime_state,"error":error,"lastError":last_error,"versions":version_entries}));
+            modules.push(json!({"id":id,"label":label,"enabled":enabled,"selectedVersion":selection.map(|s| &s.version),"selectedDigest":selection.map(|s| &s.digest),"uiRevision":ui_revision,"state":runtime_state,"error":error,"lastError":last_error,"versions":version_entries}));
         }
         Ok(json!({"hostApi":store::HOST_API,"modules":modules,"imports":state.imports}))
     }
@@ -220,6 +272,7 @@ impl ModuleManager {
             return Err("MODULE_SWITCHING".into());
         }
         let mut slot = cell.slot.lock().await;
+        slot.finish_retained().await?;
         if cell.transition.load(Ordering::SeqCst) {
             return Err("MODULE_SWITCHING".into());
         }
@@ -237,16 +290,21 @@ impl ModuleManager {
         }
         if let Some(session) = slot.session.as_mut() {
             session.restore_worker(self.diagnostics.clone()).await?;
+            session.initialize_web_app().await?;
+            self.insert_token(session)?;
             let description = session.describe();
             slot.error = None;
             return Ok(description);
         }
         let (installed, root, data, _) = self.prepare(id, &selection.version, &selection.digest)?;
         match Session::start(installed, root, data, self.diagnostics.clone()).await {
-            Ok(session) => {
-                let description = session.describe();
+            Ok(mut session) => {
+                session.ui_revision = cell.ui_revision.load(Ordering::SeqCst);
                 self.insert_token(&session)?;
                 slot.session = Some(session);
+                let session = slot.session.as_mut().ok_or("MODULE_SESSION_STALE")?;
+                session.initialize_web_app().await?;
+                let description = session.describe();
                 slot.error = None;
                 slot.awaiting_ui = true;
                 Ok(description)
@@ -262,6 +320,7 @@ impl ModuleManager {
         let cell = self.cell(id)?;
         let transition = Transition::begin(&cell)?;
         let mut slot = cell.slot.lock().await;
+        slot.finish_retained().await?;
         let (installed, root, data, previous) = self.prepare(id, version, digest)?;
         if previous
             .as_ref()
@@ -280,7 +339,10 @@ impl ModuleManager {
         }
         let mut candidate =
             match Session::start(installed.clone(), root, data, self.diagnostics.clone()).await {
-                Ok(candidate) => candidate,
+                Ok(mut candidate) => {
+                    candidate.ui_revision = cell.ui_revision.load(Ordering::SeqCst);
+                    candidate
+                }
                 Err(error) => {
                     if let Some(old) = slot.session.as_mut() {
                         if let Err(restore) = old.restore_worker(self.diagnostics.clone()).await {
@@ -291,15 +353,22 @@ impl ModuleManager {
                     return Err(error);
                 }
             };
-        let enabled = previous.as_ref().is_some_and(|selection| selection.enabled);
-        let keep_open = enabled && slot.session.is_some();
-        if !keep_open {
-            if let Err(error) = candidate.stop_worker().await {
+        candidate = match slot.initialize_candidate(candidate).await {
+            Ok(candidate) => candidate,
+            Err(error) => {
+                if let Err(stop) = slot.finish_retained().await {
+                    return Err(format!("{error}; {stop}"));
+                }
                 if let Some(old) = slot.session.as_mut() {
                     let _ = old.restore_worker(self.diagnostics.clone()).await;
                 }
                 return Err(error);
             }
+        };
+        let enabled = previous.as_ref().is_some_and(|selection| selection.enabled);
+        let keep_open = enabled && slot.session.is_some();
+        if !keep_open {
+            candidate = slot.stop_candidate(candidate).await?;
         }
         let committed = (|| {
             let mut store = self.store.lock().map_err(|_| "MODULE_STORE_UNAVAILABLE")?;
@@ -318,7 +387,9 @@ impl ModuleManager {
             store.commit(next)
         })();
         if let Err(error) = committed {
-            let _ = candidate.stop_worker().await;
+            if let Err(stop) = slot.discard_candidate(candidate).await {
+                return Err(format!("{error}; {stop}"));
+            }
             if let Some(old) = slot.session.as_mut() {
                 let _ = old.restore_worker(self.diagnostics.clone()).await;
             }
@@ -328,7 +399,10 @@ impl ModuleManager {
             self.revoke(&old);
         }
         if keep_open {
-            self.insert_token(&candidate)?;
+            if let Err(error) = self.insert_token(&candidate) {
+                slot.retained.push(candidate);
+                return Err(error);
+            }
             slot.session = Some(candidate);
         }
         slot.error = None;
@@ -355,6 +429,7 @@ impl ModuleManager {
         let cell = self.cell(id)?;
         let transition = Transition::begin(&cell)?;
         let mut slot = cell.slot.lock().await;
+        slot.finish_retained().await?;
         let previous = self
             .store
             .lock()
@@ -508,12 +583,17 @@ impl ModuleManager {
             &format!("moduleId={id} generation={generation} reason={reason}"),
         );
         let previous = slot.ui_fallback.clone();
-        let mut candidate = slot.session.take().ok_or("MODULE_SESSION_STALE")?;
-        if let Err(error) = candidate.stop_worker().await {
+        if let Err(error) = slot
+            .session
+            .as_mut()
+            .ok_or("MODULE_SESSION_STALE")?
+            .stop_worker()
+            .await
+        {
             slot.error = Some(format!("{reason}; candidate stop failed: {error}"));
-            slot.session = Some(candidate);
             return Err(error);
         }
+        let mut candidate = slot.session.take().ok_or("MODULE_SESSION_STALE")?;
         if let Some(previous) = previous {
             let previous_package = self.prepare(&id, &previous.version, &previous.digest);
             let (installed, root, data, _) = match previous_package {
@@ -527,7 +607,10 @@ impl ModuleManager {
             };
             let mut restored = if previous.enabled {
                 match Session::start(installed, root, data, self.diagnostics.clone()).await {
-                    Ok(session) => Some(session),
+                    Ok(mut session) => {
+                        session.ui_revision = cell.ui_revision.load(Ordering::SeqCst);
+                        Some(session)
+                    }
                     Err(error) => {
                         let _ = candidate.restore_worker(self.diagnostics.clone()).await;
                         slot.error = Some(format!(
@@ -540,6 +623,20 @@ impl ModuleManager {
             } else {
                 None
             };
+            if let Some(session) = restored.take() {
+                match slot.initialize_candidate(session).await {
+                    Ok(session) => restored = Some(session),
+                    Err(error) => {
+                        if let Err(stop) = slot.finish_retained().await {
+                            slot.session = Some(candidate);
+                            return Err(format!("{error}; {stop}"));
+                        }
+                        let _ = candidate.restore_worker(self.diagnostics.clone()).await;
+                        slot.session = Some(candidate);
+                        return Err(error);
+                    }
+                }
+            }
             let committed = (|| {
                 let mut store = self.store.lock().map_err(|_| "MODULE_STORE_UNAVAILABLE")?;
                 let mut next = store.state.clone();
@@ -547,8 +644,11 @@ impl ModuleManager {
                 store.commit(next)
             })();
             if let Err(error) = committed {
-                if let Some(session) = restored.as_mut() {
-                    let _ = session.stop_worker().await;
+                if let Some(session) = restored.take() {
+                    if let Err(stop) = slot.discard_candidate(session).await {
+                        slot.session = Some(candidate);
+                        return Err(format!("{error}; {stop}"));
+                    }
                 }
                 let _ = candidate.restore_worker(self.diagnostics.clone()).await;
                 slot.error = Some(format!("{reason}; rollback persistence failed: {error}"));
@@ -558,10 +658,10 @@ impl ModuleManager {
             // Persist the rollback first. Only now revoke the failed generation and
             // publish the independently prepared previous version's new session.
             self.revoke(&candidate);
-            if let Some(session) = restored.as_ref() {
+            slot.session = restored;
+            if let Some(session) = slot.session.as_ref() {
                 self.insert_token(session)?;
             }
-            slot.session = restored;
             slot.error = None;
             slot.awaiting_ui = slot.session.is_some();
             slot.ui_fallback = None;
@@ -595,35 +695,61 @@ impl ModuleManager {
         };
         let cell = self.cell(&id)?;
         let mut slot = cell.slot.lock().await;
+        slot.finish_retained().await?;
         if slot
             .session
             .as_ref()
             .is_some_and(|session| session.token == token && session.generation == generation)
         {
-            if let Some(mut session) = slot.session.take() {
-                self.revoke(&session);
+            if let Some(session) = slot.session.as_mut() {
                 session.stop_worker().await?;
+            }
+            if let Some(session) = slot.session.take() {
+                self.revoke(&session);
+                cell.ui_revision.fetch_add(1, Ordering::SeqCst);
             }
         }
         Ok(())
     }
-    pub async fn shutdown(&self) {
+    pub async fn shutdown(&self) -> Result<(), String> {
         self.stopping.store(true, Ordering::SeqCst);
         let cells = match self.cells.lock() {
             Ok(cells) => cells.values().cloned().collect::<Vec<_>>(),
-            Err(_) => return,
+            Err(_) => {
+                self.stopping.store(false, Ordering::SeqCst);
+                return Err("MODULE_LOCK_UNAVAILABLE".into());
+            }
         };
-        for cell in cells {
+        for cell in &cells {
             cell.transition.store(true, Ordering::SeqCst);
-            let mut slot = cell.slot.lock().await;
-            if let Some(mut session) = slot.session.take() {
-                self.revoke(&session);
-                if let Err(error) = session.stop_worker().await {
-                    self.diagnostics
-                        .record("error", "module.shutdown_failed", &error);
+        }
+        let result = async {
+            for cell in &cells {
+                let mut slot = cell.slot.lock().await;
+                slot.finish_retained().await?;
+                if let Some(session) = slot.session.as_mut() {
+                    if let Err(error) = session.stop_worker().await {
+                        self.diagnostics
+                            .record("error", "module.shutdown_failed", &error);
+                        slot.error = Some(error.clone());
+                        return Err(error);
+                    }
+                }
+                if let Some(session) = slot.session.take() {
+                    self.revoke(&session);
+                    cell.ui_revision.fetch_add(1, Ordering::SeqCst);
                 }
             }
+            Ok(())
         }
+        .await;
+        if result.is_err() {
+            self.stopping.store(false, Ordering::SeqCst);
+            for cell in &cells {
+                cell.transition.store(false, Ordering::SeqCst);
+            }
+        }
+        result
     }
 }
 
@@ -755,7 +881,7 @@ mod tests {
             );
             let reloaded = Store::new(root.join("data"), &root.join("no-bundles")).unwrap();
             assert_eq!(reloaded.state.selections["demo"].version, "1.0.0");
-            manager.shutdown().await;
+            manager.shutdown().await.unwrap();
             fs::remove_dir_all(root).unwrap();
         });
     }
@@ -792,7 +918,7 @@ mod tests {
                 .validate_session(failed_b["token"].as_str().unwrap(), "module-b", "1.0.0", &b)
                 .await
                 .is_err());
-            manager.shutdown().await;
+            manager.shutdown().await.unwrap();
             fs::remove_dir_all(root).unwrap();
         });
     }

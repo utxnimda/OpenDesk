@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { errorMessage, type HostAdapter, type Theme, type UIStyle } from '../core/host';
-import type { InstalledModule, PackageInstance } from '../core/packages';
+import { packageSandbox, type InstalledModule, type PackageInstance } from '../core/packages';
 import { createPackageBroker, isModuleHello, packageAppearance } from '../core/package-broker';
 import type { SurfaceEffects } from '../../../module-sdk/src/index';
 
@@ -9,6 +9,7 @@ const props = defineProps<{ module: InstalledModule; host: HostAdapter; theme: E
 const emit = defineEmits<{ failure: [message: string] }>();
 const frame = ref<HTMLIFrameElement | null>(null);
 const source = ref(''); const failure = ref(''); const ready = ref(false);
+const sandbox = ref(packageSandbox(null));
 let instance: PackageInstance | null = null;
 let closed = false;
 let origin = '';
@@ -99,6 +100,8 @@ onMounted(async () => {
     if (opened.moduleId !== props.module.id || opened.version !== props.module.selectedVersion || opened.digest !== props.module.selectedDigest) throw new Error('宿主打开的功能版本与当前选择不一致。');
     const url = new URL(opened.url);
     if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || !url.port || url.origin === window.location.origin) throw new Error('模块地址不符合独立本机来源要求。');
+    // Only the host's verified running instance may grant the web-app capability.
+    sandbox.value = packageSandbox(opened);
     origin = url.origin;
     const fragment = new URLSearchParams();
     fragment.set('nd-host-origin', window.location.origin); fragment.set('nd-generation', opened.generation);
@@ -118,6 +121,6 @@ onUnmounted(() => {
     <div class="package-running-strip"><code>v{{ module.selectedVersion }}</code><span class="package-runtime-status" role="status">{{ ready ? '独立运行' : failure ? '启动失败' : '正在连接…' }}</span></div>
     <div v-if="failure" class="alert alert-error" role="alert">{{ failure }}</div>
     <div v-else-if="!ready" class="package-loading" role="status">正在启动此版本的界面与后台…</div>
-    <iframe v-if="source" ref="frame" :src="source" :title="`${module.label} v${module.selectedVersion}`" class="package-iframe" sandbox="allow-scripts allow-same-origin allow-downloads" referrerpolicy="no-referrer" allow="" :class="{ 'is-loading': !ready }" @error="reportLoadFailure('模块页面资源加载失败。')"></iframe>
+    <iframe v-if="source" ref="frame" :src="source" :title="`${module.label} v${module.selectedVersion}`" class="package-iframe" :sandbox="sandbox" referrerpolicy="no-referrer" allow="" :class="{ 'is-loading': !ready }" @error="reportLoadFailure('模块页面资源加载失败。')"></iframe>
   </section>
 </template>

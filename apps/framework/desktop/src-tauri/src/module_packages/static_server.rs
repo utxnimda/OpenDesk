@@ -26,6 +26,26 @@ pub struct StaticServer {
 
 impl StaticServer {
     pub fn start(frontend_root: PathBuf, entry_relative: &str) -> Result<Self, String> {
+        Self::start_with_web_app(frontend_root, entry_relative, None)
+    }
+    pub fn start_with_web_app(
+        frontend_root: PathBuf,
+        entry_relative: &str,
+        web_app_origin: Option<&str>,
+    ) -> Result<Self, String> {
+        if let Some(origin) = web_app_origin {
+            let port = origin.strip_prefix("http://127.0.0.1:").and_then(|port| {
+                if port.is_empty() || !port.bytes().all(|byte| byte.is_ascii_digit()) {
+                    return None;
+                }
+                port.parse::<u16>().ok().filter(|port| *port > 0)
+            });
+            if port.is_none() {
+                return Err(
+                    "MODULE_WEB_APP_ORIGIN_INVALID: expected an exact loopback origin".into(),
+                );
+            }
+        }
         let root = frontend_root
             .canonicalize()
             .map_err(|_| "MODULE_UI_ROOT_INVALID")?;
@@ -41,14 +61,25 @@ impl StaticServer {
             .map_err(|_| "MODULE_UI_BIND_FAILED")?;
         let prefix = format!("/{}/", uuid::Uuid::new_v4().simple());
         let origin = format!("http://{address}");
+        if web_app_origin == Some(origin.as_str()) {
+            return Err(
+                "MODULE_WEB_APP_ORIGIN_INVALID: application and wrapper origins must differ".into(),
+            );
+        }
         let url = format!("{origin}{prefix}{}", encode_path(entry_relative));
         // Explicit URL sources also work for an iframe without allow-same-origin.
         let source = format!("{origin}{prefix}");
+        let extra_sandbox = if web_app_origin.is_some() {
+            " allow-modals allow-forms allow-popups allow-popups-to-escape-sandbox"
+        } else {
+            ""
+        };
+        let frame_source = web_app_origin.unwrap_or("'none'");
         let csp = format!(
-            "sandbox allow-scripts allow-same-origin allow-downloads; default-src 'none'; script-src {source}; \
+            "sandbox allow-scripts allow-same-origin allow-downloads{extra_sandbox}; default-src 'none'; script-src {source}; \
              style-src {source} 'unsafe-inline'; img-src {source} data: blob:; \
              font-src {source} data:; connect-src 'none'; worker-src 'none'; \
-             frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+             frame-src {frame_source}; object-src 'none'; base-uri 'none'; form-action 'none'"
         );
         let stopping = Arc::new(AtomicBool::new(false));
         let signal = Arc::clone(&stopping);
@@ -456,6 +487,52 @@ fn mime(path: &Path) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn web_app_wrapper_allows_only_its_exact_application_origin() {
+        let root = std::env::temp_dir().join(format!("opendesk-web-csp-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("index.html"), "<p>wrapper</p>").unwrap();
+        for invalid in [
+            "http://localhost:51234",
+            "http://127.0.0.1:0",
+            "http://127.0.0.1:51234/",
+            "http://127.0.0.1:*",
+            "http://127.0.0.1:51234; connect-src *",
+        ] {
+            assert!(
+                StaticServer::start_with_web_app(root.clone(), "index.html", Some(invalid))
+                    .is_err()
+            );
+        }
+        let server = StaticServer::start_with_web_app(
+            root.clone(),
+            "index.html",
+            Some("http://127.0.0.1:51234"),
+        )
+        .unwrap();
+        let url = tauri::Url::parse(server.url()).unwrap();
+        let mut client = TcpStream::connect(server.address).unwrap();
+        client
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        write!(
+            client,
+            "GET {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n\r\n",
+            url.path(),
+            server.address
+        )
+        .unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        assert!(response.starts_with("HTTP/1.1 200"));
+        assert!(response.contains("frame-src http://127.0.0.1:51234;"));
+        assert!(response.contains("connect-src 'none'"));
+        assert!(response
+            .contains("allow-modals allow-forms allow-popups allow-popups-to-escape-sandbox"));
+        assert!(!response.contains("unsafe-eval"));
+        drop(server);
+        fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn static_server_requires_nonce_host_and_get_then_releases_listener() {
         let root =

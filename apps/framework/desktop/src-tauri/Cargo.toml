@@ -1,6 +1,6 @@
 [package]
 name = "opendesk"
-version = "0.15.0"
+version = "0.17.0"
 description = "OpenDesk desktop framework"
 edition = "2021"
 rust-version = "1.85"

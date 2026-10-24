@@ -6,7 +6,13 @@ import { dirname, join, resolve } from 'node:path';
 export const MODULE_DEFINITIONS = Object.freeze({
   'tower-assistant': Object.freeze({ folder: 'tower_assistant', backend: 'apps.features.tower_assistant.backend.service', marker: 'tower-baseline', testFixture: false }),
   'test-lab': Object.freeze({ folder: 'test_lab', backend: 'apps.features.test_lab.backend.service', marker: 'v1-baseline', testFixture: true }),
+  'nimda-workspace': Object.freeze({ sourcePath: 'plugins/media-manager/integrations/opendesk', testFixture: false,
+    externalBuilder: Object.freeze({ script: 'build.mjs', projectPath: 'plugins/media-manager', workDirectory: '.cache/media-manager-build',
+      pythonEnv: 'OPENDESK_MEDIA_MANAGER_PYTHON', pythonEnvAliases: Object.freeze(['OPENDESK_WORK_MANAGER_PYTHON']),
+      pythonConfig: 'mediaManagerPython', pythonConfigAliases: Object.freeze(['workManagerPython']) }) }),
 });
+// CLI names may change independently of installed package identities.
+export const MODULE_BUILD_ALIASES = Object.freeze({ 'media-manager': 'nimda-workspace' });
 const SEMVER = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const DIGEST = /^[a-f0-9]{64}$/;
 const plainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -30,6 +36,12 @@ export function readDistribution(projectRoot) {
   return validateDistribution(JSON.parse(readFileSync(join(projectRoot, 'config/distribution.json'), 'utf8')));
 }
 
+export function moduleSourceDirectory(projectRoot, id) {
+  if (!Object.hasOwn(MODULE_DEFINITIONS, id)) throw new Error('Unknown build source module.');
+  const definition = MODULE_DEFINITIONS[id];
+  return join(projectRoot, definition.sourcePath ?? join('apps/features', definition.folder));
+}
+
 export function assertPublicModule(distribution, id) {
   validateDistribution(distribution);
   if (!distribution.publicModules.includes(id)) throw new Error(`Module ${String(id)} is not in the public distribution allowlist.`);
@@ -39,11 +51,12 @@ export function assertPublicModule(distribution, id) {
 export function parseModulePackArgs(args, distribution) {
   const [mode, ...extra] = args;
   if (mode === 'module' && extra.length === 1) {
-    assertPublicModule(distribution, extra[0]);
-    return { mode, moduleId: extra[0] };
+    const moduleId = Object.hasOwn(MODULE_BUILD_ALIASES, extra[0]) ? MODULE_BUILD_ALIASES[extra[0]] : extra[0];
+    assertPublicModule(distribution, moduleId);
+    return { mode, moduleId };
   }
   if (['bundled', 'fixtures', 'ui-failure-fixture'].includes(mode) && extra.length === 0) return { mode };
-  throw new Error('Usage: node scripts/module-pack.mjs bundled|fixtures|ui-failure-fixture|module <public-module-id>');
+  throw new Error('Usage: node scripts/module-pack.mjs bundled|fixtures|ui-failure-fixture|module <public-module-id-or-alias>');
 }
 
 function assertSafeName(name) {
