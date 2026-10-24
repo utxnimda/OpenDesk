@@ -1,6 +1,8 @@
 # 作品管理器
 
-原 Nimda 应用作为 OpenDesk 的独立页签继续维护。作品库、人物资料、作品数据、收集情况和目录整理功能保留原界面与业务实现。显示名称统一为「作品管理器」；稳定模块 ID 为 `nimda-workspace`，本次源码版本为 `0.3.1`，`hostApi=2`、`dataSchema=1`。
+原 Nimda 应用作为 OpenDesk 的独立页签继续维护。作品库、人物资料、作品数据、收集情况和目录整理功能保留原界面与业务实现。显示名称统一为「作品管理器」；稳定模块 ID 为 `nimda-workspace`，当前正式页签版本为 `0.3.1`，`hostApi=2`、`dataSchema=1`。
+
+[下载正式页签 0.3.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fnimda-workspace%2Fv0.3.1)；按需在 OpenDesk「功能管理」导入。此 Release 不含真实资料或带本机工作区配置的独立 EXE ZIP。
 
 可以在 OpenDesk 页签中使用，也可以弹出完整原应用窗口或独立启动。页签与弹窗共用后台，关闭弹窗返回页签；两视图保留各自未提交的输入，不自动同步表单草稿。原单实例锁继续防止独立应用和插件同时写同一工作区。
 

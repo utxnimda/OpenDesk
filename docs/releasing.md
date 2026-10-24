@@ -2,13 +2,15 @@
 
 本手册描述可重复执行的公开交付流程，命令块供后续发布参考，不应原样重复创建已发布版本。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
 
-## 2026-10-25 发布准备
+## 2026-10-25 发布结果
 
-用户本轮明确授权提交 Git/SVN 并执行打包发布。目标为 OpenDesk 0.17.0 与作品管理器 nimda-workspace 0.3.1；App 仍只随附已公开且字节不变的塔防 0.1.9。作品管理器 0.3.0 是已安装的本地开发包，保留原件；0.3.1 从本次审阅后的干净提交构建。真实资料迁移已在 SVN r196 提交，当前工作副本没有新变更；不创建空提交。
+用户本轮明确授权提交 Git/SVN 并执行打包发布。已从干净提交 `95e1107761710d7f2b61cb575a802c6507831b66` 交付 [OpenDesk 0.17.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.17.0) 与[作品管理器 nimda-workspace 0.3.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fnimda-workspace%2Fv0.3.1)；main 与标签 `v0.17.0`、`modules/nimda-workspace/v0.3.1` 已推送，三项 Check CI 均成功。App 标为最新，独立页签不覆盖 App 的最新入口。
 
-本轮独立作品管理器的公开交付为标准 .ndpkg 及 manifest、发布清单、校验和。原本机 MediaManager.exe ZIP 带本机工作区启动配置，不纳入公开附件；不会直接上传旧 dirty 包或私人配置。当前 GitHub Actions 模块标签检查使用统一模块源目录解析，支持插件目录中的 hostApi 2 包。
+App 仍只随附已公开且字节不变的塔防 0.1.9，保留其原来源提交；作品管理器 0.3.0 本地开发原包保持不变，0.3.1 从本次干净源码构建。真实资料迁移已在 SVN r196 提交，本轮复查工作副本没有新变更，没有创建空提交。
 
-构建 App 时先验证现有塔防包与已公开附件摘要相同，复用原包。因通用构建脚本变更可能使缓存指纹变化，不为同一已发布版本重新生成不同字节；本次 Tauri 通过本地临时配置只运行 build:web / build:worker，之后仍执行标准便携打包、App 收据及 release:stage 校验。全部最终附件暂存、远端上传和下载核对完成后，另提交发布结果和下载索引；本节为准备记录，不代表已经发布。
+本轮 App 6 个附件、作品管理器 4 个附件均已上传、重新下载并逐项核对 SHA-256。公开作品管理器附件为标准 .ndpkg、manifest、发布清单和校验和；带本机工作区启动配置的 MediaManager.exe ZIP、真实资料、部署工作台和 fixture 不在公开附件中。
+
+App 构建前核对现有塔防包与公开原包摘要相同，通过本地临时 Tauri 配置只运行 build:web / build:worker，之后执行标准便携打包、App 收据与 release:stage 校验；没有重写模块来源或以新摘要覆盖旧版本。构建及远端核验结果见[验证记录](verification.md)，直接链接见[下载索引](downloads.md)。发布结果文档作为后续提交，不移动实际构建标签。
 
 ## 1. 当次目标与授权
 

@@ -2,6 +2,27 @@
 
 # 验证记录
 
+## 2026-10-25：App 0.17.0 与作品管理器 0.3.1 正式发布
+
+用户本轮明确授权提交 Git/SVN、打包与公开发布。源码提交 `95e1107761710d7f2b61cb575a802c6507831b66` 已推送 main；标签 `v0.17.0`、`modules/nimda-workspace/v0.3.1` 指向该实际构建来源。已发布 [App 0.17.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.17.0) 和[作品管理器 0.3.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fnimda-workspace%2Fv0.3.1)，App 作为最新入口。下方较早“未提交/未发布”的记录保留其当时含义，不代表当前发布状态。
+
+- Git 源码经过公开候选审阅后提交，未合并旧 Nimda 含真实资料的历史。源码 Git 和公开包不含 workspaces、runtime、凭据、本机配置或私人资料。SVN 数据地址此前已在 r196 提交；本轮复查工作副本无新差异，没有制造空提交。
+- 从干净提交完成主仓检查：54 项版本/分发测试、TypeScript、架构检查、142 项前端测试及 69 项 Python 测试（1 项权限跳过）；Rust 59 项通过。替换原样例中的实际目录内容为虚构测试示例后，相关 5 项测试通过。
+- 作品管理器业务回归沿用本轮前一阶段的 1,830 项 Python 测试（5 项符号链接权限跳过）、867 项 JavaScript 测试，以及适配器 Python 28 项、JavaScript 9 项结果；这些不是声称在发布阶段重复执行。正式 0.3.1 冻结包另通过实际身份、鉴权及正常关闭检查。
+- App 安装器与 62 文件便携包构建成功，App 收据和前端构建来源均为该提交且 dirty:false。独立原生 core smoke 与 module-smoke 均通过，测试运行使用隔离数据根；fixture 仅用于本机验证，不进入公开目录。
+- 作品管理器 0.3.1 包含 370 项文件，包内外 manifest 一致，来源为该干净提交，hostApi 2 / dataSchema 1。实际包审计未发现真实资料、工作区 bootstrap 或凭据，公开默认根为空；稳定 ID 保留 nimda-workspace。旧 0.3.0 开发包保留原字节。
+- App 只随附塔防 0.1.9 原包，SHA-256 为 `bacc16c3aa03054932ccb76cad08039a1091b972ab449c8ea620a89c66df4b91`，来源仍为原提交 aa7bdd7346fc1544bebff939b79ed40886c215a2。作品管理器单独发布；模块测试台二进制、部署工作台、私人模块和本机独立 EXE ZIP 均排除。
+- App 的 6 个附件与作品管理器的 4 个附件已全部重新从远端下载，名称、数量、长度及 SHA-256 与已审核暂存产物一致；没有覆盖旧标签、旧 Release 或同名不可变产物。主分支和两个标签的 Check CI 均为 completed/success：[main](https://github.com/utxnimda/OpenDesk/actions/runs/40127317311)、[modules/nimda-workspace/v0.3.1](https://github.com/utxnimda/OpenDesk/actions/runs/40127317278)、[v0.17.0](https://github.com/utxnimda/OpenDesk/actions/runs/40127317350)。
+- 本轮没有完成原生人工点击和弹窗切换验收，桌面控制接口仍存在坐标信息不可用限制。没有执行安装/卸载、发布者签名、其他机器兼容性或长期运行验证；构建成功、自动 smoke 和摘要核验不替代这些项目。
+
+| 主要附件 | 已下载远端 SHA-256 |
+|---|---|
+| `OpenDesk_0.17.0_x64-setup.exe` | `0381341cf05d16bb0d3b11e064d69f64f61defaff760c0d7f476e7d73b4ebef9` |
+| `OpenDesk_0.17.0_windows-x64_portable.zip` | `4e4c8c766d13a0cd02de55c4d5b209c9c022c4985a23f9dbc401c97ad33b0c6c` |
+| `nimda-workspace-0.3.1.ndpkg` | `a47b0681b9791e58225a626f9af57f894540d2306baf58b6e92e2862db498f18` |
+
+完整附件清单及摘要见各 Release 的 release-manifest.json / SHA256SUMS.txt。本机证据保存在忽略目录 .local/release-20261025，包括构建、测试、包审计、remote-verification.json 和 ci-release.json；不上传真实资料或本机审计细节。发布结果文档在核验后单独提交，发布标签仍固定在上述构建提交。
+
 ## 2026-10-25：作品管理器 0.3.0 命名统一与边界审查
 
 本轮将当前显示名统一为作品管理器，源码、资料、构建环境和独立输出统一使用 media-manager / MediaManager。稳定模块 ID nimda-workspace、旧 RPC、偏好键与单实例锁保持兼容。按用户授权完成 SVN 地址改名提交 r196；没有 Git 提交、推送或公开发布。审查范围及修复见[代码审查](media-manager-review.md)，接入形态取舍见[模式评估](application-modes.md)。

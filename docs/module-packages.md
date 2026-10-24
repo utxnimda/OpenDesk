@@ -88,7 +88,7 @@ npm run build:module-fixtures
 
 | 命令 | 输出 | 范围 |
 |---|---|---|
-| `build:modules` | `dist/bundled-modules/app-manifest.json` 和 `tower-assistant-0.1.9.ndpkg` | 当前公开 App 0.15.0 仅随附塔防助手 |
+| `build:modules` | `dist/bundled-modules/app-manifest.json` 和 `tower-assistant-0.1.9.ndpkg` | 当前公开 App 0.17.0 仅随附塔防助手 |
 | `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.1.9/` 下的包、manifest 与 SHA256SUMS | 0.1.9 已独立发布，正式包保持不可变 |
 | `build:module-fixtures` | `dist/module-fixtures/fixtures.json`、测试台 baseline 及四个变体 | 仅本机开发验证，不进入 App 或独立 Release |
 

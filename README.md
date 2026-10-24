@@ -6,15 +6,15 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 面向 Windows 的本地桌面工具台，用于挂载和开发独立功能。基于 **Tauri 2 + Vue 3 / TypeScript + Python worker**，通用框架管理窗口、设置和后台通信，业务模块各自负责界面与逻辑。
 
-**最新公开版本：[v0.15.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.15.0)**（2026-10-23 已发布并完成远端附件摘要核验） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
+**最新公开版本：[v0.17.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.17.0)**（2026-10-25 已发布并完成远端附件摘要核验） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
 
 ## 正式页签与本地开发测试
 
-当前公开 App 0.15.0 只随附「塔防山贼助手 0.1.9」，该页签已[独立发布](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)，支持薄荷奶油风格。旧公开产物保持不可变。本地开发分发清单继续只随附 `tower-assistant`；允许独立发布的源码模块另增加 `nimda-workspace`（作品管理器）。模块测试台和 fixture 仅用于开发验证，部署工作台及其他私有模块不在公开清单内。
+当前公开 App 0.17.0 只随附「塔防山贼助手 0.1.9」，该页签已[独立发布](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9)，支持薄荷奶油风格。旧公开产物保持不可变。分发清单继续只随附 `tower-assistant`；作品管理器 `nimda-workspace` **[0.3.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fnimda-workspace%2Fv0.3.1)** 作为独立页签公开发布，按需下载导入。模块测试台和 fixture 仅用于开发验证，部署工作台及其他私有模块不在公开清单内。
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
 
-本地开发版 **0.17.0** 延续 0.16.0 的 [本地 Web 应用接入](docs/module-web-apps.md)，并支持工程内统一管理状态、外部结构插件的统一构建。作品管理器 **0.3.1** 已纳入本仓库源码，保留原应用界面、嵌入与完整弹出窗口；真实数据在 Git 忽略的独立 SVN 工作副本中。宿主在停用、切换版本和退出前等待已开始的操作结束，旧 `hostApi: 1` 继续兼容。这两个开发版本尚未公开发布，实际验证见[验证记录](docs/verification.md)。
+正式版 **0.17.0** 延续 0.16.0 的 [本地 Web 应用接入](docs/module-web-apps.md)，并支持工程内统一管理状态、外部结构插件的统一构建。作品管理器 **0.3.1** 已纳入本仓库源码，保留原应用界面、嵌入与完整弹出窗口；真实数据在 Git 忽略的独立 SVN 工作副本中。宿主在停用、切换版本和退出前等待已开始的操作结束，旧 `hostApi: 1` 继续兼容。App 与作品管理器均已从干净源码构建并公开发布，10 个远端附件已逐项下载核对；实际验证和限制见[验证记录](docs/verification.md)。
 
 ## 作品管理器与统一工程
 
