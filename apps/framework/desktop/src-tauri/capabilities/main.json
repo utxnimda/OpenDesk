@@ -11,6 +11,6 @@
     "allow-modules-list", "allow-modules-import", "allow-modules-select",
     "allow-modules-enable", "allow-modules-open", "allow-modules-call", "allow-modules-close",
     "allow-modules-ui-ready", "allow-modules-load-failed", "core:event:allow-listen", "core:event:allow-unlisten",
-    "allow-companion-menu-show", "allow-companion-menu-close"
+    "allow-companion-menu-show", "allow-companion-menu-close", "allow-module-surface-open"
   ]
 }

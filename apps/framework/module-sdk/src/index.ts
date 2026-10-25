@@ -1,4 +1,6 @@
 /** Browser-only module SDK. It deliberately has no Tauri or host-process imports. */
+import { isSurfaceContext, parseSurfaceOperation, type ModuleSurfaceClient, type ModuleSurfaceContext } from './module-surface';
+export type { ModuleSurfaceClient, ModuleSurfaceContext, ModuleSurfaceOptions } from './module-surface';
 export const BRIDGE_PROTOCOL = 1;
 // Protocol 1 keeps its legacy nimdadesk:* messages and nd-* fragment keys so
 // already installed module packages can still connect after the OpenDesk rename.
@@ -34,6 +36,8 @@ export interface ModuleIdentity {
 }
 export interface LimitedHost {
   readonly available: boolean;
+  /** Undefined on older hosts; context is null in the owning main view. */
+  readonly surface?: ModuleSurfaceClient;
   callWorker<T>(method: string, params?: Record<string, unknown>): Promise<T>;
 }
 export interface ModuleServices { host: LimitedHost }
@@ -45,6 +49,7 @@ export interface ConnectMessage {
   uiStyle?: unknown;
   /** Optional extension: older hosts retain an opaque, motion-free module surface. */
   surfaceEffects?: unknown;
+  moduleSurface?: unknown;
 }
 export interface ModuleBridge {
   host: LimitedHost;
@@ -107,6 +112,7 @@ export function createModuleBridge(): ModuleBridge {
   let accepted = false;
   let port: MessagePort | null = null;
   let sequence = 0;
+  let surface: ModuleSurfaceClient | undefined;
   let resolveReady!: (identity: ModuleIdentity) => void;
   let rejectReady!: (reason: Error) => void;
   const pending = new Map<string, { resolve(value: unknown): void; reject(reason: Error): void; timer: ReturnType<typeof setTimeout> }>();
@@ -120,6 +126,16 @@ export function createModuleBridge(): ModuleBridge {
     document.documentElement.dataset.theme = resolveMessageAppearance(event.data.theme, event.data.appearance)!;
     document.documentElement.dataset.uiStyle = resolveMessageUIStyle(event.data.uiStyle);
     applySurfaceEffects(event.data.surfaceEffects);
+    if (isRecord(event.data.moduleSurface) && (event.data.moduleSurface.context === null || isSurfaceContext(event.data.moduleSurface.context))) {
+      const context = event.data.moduleSurface.context as ModuleSurfaceContext | null;
+      surface = {
+        context,
+        open: (options) => surfaceRequest('open', options),
+        close: () => surfaceRequest('close', {}),
+        setAlwaysOnTop: (enabled) => surfaceRequest('always-on-top', { enabled }),
+        startDrag: () => surfaceRequest('start-drag', {}),
+      };
+    }
     port.onmessage = (message: MessageEvent) => {
       const data: unknown = message.data;
       if (!active || !isRecord(data) || data.generation !== generation) return;
@@ -152,8 +168,21 @@ export function createModuleBridge(): ModuleBridge {
     clearTimeout(handshakeTimer); rejectReady(new Error(BROWSER_UNAVAILABLE));
   }
 
+  async function surfaceRequest(action: string, params: unknown): Promise<void> {
+    const operation = parseSurfaceOperation(action, params);
+    await ready;
+    if (!active || !port || !surface) throw new Error('当前宿主不支持独立窗口，或模块实例已关闭。');
+    const id = `${generation}:${++sequence}`;
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => { pending.delete(id); reject(new Error('独立窗口请求超时；没有自动重试。')); }, 15_000);
+      pending.set(id, { resolve: () => resolve(), reject, timer });
+      try { port!.postMessage({ type: 'surface', generation, id, ...operation }); }
+      catch (error) { pending.delete(id); clearTimeout(timer); reject(new Error(errorMessage(error))); }
+    });
+  }
   const host: LimitedHost = {
     get available() { return active && accepted && port !== null; },
+    get surface() { return surface; },
     async callWorker<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
       await ready;
       if (!active || !port) throw new Error('模块实例已关闭，不能继续调用。');

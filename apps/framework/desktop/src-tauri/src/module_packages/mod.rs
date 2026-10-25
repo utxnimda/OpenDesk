@@ -475,6 +475,34 @@ impl ModuleManager {
         drop(transition);
         self.catalog().await
     }
+    /// Borrow an already active instance without opening it, restoring a worker,
+    /// or changing UI readiness/rollback state. Auxiliary views use this path.
+    pub async fn describe_existing(&self, token: &str) -> Result<Value, String> {
+        self.ensure_running()?;
+        let (id, generation) = self
+            .tokens
+            .lock()
+            .map_err(|_| "MODULE_LOCK_UNAVAILABLE")?
+            .get(token)
+            .cloned()
+            .ok_or("MODULE_SESSION_STALE")?;
+        let cell = self.cell(&id)?;
+        if cell.transition.load(Ordering::SeqCst) {
+            return Err("MODULE_SWITCHING".into());
+        }
+        let slot = cell.slot.lock().await;
+        if cell.transition.load(Ordering::SeqCst) {
+            return Err("MODULE_SWITCHING".into());
+        }
+        let session = slot.session.as_ref().ok_or("MODULE_SESSION_STALE")?;
+        if session.token != token || session.generation != generation {
+            return Err("MODULE_SESSION_STALE".into());
+        }
+        if slot.awaiting_ui {
+            return Err("MODULE_NOT_READY".into());
+        }
+        Ok(session.describe())
+    }
     pub async fn call(&self, token: &str, method: &str, params: Value) -> Result<Value, String> {
         self.ensure_running()?;
         let (id, generation) = self
@@ -814,6 +842,45 @@ mod tests {
             .unwrap();
     }
 
+    #[test]
+    fn borrowed_view_preserves_session_and_requires_existing_confirmed_generation() {
+        tauri::async_runtime::block_on(async {
+            let (root, manager) = test_manager();
+            let first = install(&manager, &root, "demo", "1.0.0");
+            let second = install(&manager, &root, "demo", "1.1.0");
+            manager.select("demo", "1.0.0", &first).await.unwrap();
+            manager.set_enabled("demo", true).await.unwrap();
+            let opened = manager.open("demo").await.unwrap();
+            let token = opened["token"].as_str().unwrap();
+            assert_eq!(
+                manager.describe_existing(token).await.unwrap_err(),
+                "MODULE_NOT_READY"
+            );
+            ready(&manager, &opened).await;
+            assert_eq!(manager.describe_existing(token).await.unwrap(), opened);
+            assert_eq!(manager.describe_existing(token).await.unwrap(), opened);
+            assert!(manager.describe_existing("unknown").await.is_err());
+            // No token rotation, server replacement or worker restoration is
+            // performed by repeated borrowing. Switching revokes the old view.
+            manager.select("demo", "1.1.0", &second).await.unwrap();
+            assert_eq!(
+                manager.describe_existing(token).await.unwrap_err(),
+                "MODULE_SESSION_STALE"
+            );
+            let replacement = manager.open("demo").await.unwrap();
+            ready(&manager, &replacement).await;
+            let token = replacement["token"].as_str().unwrap();
+            assert_eq!(manager.describe_existing(token).await.unwrap(), replacement);
+            manager.close(token).await.unwrap();
+            assert_eq!(
+                manager.describe_existing(token).await.unwrap_err(),
+                "MODULE_SESSION_STALE"
+            );
+            manager.shutdown().await.unwrap();
+            drop(manager);
+            fs::remove_dir_all(root).unwrap();
+        });
+    }
     #[test]
     fn ui_failure_restores_confirmed_version_and_ignores_stale_or_ready_reports() {
         tauri::async_runtime::block_on(async {

@@ -2,6 +2,12 @@
 
 <!-- Generated from config/version.json by scripts/version.mjs. Do not edit directly. -->
 
+## 0.18.0 — 2026-10-26
+
+新增通用透明模块第二视图，复用当前模块的运行实例。
+
+- **页签包与版本管理 0.7.0**（调整，`core.module-packages`）：通用透明模块第二视图借用当前模块的同一 worker；独立关闭不清空计时，严格校验窗口身份和迟到请求的 generation。
+
 ## 0.17.0 — 2026-10-25
 
 支持工程目录内统一管理本地状态，并纳入作品管理工具的独立构建。

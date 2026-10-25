@@ -57,6 +57,10 @@ export interface SpiritItem {
   plannedLocation?: 'warehouse' | 'placed';
   plannedPedestalId?: string | null;
   originalId?: number;
+  /** Authoritative per-pedestal emission returned by the worker; absent in storage. */
+  currentQi?: number;
+  /** Worker-computed contributions to receiving platforms. An omitted platform receives zero. */
+  contributions?: { platformId: string; qi: number }[];
 }
 export interface Snapshot {
   source: SaveSource;

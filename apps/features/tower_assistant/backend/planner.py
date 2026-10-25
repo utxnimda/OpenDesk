@@ -16,6 +16,8 @@ import math
 import time
 from typing import Any
 
+from .reader import pedestal_qi_units
+
 
 class PlannerError(ValueError):
     """The supplied snapshot cannot be interpreted safely."""
@@ -54,11 +56,7 @@ def _cells(entity: dict, point: tuple[int, int] | None = None) -> frozenset[tupl
 def _qi_units(item: dict | None, pedestal: dict, bonus: Decimal) -> int:
     if item is None:
         return 0
-    # Preserve the native expression's binary arithmetic and multiplication
-    # order: Math.round(10 * rawQi * (1 + tier * .15)). Decimal rounding or
-    # multiplying by 10 last can differ at a half-unit boundary.
-    value = 10 * float(item["qi"]) * (1 + pedestal["tier"] * float(bonus))
-    return math.floor(value + 0.5)
+    return pedestal_qi_units(item["qi"], pedestal["tier"], float(bonus))
 
 
 def _validate(snapshot: dict) -> tuple[list[dict], list[dict], dict, Decimal]:

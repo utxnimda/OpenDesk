@@ -5,6 +5,7 @@ mod data_location;
 mod diagnostics;
 mod module_packages;
 mod module_smoke;
+mod module_surface;
 mod personalization;
 mod process_job;
 mod settings;
@@ -43,6 +44,8 @@ struct AppState {
     companion_ready: tokio::sync::Mutex<Option<String>>,
     companion_show_lock: tokio::sync::Mutex<()>,
     companion_menu: companion_menu::MenuSession,
+    module_surface: module_surface::SurfaceSession,
+    module_surface_lock: tokio::sync::Mutex<()>,
     module_ui_ready: tokio::sync::Mutex<std::collections::BTreeMap<String, Value>>,
     module_ui_calls: tokio::sync::Mutex<std::collections::BTreeMap<String, Value>>,
     module_ui_closed: tokio::sync::Mutex<std::collections::HashSet<String>>,
@@ -509,8 +512,9 @@ async fn modules_select(
         .map_err(Clone::clone)?
         .select(&id, &version, &digest)
         .await;
+    let surface_result = reconcile_module_surface(&app, &state).await;
     let _ = app.emit("modules-changed", ());
-    result
+    result.and_then(|value| surface_result.map(|()| value))
 }
 
 #[tauri::command]
@@ -526,8 +530,9 @@ async fn modules_enable(
         .map_err(Clone::clone)?
         .set_enabled(&id, enabled)
         .await;
+    let surface_result = reconcile_module_surface(&app, &state).await;
     let _ = app.emit("modules-changed", ());
-    result
+    result.and_then(|value| surface_result.map(|()| value))
 }
 
 #[tauri::command]
@@ -576,22 +581,41 @@ async fn modules_load_failed(
         .map_err(Clone::clone)?
         .report_load_failed(&token, &reason)
         .await;
+    let surface_result = reconcile_module_surface(&app, &state).await;
     let _ = app.emit("modules-changed", ());
-    result
+    result.and_then(|value| surface_result.map(|()| value))
 }
 
 #[tauri::command]
-async fn modules_close(token: String, state: State<'_, AppState>) -> Result<(), String> {
-    state
+async fn modules_close(
+    token: String,
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let result = state
         .modules
         .as_ref()
         .map_err(Clone::clone)?
         .close(&token)
-        .await?;
+        .await;
+    let surface_result = reconcile_module_surface(&app, &state).await;
+    result?;
+    surface_result?;
     if state.module_smoke {
         state.module_ui_closed.lock().await.insert(token);
     }
     Ok(())
+}
+
+async fn reconcile_module_surface(app: &tauri::AppHandle, state: &AppState) -> Result<(), String> {
+    module_surface::reconcile(app, state)
+        .await
+        .map_err(|error| {
+            state
+                .diagnostics
+                .record("error", "module.surface_reconcile", &error);
+            error
+        })
 }
 
 #[tauri::command]
@@ -1152,6 +1176,12 @@ pub fn run() {
             modules_close,
             modules_ui_ready,
             modules_load_failed,
+            module_surface::module_surface_open,
+            module_surface::module_surface_context,
+            module_surface::module_surface_call,
+            module_surface::module_surface_close,
+            module_surface::module_surface_start_drag,
+            module_surface::module_surface_set_always_on_top,
             frontend_ready
         ])
         .setup(move |app| {
@@ -1194,6 +1224,8 @@ pub fn run() {
                 companion_ready: tokio::sync::Mutex::new(None),
                 companion_show_lock: tokio::sync::Mutex::new(()),
                 companion_menu: companion_menu::MenuSession::default(),
+                module_surface: module_surface::SurfaceSession::default(),
+                module_surface_lock: tokio::sync::Mutex::new(()),
                 module_ui_ready: tokio::sync::Mutex::new(std::collections::BTreeMap::new()),
                 module_ui_calls: tokio::sync::Mutex::new(std::collections::BTreeMap::new()),
                 module_ui_closed: tokio::sync::Mutex::new(std::collections::HashSet::new()),
@@ -1312,6 +1344,34 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
+            if window.label() == module_surface::LABEL {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    let state = window.state::<AppState>();
+                    if state.exiting.load(Ordering::SeqCst) { return; }
+                    api.prevent_close();
+                    let generation = match state.module_surface.current() {
+                        Ok(Some(context)) => context.generation,
+                        Ok(None) => {
+                            if let Err(error) = window.destroy() {
+                                state.diagnostics.record("error", "module.surface_close", &error.to_string());
+                            }
+                            return;
+                        }
+                        Err(error) => {
+                            state.diagnostics.record("error", "module.surface_close", &error);
+                            return;
+                        }
+                    };
+                    let app = window.app_handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        let state = app.state::<AppState>();
+                        if let Err(error) = module_surface::close_native(&app, &state, &generation).await {
+                            state.diagnostics.record("error", "module.surface_close", &error);
+                        }
+                    });
+                }
+                return;
+            }
             if window.label() == companion_menu::LABEL {
                 match event {
                     tauri::WindowEvent::CloseRequested { api, .. } => {

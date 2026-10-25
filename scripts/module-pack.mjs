@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { readGitIdentity } from './build-version.mjs';
 import { localConfig, pythonExecutable, root, run, worker } from './environment.mjs';
-import { MODULE_DEFINITIONS as definitions, assertBundleDirectory, assertOutputDirectory, moduleSourceDirectory, parseModulePackArgs, readDistribution, sha256, writeImmutableFiles } from './distribution.mjs';
+import { MODULE_DEFINITIONS as definitions, assertBundleDirectory, assertOutputDirectory, assertUnlinkedPath, moduleSourceDirectory, parseModulePackArgs, readDistribution, sha256, writeImmutableFiles } from './distribution.mjs';
 
 function underRoot(...parts) {
   const path = resolve(root, ...parts);
@@ -93,6 +93,27 @@ function buildFingerprint(source, manifest, marker) {
 function writeJson(path, value) {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(value, null, 2) + '\n', 'utf8');
+}
+
+/** Only explicitly listed, ordinary module files enter the frozen worker. */
+export function workerDataArguments(projectRoot, source, files = []) {
+  if (!Array.isArray(files)) throw new Error('workerData must be an explicit list of files.');
+  const seen = new Set();
+  const args = [];
+  for (const file of files) {
+    if (typeof file !== 'string' || !file || file.split('/').some((part) => !/^[a-zA-Z0-9_.-]+$/.test(part) || part === '.' || part === '..')) throw new Error('Invalid worker resource path.');
+    const path = resolve(source, file);
+    const withinSource = relative(resolve(source), path);
+    const withinProject = relative(resolve(projectRoot), path);
+    if (!withinSource || withinSource.startsWith('..') || isAbsolute(withinSource) || !withinProject || withinProject.startsWith('..') || isAbsolute(withinProject)) throw new Error('Worker resource must belong to this module.');
+    assertUnlinkedPath(path);
+    if (!lstatSync(path).isFile()) throw new Error('Worker resource must be an ordinary file.');
+    const key = withinProject.replaceAll('\\', '/').toLowerCase();
+    if (seen.has(key)) throw new Error('Duplicate worker resource.');
+    seen.add(key);
+    args.push('--add-data', path + (process.platform === 'win32' ? ';' : ':') + dirname(withinProject).replaceAll('\\', '/'));
+  }
+  return args;
 }
 
 function workerEntry(definition, manifest, marker) {
@@ -191,7 +212,7 @@ async function buildPackage(sourceId, destination, override = {}) {
     const pyDist = join(temporary, 'd');
     run(python, ['-X', 'utf8', '-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir', '--contents-directory', '_internal', '--name', 'module-worker',
       '--distpath', pyDist, '--workpath', join(temporary, 'w'), '--specpath', temporary,
-      '--paths', root, '--paths', worker, entry], { env: { ...process.env, PYINSTALLER_CONFIG_DIR: join(temporary, 'c'), SOURCE_DATE_EPOCH: '1577836800', PYTHONHASHSEED: '0' } });
+      '--paths', root, '--paths', worker, ...workerDataArguments(root, source, definition.workerData), entry], { env: { ...process.env, PYINSTALLER_CONFIG_DIR: join(temporary, 'c'), SOURCE_DATE_EPOCH: '1577836800', PYTHONHASHSEED: '0' } });
     const frozen = join(pyDist, 'module-worker');
     if (!existsSync(join(frozen, 'module-worker.exe')) || !existsSync(join(frozen, '_internal/base_library.zip'))) throw new Error('Frozen worker output is incomplete.');
     verifyFrozenWorker(join(frozen, 'module-worker.exe'), manifest, marker);

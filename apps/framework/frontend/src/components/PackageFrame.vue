@@ -77,6 +77,9 @@ function receive(event: MessageEvent) {
     catch (error) { await reportLoadFailure(errorMessage(error)); throw error; }
     if (!closed) ready.value = true;
     if (timer) clearTimeout(timer);
+  }, async (operation) => {
+    if (operation.action !== 'open') throw new Error('请在独立窗口中操作其关闭、拖动和置顶。');
+    await props.host.openPackageSurface(owned.token, operation.params);
   });
   transport.port1.onmessage = (message: MessageEvent) => {
     void broker?.receive(message.data, (value) => { if (!closed) transport.port1.postMessage(value); });
@@ -86,6 +89,7 @@ function receive(event: MessageEvent) {
     type: 'nimdadesk:connect', protocol: 1,
     identity: { moduleId: owned.moduleId, version: owned.version, digest: owned.digest, generation: owned.generation },
     ...packageAppearance(props.theme, props.uiStyle, props.surfaceEffects),
+    moduleSurface: { context: null },
   }, origin, [transport.port2]);
 }
 watch(() => [props.theme, props.uiStyle, props.surfaceEffects] as const, ([theme, uiStyle, effects]) => {

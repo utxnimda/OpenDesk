@@ -1,6 +1,6 @@
 {
   "name": "opendesk",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "private": true,
   "type": "module",
   "description": "A local desktop workbench framework; business modules are added explicitly.",
@@ -15,6 +15,7 @@
     "test:frontend": "vitest run",
     "test:worker": "node scripts/python.mjs test",
     "test:versioning": "node --test tests/versioning/*.test.mjs",
+    "test:capture": "node --test tests/capture/*.test.cjs",
     "version:check": "node scripts/version.mjs check",
     "version:sync": "node scripts/version.mjs sync",
     "version:prepare": "node scripts/version.mjs prepare",

@@ -1,6 +1,6 @@
 """Read game-owned files without executing game code or writing save data.
 
-The format and constants below are audited against the hashes in RULE_HASHES.
+The format and constants below are audited against complete RULE_PROFILES.
 Unknown game revisions deliberately fail instead of producing plausible layouts.
 """
 from __future__ import annotations
@@ -27,6 +27,39 @@ RULE_HASHES = {
     "lw.json": "7a4f5a5bfd5967f3a74e36aa9a0c2cda132619b2908bdc39b1406da4b346bde6",
     "wp.json": "14516d34cedf209c497fca10699e179c26c43558c2a3253bc87c8b33493a82c4",
     "zy.json": "89f437020459a63408d88202afa47f0550306034e6d6e75e2315c7122d662748",
+}
+RULE_PROFILES = {
+    "audited-2026-10-18": {
+        "hashes": RULE_HASHES,
+        "saveDepth": 22,
+        "sprites": ((221, "角色形象", "person"), (420, "物品图标", "item")),
+    },
+    "audited-2026-10-25": {
+        "saveDepth": 23,
+        "hashes": {
+            "data.json": "f6222404d982bdd5cb57d8e206b70ccf5e7c3f7b0f18891ca0d387c68ab92001",
+            "scripts/c3runtime.js": "11b5942035ae1fc3185abb5550f97abbe70e1451679698da2e169e9c7ee3753c",
+            "jz.json": "3d5da9a57d55f8ec616bf514571bbd06e688ee456d3b3c348a390322de3e3b25",
+            "ss.json": "4350cb979c4026ce0d8dc25e7807fde3d29a1d42fbd2e499673614a4f67e1bc7",
+            "lw.json": "7a4f5a5bfd5967f3a74e36aa9a0c2cda132619b2908bdc39b1406da4b346bde6",
+            "wp.json": "c7b65aad4dc3ee9458221ca8fc16d91a8e6ad7e872686a820e97303de7bb6558",
+            "zy.json": "97d59a029aefbfbba315c9cec7b83a168571def79282eec2be9edbfeb3759188",
+        },
+        "sprites": ((224, "角色形象", "person"), (423, "物品图标", "item")),
+    },
+    "audited-2026-10-25-r2": {
+        "saveDepth": 23,
+        "hashes": {
+            "data.json": "9e5697adeb11a0c1daf40be6086b56f58755562f3560ad1772d771445e167ed2",
+            "scripts/c3runtime.js": "2546ca0823f858f3ce2a2e1dd013ed70f7e4d330e8d6c33d7ce75fb2a75d6936",
+            "jz.json": "3d5da9a57d55f8ec616bf514571bbd06e688ee456d3b3c348a390322de3e3b25",
+            "ss.json": "4350cb979c4026ce0d8dc25e7807fde3d29a1d42fbd2e499673614a4f67e1bc7",
+            "lw.json": "7a4f5a5bfd5967f3a74e36aa9a0c2cda132619b2908bdc39b1406da4b346bde6",
+            "wp.json": "c7b65aad4dc3ee9458221ca8fc16d91a8e6ad7e872686a820e97303de7bb6558",
+            "zy.json": "97d59a029aefbfbba315c9cec7b83a168571def79282eec2be9edbfeb3759188",
+        },
+        "sprites": ((224, "角色形象", "person"), (423, "物品图标", "item")),
+    },
 }
 QUALITY_NAMES = {1: "凡物", 2: "优秀", 3: "精致", 4: "绝世", 5: "传说", 6: "神话"}
 SAVE_NAME = re.compile(r"ea([1-9][0-9]{0,2})save\.dat\Z")
@@ -94,7 +127,7 @@ def _read_stable(path: Path, limit: int) -> tuple[bytes, float]:
     return raw, after.st_mtime
 
 
-def _array(value: Any, label: str, *, save: bool = False) -> list:
+def _array(value: Any, label: str, *, save: bool = False, save_depth: int = 22) -> list:
     if not isinstance(value, dict) or value.get("c2array") is not True:
         raise ReaderError(f"{label}不是支持的 Construct 数组格式。")
     size = value.get("size")
@@ -103,7 +136,7 @@ def _array(value: Any, label: str, *, save: bool = False) -> list:
         raise ReaderError(f"{label}数组尺寸无效。")
     if size[0] > 5001 or size[1] > 100 or size[2] > 30:
         raise ReaderError(f"{label}数组尺寸超出支持范围。")
-    if save and (size[0] < 201 or size[1] < 51 or size[2] != 22):
+    if save and (size[0] < 201 or size[1] < 51 or size[2] != save_depth):
         raise ReaderError("存档版本不受支持，无法可靠识别城市和仓库。")
     data = value.get("data")
     if not isinstance(data, list) or len(data) != size[0]:
@@ -185,21 +218,45 @@ def discover_saves(game_dir: str | Path) -> list[dict[str, Any]]:
             for item in _save_entries(_root(game_dir))]
 
 
-def _tables(root: Path) -> dict[str, list]:
+def _audited_package(package: ZipFile) -> tuple[str, dict[str, bytes]]:
+    """Match one whole audited revision; never combine individually known files."""
+    manifest = package.getinfo("package.json")
+    if manifest.file_size > 65536:
+        raise ReaderError("游戏包标识异常。")
+    identity = _json(package.read(manifest), "游戏标识")
+    if not isinstance(identity, dict) or identity.get("name") != "com.ujwan.tfszmnq":
+        raise ReaderError("所选目录不是塔防山贼模拟器。")
+    candidates = list(RULE_PROFILES)
+    members = {}
+    names = package.namelist()
+    for member in RULE_HASHES:
+        if names.count(member) != 1:
+            raise ReaderError("游戏规则文件缺失或重复，无法确认版本。")
+        if package.getinfo(member).file_size > MAX_MEMBER_BYTES:
+            raise ReaderError("游戏规则文件超出支持大小。")
+        raw = package.read(member)
+        digest = sha256(raw).hexdigest()
+        candidates = [ident for ident in candidates if RULE_PROFILES[ident]["hashes"][member] == digest]
+        if not candidates:
+            raise ReaderError("游戏版本的完整规则组合尚未核实，已停止读取；需要适配当前版本后再使用。")
+        members[member] = raw
+    return candidates[0], members
+
+
+def pedestal_qi_units(qi: int | float, tier: int, bonus: float = 0.15) -> int:
+    """Native nonnegative Math.round result, in tenths of qi."""
+    # Keep binary arithmetic and the game's operation order. Decimal rounding
+    # or applying the factor 10 last changes some half-unit boundaries.
+    value = 10 * float(qi) * (1 + tier * bonus)
+    return math.floor(value + 0.5)
+
+
+def _tables(root: Path) -> dict[str, Any]:
     try:
         with ZipFile(_inside(root, "package.nw")) as package:
-            manifest = package.getinfo("package.json")
-            if manifest.file_size > 65536:
-                raise ReaderError("游戏包标识异常。")
-            if _json(package.read(manifest), "游戏标识").get("name") != "com.ujwan.tfszmnq":
-                raise ReaderError("所选目录不是塔防山贼模拟器。")
-            tables = {}
-            for member, expected in RULE_HASHES.items():
-                if package.getinfo(member).file_size > MAX_MEMBER_BYTES:
-                    raise ReaderError("游戏规则文件超出支持大小。")
-                raw = package.read(member)
-                if sha256(raw).hexdigest() != expected:
-                    raise ReaderError("游戏版本的摆放规则尚未核实，已停止分析；需要适配当前版本后再使用。")
+            profile, members = _audited_package(package)
+            tables: dict[str, Any] = {"_ruleProfile": profile}
+            for member, raw in members.items():
                 if member in ("jz.json", "ss.json", "lw.json", "wp.json", "zy.json"):
                     data = _array(_json(raw, member), member)
                     tables[member] = [[cell[0] for cell in row] for row in data]
@@ -222,7 +279,7 @@ def _footprint(entity: dict) -> set[tuple[int, int]]:
             for y in range(top, top + entity["height"])}
 
 
-def _person_details(row: list, slot: int, data: list, tables: dict[str, list]) -> dict[str, Any]:
+def _person_details(row: list, slot: int, data: list, tables: dict[str, Any]) -> dict[str, Any]:
     """Optional display fields never alter the placement/qi authority."""
     details: dict[str, Any] = {}
     notices = []
@@ -270,7 +327,7 @@ def _person_details(row: list, slot: int, data: list, tables: dict[str, list]) -
     return details
 
 
-def _normalize(data: list, tables: dict[str, list], source: dict[str, Any]) -> dict[str, Any]:
+def _normalize(data: list, tables: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
     if data[0][0][1] != "szmnqea":
         raise ReaderError("存档缺少游戏格式标识。")
     level = _number(data[2][1][0], "山寨等级", integer=True, minimum=1)
@@ -395,21 +452,38 @@ def _normalize(data: list, tables: dict[str, list], source: dict[str, Any]) -> d
                     raise ReaderError("已摆放灵物与置物台的绑定不一致，请重新保存后再分析。")
                 item["pedestalId"] = parent["id"]
             items.append(item)
-    item_ids = {item["id"] for item in items}
-    if any(e.get("itemId") not in item_ids for e in entities if e.get("itemId")):
-        raise ReaderError("置物台引用了不存在的灵物。")
+    item_by_id = {item["id"]: item for item in items}
+    for entity in entities:
+        if not entity.get("itemId"):
+            continue
+        item = item_by_id.get(entity["itemId"])
+        if item is None:
+            raise ReaderError("置物台引用了不存在的灵物。")
+        if item["location"] != "placed" or item.get("pedestalId") != entity["id"]:
+            raise ReaderError("置物台与已摆放灵物的绑定不一致，不能重复引用同一灵物；请重新保存后再分析。")
     if len({e["id"] for e in entities}) != len(entities):
         raise ReaderError("地图重复引用同一个设施，无法可靠分析。")
     if not any(e["kind"] == "platform" for e in entities):
         warnings.append("这个存档的主城没有渡劫台。")
-    warnings.append("只读取最近一次保存的城市；游戏中尚未保存的移动不会出现在图上。")
+    warnings.append("只读取所选存档保存时的城市；游戏中尚未保存的移动不会出现在图上。")
     warnings.append("固定渡劫台与有附属设施的主体建筑；设施可在原主体有效范围内搬迁，原生资源和特殊地形保持原位。")
-    item_by_id = {item["id"]: item for item in items}
-    for platform in (e for e in entities if e["kind"] == "platform"):
-        contributions = [math.floor(item_by_id[e["itemId"]]["qi"] * 10 * (1 + e["tier"] * 0.15) + 0.5) / 10
-                         for e in entities if e["kind"] == "pedestal" and e.get("itemId")
-                         and abs(e["x"] - platform["x"]) + abs(e["y"] - platform["y"]) <= 3]
-        platform["currentQi"] = round(sum(contributions), 1)
+    entity_by_id = {entity["id"]: entity for entity in entities}
+    platforms = [entity for entity in entities if entity["kind"] == "platform"]
+    platform_units = {platform["id"]: 0 for platform in platforms}
+    for item in items:
+        item["contributions"] = []
+        if item["location"] != "placed":
+            continue
+        pad = entity_by_id[item["pedestalId"]]
+        units = pedestal_qi_units(item["qi"], pad["tier"])
+        item["currentQi"] = units / 10
+        for platform in platforms:
+            if abs(pad["x"] - platform["x"]) + abs(pad["y"] - platform["y"]) <= 3:
+                item["contributions"].append({"platformId": platform["id"], "qi": units / 10})
+                platform_units[platform["id"]] += units
+    for platform in platforms:
+        platform["currentQi"] = platform_units[platform["id"]] / 10
+    profile = tables.get("_ruleProfile", "audited-2026-10-18")
     return {"schemaVersion": 1, "source": source, "bounds": bounds, "entities": entities, "items": items,
             "rules": {"auraRadius": 3, "auraMetric": "manhattan", "pedestalTierBonus": 0.15,
                       "qiRounding": "js-one-decimal", "allowItemReassignment": True,
@@ -417,7 +491,8 @@ def _normalize(data: list, tables: dict[str, list], source: dict[str, Any]) -> d
                       "cityLevel": level, "mapSize": 50, "facilityRange": 3,
                       "warehouseCapacity": len(data) - 1,
                       "warehouseFreeSlots": warehouse_free_slots,
-                      "ruleHashes": dict(RULE_HASHES)}, "warnings": warnings}
+                      "ruleProfile": profile,
+                      "ruleHashes": dict(RULE_PROFILES[profile]["hashes"])}, "warnings": warnings}
 
 
 def load_latest(game_dir: str | Path, save_id: str | None = None) -> dict[str, Any]:
@@ -432,7 +507,9 @@ def load_latest(game_dir: str | Path, save_id: str | None = None) -> dict[str, A
     dirname, filename = entry["id"].split(":")
     tables = _tables(root)
     raw, _mtime = _read_stable(_inside(root, dirname, filename), MAX_SAVE_BYTES)
-    data = _array(_json(raw, "存档"), "存档", save=True)
+    profile = tables.get("_ruleProfile", "audited-2026-10-18")
+    data = _array(_json(raw, "存档"), "存档", save=True,
+                  save_depth=RULE_PROFILES[profile]["saveDepth"])
     source = {k: v for k, v in entry.items() if not k.startswith("_")}
     source.update({"sha256": sha256(raw).hexdigest(), "savedAtSource": entry["_dateSource"]})
     snapshot = _normalize(data, tables, source)

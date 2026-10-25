@@ -6,10 +6,13 @@ import { createTowerClient } from './client';
 import { collectIconKeys, comparisonSvg, ENTITY_STYLE, entitiesAtPoint, focusBounds, formatQi, stepDescription } from './map';
 import TowerMap from './TowerMap.vue';
 import EntityDetails from './EntityDetails.vue';
+import SpiritInventoryPanel from './SpiritInventoryPanel.vue';
+import RuntimeStatisticsPanel from './RuntimeStatisticsPanel.vue';
 import type { Analysis, Inspection, MigrationStep, Point, VisualCatalog } from './types';
 
 const props = defineProps<{ services: ModuleServices }>();
 const client = createTowerClient(props.services.host);
+const activeView = ref<'inventory' | 'planning' | 'statistics'>('inventory');
 const gameDir = ref('');
 const saveId = ref('');
 const platformId = ref('');
@@ -18,6 +21,7 @@ const analysis = ref<Analysis | null>(null);
 const pending = ref('');
 const failure = ref('');
 const sourceOpen = ref(false);
+const sourceExpanded = computed(() => sourceOpen.value || (activeView.value === 'statistics' && !gameDir.value.trim()));
 const selectedStep = ref('');
 const selectedEntityId = ref('');
 const selectedSide = ref<'before' | 'after'>('before');
@@ -39,7 +43,7 @@ const entitiesBefore = computed(() => analysis.value?.entitiesBefore ?? snapshot
 const entitiesAfter = computed(() => analysis.value?.entitiesAfter ?? entitiesBefore.value);
 const platforms = computed(() => entitiesBefore.value.filter((entity) => entity.kind === 'platform'));
 const chosenPlatform = computed(() => platforms.value.find((entity) => entity.id === (analysis.value?.platformId || platformId.value)) ?? platforms.value[0]);
-const source = computed(() => analysis.value?.source ?? snapshot.value?.source);
+const source = computed(() => activeView.value === 'inventory' ? snapshot.value?.source : analysis.value?.source ?? snapshot.value?.source);
 const steps = computed(() => analysis.value?.steps ?? []);
 const currentStep = computed(() => {
   const step = steps.value.find((entry) => entry.id === selectedStep.value);
@@ -70,6 +74,7 @@ function stepLabel(step: MigrationStep): string {
 }
 
 watch(gameDir, () => { inspection.value = null; analysis.value = null; saveId.value = ''; platformId.value = ''; selectedStep.value = ''; selectedEntityId.value = ''; visuals.value = null; visualsFailure.value = ''; visualsPending.value = false; visualsRequest++; }, { flush: 'sync' });
+watch([activeView, gameDir], () => { if (activeView.value === 'statistics' && !gameDir.value.trim()) sourceOpen.value = true; }, { flush: 'sync' });
 watch(saveId, () => { analysis.value = null; platformId.value = ''; selectedStep.value = ''; selectedEntityId.value = ''; }, { flush: 'sync' });
 watch(platformId, () => { analysis.value = null; selectedStep.value = ''; selectedEntityId.value = ''; }, { flush: 'sync' });
 watch(selectedEntityId, (value) => { if (!value) selectedPoint.value = null; }, { flush: 'sync' });
@@ -173,23 +178,34 @@ function exportComparison() {
 <template>
   <div class="tower-assistant">
     <header class="tool-heading">
-      <div><p class="tool-overline">塔防山贼助手 <span>/</span> 布局工具</p><h2>渡劫布局分析</h2><p class="tool-description">先达到可用灵物的最高灵气，再尽量少搬人物和建筑。</p></div>
-      <button class="button button-primary analyze-button" :disabled="busy || !services.host.available || !gameDir.trim() || (platforms.length > 1 && !platformId)" @click="generate"><RefreshCw v-if="busy" :size="15" class="spinning" /><Sparkles v-else :size="15" />{{ pending || '生成迁移方案' }}</button>
+      <div><p class="tool-overline">塔防山贼助手 <span>/</span> {{ activeView === 'statistics' ? '运行统计' : '存档工具' }}</p><h2>{{ activeView === 'statistics' ? '工作与战斗' : activeView === 'inventory' ? '灵物与灵气' : '渡劫布局分析' }}</h2><p class="tool-description">{{ activeView === 'statistics' ? '从计时点记录人物工作与逐次伤害，查看完整输出和公式中的提升空间。' : activeView === 'inventory' ? '对比已摆和仓库灵物，查看基础灵气排名与实际贡献。' : '先达到可用灵物的最高灵气，再尽量少搬人物和建筑。' }}</p></div>
+      <button v-show="activeView === 'planning'" class="button button-primary analyze-button" :disabled="busy || !services.host.available || !gameDir.trim() || (platforms.length > 1 && !platformId)" @click="generate"><RefreshCw v-if="busy" :size="15" class="spinning" /><Sparkles v-else :size="15" />{{ pending || '生成迁移方案' }}</button>
+      <button v-if="activeView === 'inventory'" class="button button-secondary" :disabled="busy || !services.host.available || !gameDir.trim()" @click="readSnapshot"><RefreshCw :size="15" :class="{ spinning: busy }" />{{ pending || '刷新所选存档' }}</button>
     </header>
 
-    <div v-if="!services.host.available" class="alert browser-note" role="status"><strong>浏览器预览无法读取本地游戏存档</strong><span>请从 OpenDesk 桌面应用打开此工具。读取和分析只在本机进行。</span></div>
-    <div v-if="failure" class="alert alert-error" role="alert">{{ failure }}</div>
+    <div v-if="!services.host.available" class="alert browser-note" role="status"><strong>{{ activeView === 'statistics' ? '浏览器预览无法连接本地游戏' : '浏览器预览无法读取本地游戏存档' }}</strong><span>请从 OpenDesk 桌面应用打开此工具。读取和分析只在本机进行。</span></div>
+    <div v-if="failure && activeView !== 'statistics'" class="alert alert-error" role="alert">{{ failure }}</div>
 
     <section class="source-panel">
-      <button class="source-summary" :aria-expanded="sourceOpen" @click="sourceOpen = !sourceOpen"><FolderOpen :size="15" /><span v-if="source"><strong>{{ source.name }}</strong><span class="source-date">{{ dateLabel(source.savedAt) }}</span></span><span v-else>选择游戏目录 · 默认读取最近存档</span><span class="read-only"><ShieldCheck :size="13" />只读分析</span><ChevronDown :size="15" :class="{ flipped: sourceOpen }" /></button>
-      <div v-if="sourceOpen" class="source-fields">
-        <label class="directory-field">游戏安装目录<input v-model="gameDir" type="text" :disabled="busy || !services.host.available" placeholder="包含 game.exe 和 package.nw 的目录" spellcheck="false" @keydown.enter="readSnapshot" /></label>
-        <button class="button button-secondary" :disabled="busy || !services.host.available || !gameDir.trim()" @click="readSnapshot"><RefreshCw :size="13" />读取存档</button>
-        <label v-if="inspection" class="save-field">分析存档<select v-model="saveId" :disabled="busy" @change="readSnapshot"><option value="">最近存档（每次分析重新读取）</option><option v-for="save in inspection.saves" :key="save.id" :value="save.id">{{ save.name }} · {{ dateLabel(save.savedAt) }}</option></select></label>
-        <label v-if="platforms.length > 1" class="platform-field">渡劫台<select v-model="platformId" :disabled="busy"><option value="">请选择渡劫台</option><option v-for="platform in platforms" :key="platform.id" :value="platform.id">{{ platform.name }} ({{ platform.x }}, {{ platform.y }})</option></select></label>
-        <p class="source-help">不修改存档、不移动游戏中的对象。更改游戏摆放或仓库后，请先在游戏中存档，再重新生成方案。</p>
+      <button class="source-summary" :aria-expanded="sourceExpanded" @click="sourceOpen = activeView === 'statistics' && !gameDir.trim() ? true : !sourceExpanded"><FolderOpen :size="15" /><span v-if="activeView === 'statistics'"><strong>{{ gameDir.trim() || '请先填写游戏安装目录' }}</strong></span><span v-else-if="source"><strong>{{ source.name }}</strong><span class="source-date">{{ dateLabel(source.savedAt) }}</span></span><span v-else>选择游戏目录 · 默认读取最近存档</span><span v-if="activeView !== 'statistics'" class="read-only"><ShieldCheck :size="13" />只读分析</span><ChevronDown :size="15" :class="{ flipped: sourceExpanded }" /></button>
+      <div v-if="sourceExpanded" class="source-fields">
+        <label class="directory-field">游戏安装目录<input v-model="gameDir" type="text" :disabled="busy || !services.host.available" placeholder="包含 game.exe 和 package.nw 的目录" spellcheck="false" @keydown.enter="activeView !== 'statistics' && readSnapshot()" /></label>
+        <button v-if="activeView !== 'statistics'" class="button button-secondary" :disabled="busy || !services.host.available || !gameDir.trim()" @click="readSnapshot"><RefreshCw :size="13" />读取存档</button>
+        <label v-if="inspection && activeView !== 'statistics'" class="save-field">分析存档<select v-model="saveId" :disabled="busy" @change="readSnapshot"><option value="">最近存档（每次分析重新读取）</option><option v-for="save in inspection.saves" :key="save.id" :value="save.id">{{ save.name }} · {{ dateLabel(save.savedAt) }}</option></select></label>
+        <label v-if="platforms.length > 1 && activeView !== 'statistics'" class="platform-field">渡劫台<select v-model="platformId" :disabled="busy"><option value="">请选择渡劫台</option><option v-for="platform in platforms" :key="platform.id" :value="platform.id">{{ platform.name }} ({{ platform.x }}, {{ platform.y }})</option></select></label>
+        <p v-if="activeView === 'statistics'" class="source-help">{{ !gameDir.trim() ? '请先填写包含 game.exe 和 package.nw 的游戏安装目录。未指定目录时不会检测游戏或判断采集入口是否已安装。' : '统计连接此目录启动的游戏，以实际事件为准，不读取存档中的历史工作与战斗。' }}识别游戏无需先载入存档；首次安装采集入口后需重新启动游戏。</p>
+        <p v-else class="source-help">不修改存档、不移动游戏中的对象。更改游戏摆放或仓库后，请先在游戏中存档，再重新读取。这里显示保存时的状态，不是实时数据。</p>
       </div>
     </section>
+
+    <nav class="tool-tabs" aria-label="山贼助手功能"><button :aria-pressed="activeView === 'inventory'" @click="activeView = 'inventory'">灵物总览</button><button :aria-pressed="activeView === 'planning'" @click="activeView = 'planning'">渡劫布局</button><button :aria-pressed="activeView === 'statistics'" @click="activeView = 'statistics'">工作与战斗</button></nav>
+    <RuntimeStatisticsPanel v-if="activeView === 'statistics'" :host="services.host" :game-dir="gameDir" />
+    <section v-if="activeView === 'inventory'" aria-label="灵物总览视图">
+      <SpiritInventoryPanel v-if="snapshot" :key="`${gameDir}:${snapshot.source.id}:${snapshot.source.sha256}`" :snapshot="snapshot" :visuals="visuals" :visuals-pending="visualsPending" :visuals-failure="visualsFailure" />
+      <div v-else class="empty-map"><div class="empty-map-icon"><Package :size="35" stroke-width="1.2" /></div><h3>{{ busy ? pending : '从你的存档开始' }}</h3><p>选择存档即可查看全部灵物与全局排名，无需先生成迁移方案。</p></div>
+    </section>
+
+    <div v-show="activeView === 'planning'" class="planning-view">
 
     <section v-if="analysis" class="result-summary" aria-label="分析结果">
       <div class="qi-summary"><span>渡劫台灵气</span><div><strong>{{ formatQi(analysis.metrics.currentQi) }}</strong><ArrowRight :size="18" /><strong class="target-qi">{{ formatQi(analysis.metrics.targetQi) }}</strong><em v-if="analysis.metrics.gain > 0">+{{ formatQi(analysis.metrics.gain) }}</em></div></div>
@@ -230,11 +246,17 @@ function exportComparison() {
       </section>
       <section class="inventory-section detail-panel"><div class="detail-heading"><div><h3>灵物清单 <span>{{ items.length }}</span></h3><p>仓库 {{ warehouseCount }} 件 · 已放置 {{ items.length - warehouseCount }} 件</p></div><Package :size="19" /></div><div class="inventory-filters"><select v-model="itemLocation" aria-label="灵物位置筛选"><option value="warehouse">仓库灵物</option><option value="placed">已放置灵物</option><option value="all">全部灵物</option></select><input v-model="itemSearch" placeholder="搜索灵物名称" aria-label="搜索灵物名称" /></div><div class="item-table-wrap"><table class="item-table"><thead><tr><th>灵物</th><th>位置</th><th>基础灵气</th></tr></thead><tbody><tr v-for="item in shownItems" :key="item.id"><td>{{ item.name }}<small>{{ item.id }}</small></td><td>{{ item.location === 'warehouse' ? '仓库' : '已放置' }}</td><td>{{ formatQi(item.qi) }}</td></tr></tbody></table><p v-if="!shownItems.length" class="no-items">没有符合条件的灵物。</p></div><p class="inventory-footnote">按基础灵气排序。实际对渡劫台的贡献由后台结合灵台等级与距离计算。</p></section>
     </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .tower-assistant { display: flex; flex-direction: column; gap: 15px; padding-bottom: 18px; }
+.planning-view { display: flex; flex-direction: column; gap: 15px; }
+.tool-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); }
+.tool-tabs button { border: 0; border-bottom: 2px solid transparent; padding: 10px 16px; font-size: 12px; background: transparent; color: var(--muted); cursor: pointer; }
+.tool-tabs button[aria-pressed="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.tool-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .tool-heading { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 2px 0 4px; }
 .tool-overline { color: var(--muted); font-size: 10px; letter-spacing: .5px; }
 .tool-overline span { margin: 0 8px; opacity: .45; }

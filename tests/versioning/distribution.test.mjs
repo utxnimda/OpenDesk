@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { MODULE_DEFINITIONS, assertBundleDirectory, assertOutputDirectory, assertPublicModule, moduleSourceDirectory, parseModulePackArgs, readDistribution, sha256, validateDistribution, writeImmutableFiles } from '../../scripts/distribution.mjs';
-import { externalBuildArguments, externalPython, validateCachedPackage, validateManifest } from '../../scripts/module-pack.mjs';
+import { externalBuildArguments, externalPython, validateCachedPackage, validateManifest, workerDataArguments } from '../../scripts/module-pack.mjs';
 import { parseBuildArgs } from '../../plugins/media-manager/integrations/opendesk/build.mjs';
 
 const config = () => ({ schemaVersion: 1, bundledModules: ['tower-assistant'], publicModules: ['tower-assistant'] });
@@ -20,6 +20,36 @@ function fixture(t) {
   writeFileSync(join(root, 'config/distribution.json'), serialize(config()));
   return root;
 }
+
+test('worker data includes only explicit files under the selected module', (t) => {
+  const project = fixture(t);
+  const source = join(project, 'apps', 'module');
+  mkdirSync(join(source, 'capture'), { recursive: true });
+  writeFileSync(join(source, 'capture', 'observer.js'), 'synthetic observer');
+  writeFileSync(join(source, 'capture', 'private.dat'), 'must not be copied');
+  const args = workerDataArguments(project, source, ['capture/observer.js']);
+  assert.equal(args.length, 2);
+  assert.equal(args[0], '--add-data');
+  assert.ok(args[1].endsWith('apps/module/capture'));
+  assert.ok(args[1].includes('observer.js'));
+  assert.ok(!args[1].includes('private.dat'));
+  assert.deepEqual(workerDataArguments(project, source), []);
+  for (const files of [['../private.dat'], ['/private.dat'], ['capture'], ['capture/missing.js'],
+    ['capture/observer.js', 'capture/observer.js'], ['capture\\observer.js'], ['capture/observer.js:bad'], 'capture']) {
+    assert.throws(() => workerDataArguments(project, source, files));
+  }
+});
+
+test('worker data refuses linked resource directories', (t) => {
+  const project = fixture(t);
+  const source = join(project, 'module');
+  const outside = join(project, 'outside');
+  mkdirSync(source); mkdirSync(outside);
+  writeFileSync(join(outside, 'secret.js'), 'private');
+  try { symlinkSync(outside, join(source, 'linked'), 'junction'); }
+  catch (error) { if (error.code === 'EPERM') return t.skip('Windows link permission unavailable'); throw error; }
+  assert.throws(() => workerDataArguments(project, source, ['linked/secret.js']), /Linked/);
+});
 
 function bundle(t) {
   const root = fixture(t);

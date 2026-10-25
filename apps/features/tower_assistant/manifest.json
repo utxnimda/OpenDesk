@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "id": "tower-assistant",
   "label": "塔防山贼助手",
-  "version": "0.1.9",
+  "version": "0.8.2",
   "hostApi": 1,
   "target": "windows-x64",
   "frontend": "frontend/index.html",
   "worker": "worker/module-worker.exe",
-  "methods": ["tower.discover", "tower.inspect", "tower.analyze", "tower.visuals"],
+  "methods": ["tower.discover", "tower.inspect", "tower.analyze", "tower.visuals", "tower.capture.status", "tower.capture.install", "tower.capture.remove", "tower.statistics.start", "tower.statistics.stop", "tower.statistics.status", "tower.statistics.explain"],
   "dataSchema": 1,
   "source": {"commit": null, "dirty": true}
 }

@@ -10,6 +10,7 @@ const props = withDefaults(defineProps<{
   platformId: string;
   steps?: MigrationStep[];
   items?: SpiritItem[];
+  itemRanks?: Record<string, number>;
   after?: boolean;
   arrows?: boolean;
   selectedStep?: string;
@@ -57,7 +58,7 @@ const itemName = (entity: Entity) => entity.kind === 'pedestal' ? props.items.fi
 const isChanged = (entity: Entity) => props.steps.some((step) => step.entityId === entity.id);
 const overlapsAnother = (entity: Entity) => entitiesAtPoint(props.entities, entity).some((other) => other.id !== entity.id);
 const containsPerson = (entity: Entity) => props.entities.some((person) => person.kind === 'person' && entitiesAtPoint([entity], person).length > 0);
-const entityTitle = (entity: Entity) => `${entity.name} · ${coordinates(entity)}${entity.tier !== undefined ? ` · ${entity.tier} 级` : ''}${itemName(entity) ? ` · ${itemName(entity)}` : ''}${entity.kind === 'pedestal' && itemForEntity(entity, props.items) ? ` · 基础灵气 ${itemForEntity(entity, props.items)!.qi}` : ''} · 点击查看详情`;
+const entityTitle = (entity: Entity) => `${entity.name} · ${coordinates(entity)}${entity.tier !== undefined ? ` · ${entity.tier} 级` : ''}${itemName(entity) ? ` · ${itemName(entity)}` : ''}${entity.kind === 'pedestal' && itemForEntity(entity, props.items) ? ` · 基础灵气 ${itemForEntity(entity, props.items)!.qi}` : ''}${entity.itemId && props.itemRanks?.[entity.itemId] ? ` · 全局第 ${props.itemRanks[entity.itemId]} 名` : ''} · 点击查看详情`;
 function selectEntity(entity: Entity) {
   hovered.value = entity;
   emit('selectEntity', entity.id);
@@ -68,7 +69,7 @@ function selectEntity(entity: Entity) {
   <div class="tower-map">
     <div ref="scrollElement" class="map-scroll" tabindex="0" :aria-label="`${label}，可滚动查看放大后的地图`">
       <svg :viewBox="`0 0 ${geometry.width} ${geometry.height}`" :style="{ width: `${renderSize.width}px`, height: `${renderSize.height}px` }" role="group" :aria-label="label">
-        <title>{{ label }}。点击对象查看详情，点击编号定位迁移步骤；支持 Tab、Enter 和空格键。</title>
+        <title>{{ label }}。{{ itemRanks ? '# 为全部灵物的基础灵气名次，点击对象在排行榜中选中。' : '点击对象查看详情，点击编号定位迁移步骤；' }}支持 Tab、Enter 和空格键。</title>
         <defs>
           <pattern :id="`${uid}-grid`" :width="geometry.cell" :height="geometry.cell" patternUnits="userSpaceOnUse" :x="geometry.padding" :y="geometry.padding">
             <path :d="`M ${geometry.cell} 0 L 0 0 0 ${geometry.cell}`" fill="none" class="grid-line" />
@@ -96,6 +97,7 @@ function selectEntity(entity: Entity) {
                 <SpriteIcon :x="geometry.x(entity.x) - 13" :y="geometry.y(entity.y) + (containsPerson(entity) ? 0 : -9)" :size="containsPerson(entity) ? 7 : 9" :icon-key="itemForEntity(entity, items)?.iconKey" :visuals="visuals" :label="itemName(entity)" fallback="item" aria-hidden="true" class="map-sprite" />
                 <text :x="geometry.x(entity.x) + 4" :y="geometry.y(entity.y) + (containsPerson(entity) ? 5 : -1)" text-anchor="middle" class="entity-label pedestal-label">{{ entityShortLabel(entity, items).slice(0, 3) }}</text>
                 <text :x="geometry.x(entity.x)" :y="geometry.y(entity.y) + (containsPerson(entity) ? 13 : 10)" text-anchor="middle" class="qi-label">{{ entitySecondaryLabel(entity, items) }}</text>
+                <text v-if="entity.itemId && itemRanks?.[entity.itemId]" :x="geometry.x(entity.x)" :y="geometry.y(entity.y) - 11" text-anchor="middle" class="rank-label">#{{ itemRanks[entity.itemId] }}</text>
               </template>
               <text v-else :x="geometry.x(entityCenter(entity).x)" :y="geometry.y(entityCenter(entity).y) + 3.5" text-anchor="middle" class="entity-label" :class="{ 'compact-label': entity.width === 1 }">{{ entityShortLabel(entity, items) }}</text>
             </template>
@@ -115,12 +117,13 @@ function selectEntity(entity: Entity) {
         </g>
       </svg>
     </div>
-    <p class="map-hover" aria-live="polite"><template v-if="hovered"><strong>{{ hovered.name }}</strong> {{ coordinates(hovered) }}<span v-if="hovered.tier"> · {{ hovered.tier }} 级</span><span v-if="itemName(hovered)"> · {{ itemName(hovered) }}</span><span v-if="!hovered.movable"> · 不可搬动</span></template><template v-else>点击对象查看详情 · 灵物下方数字为基础灵气 · 编号带 + 表示多步骤</template></p>
+    <p class="map-hover" aria-live="polite"><template v-if="hovered"><strong>{{ hovered.name }}</strong> {{ coordinates(hovered) }}<span v-if="hovered.tier"> · {{ hovered.tier }} 级</span><span v-if="itemName(hovered)"> · {{ itemName(hovered) }}</span><span v-if="!hovered.movable"> · 不可搬动</span></template><template v-else>点击对象查看详情 · 灵物下方数字为基础灵气 · {{ itemRanks ? '# 为全局名次' : '编号带 + 表示多步骤' }}</template></p>
   </div>
 </template>
 
 <style scoped>
 .tower-map { min-width: 0; display: flex; flex-direction: column; height: 100%; }
+.rank-label { font-size: 6.5px; fill: var(--accent); font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 1.5px; }
 .map-scroll { min-height: 0; flex: 1; overflow: auto; scrollbar-width: thin; }
 svg { display: block; margin-inline: auto; }
 .grid-line { stroke: var(--border); stroke-width: .8; }

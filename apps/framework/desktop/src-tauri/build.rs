@@ -29,6 +29,12 @@ fn main() {
             "modules_close",
             "modules_ui_ready",
             "modules_load_failed",
+            "module_surface_open",
+            "module_surface_context",
+            "module_surface_call",
+            "module_surface_close",
+            "module_surface_start_drag",
+            "module_surface_set_always_on_top",
         ]),
     ))
     .expect("Tauri build metadata");

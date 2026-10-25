@@ -5,6 +5,7 @@ import type { PackageCatalog, PackageInstance } from './packages';
 import type { Personalization, PetPreferenceChange } from './personalization';
 export type { Personalization, PetSettings } from './personalization';
 import type { Appearance, UIStyle } from '../../../module-sdk/src/index';
+import type { ModuleSurfaceOptions } from '../../../module-sdk/src/module-surface';
 
 export type Theme = 'system' | Appearance;
 export type { UIStyle } from '../../../module-sdk/src/index';
@@ -35,6 +36,7 @@ export interface PingResult {
 }
 
 export interface CompanionMenuContext { generation: number; modelId: string; canAnimate: boolean }
+export interface PackageSurfaceContext { generation: string; instance: PackageInstance; view: string; context: Record<string, unknown>; alwaysOnTop: boolean }
 
 export interface HostAdapter {
   readonly available: boolean;
@@ -66,6 +68,12 @@ export interface HostAdapter {
   selectPackage(id: string, version: string, digest: string): Promise<PackageCatalog>;
   setPackageEnabled(id: string, enabled: boolean): Promise<PackageCatalog>;
   openPackage(id: string): Promise<PackageInstance>;
+  openPackageSurface(token: string, options: ModuleSurfaceOptions): Promise<void>;
+  getPackageSurfaceContext(): Promise<PackageSurfaceContext>;
+  callPackageSurface<T>(generation: string, method: string, params?: Record<string, unknown>): Promise<T>;
+  closePackageSurface(generation: string): Promise<void>;
+  startPackageSurfaceDrag(generation: string): Promise<void>;
+  setPackageSurfaceAlwaysOnTop(generation: string, enabled: boolean): Promise<void>;
   callPackage<T>(token: string, method: string, params?: Record<string, unknown>): Promise<T>;
   closePackage(token: string): Promise<void>;
   reportPackageReady(token: string, id: string, version: string, digest: string): Promise<void>;
@@ -118,6 +126,12 @@ export function createHostAdapter(bridge?: InvokeBridge, events?: EventBridge): 
     selectPackage: (id, version, digest) => request('modules_select', { id, version, digest }),
     setPackageEnabled: (id, enabled) => request('modules_enable', { id, enabled }),
     openPackage: (id) => request('modules_open', { id }),
+    openPackageSurface: (token, options) => request('module_surface_open', { token, options }),
+    getPackageSurfaceContext: () => request('module_surface_context'),
+    callPackageSurface: (generation, method, params = {}) => request('module_surface_call', { generation, method, params }),
+    closePackageSurface: (generation) => request('module_surface_close', { generation }),
+    startPackageSurfaceDrag: (generation) => request('module_surface_start_drag', { generation }),
+    setPackageSurfaceAlwaysOnTop: (generation, enabled) => request('module_surface_set_always_on_top', { generation, enabled }),
     callPackage: (token, method, params = {}) => request('modules_call', { token, method, params }),
     closePackage: (token) => request('modules_close', { token }),
     reportPackageReady: (token, id, version, digest) => request('modules_ui_ready', { token, id, version, digest }),

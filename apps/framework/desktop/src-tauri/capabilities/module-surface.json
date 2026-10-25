@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "module-surface-window",
+  "description": "Borrowed module view; only its bound session and its own native window controls.",
+  "windows": ["module-surface"],
+  "permissions": [
+    "allow-module-surface-context", "allow-module-surface-call", "allow-module-surface-close",
+    "allow-module-surface-start-drag", "allow-module-surface-set-always-on-top", "allow-settings-get"
+  ]
+}

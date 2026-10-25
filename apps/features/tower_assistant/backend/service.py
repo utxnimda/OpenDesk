@@ -1,4 +1,4 @@
-"""Read-only game capabilities exposed by the application composition root."""
+"""Named game operations; capture installation is always explicitly requested."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -7,7 +7,8 @@ from typing import Any, Callable
 
 from opendesk_worker.protocol import ProtocolError
 from opendesk_worker.registry import MethodRegistry, MethodResult
-from . import reader, planner, visuals
+from . import reader, planner, visuals, capture
+from .output_statistics import StatisticsError, validate_detail_snapshot, validate_latest_selector
 
 
 def _params(params: dict[str, Any], optional: set[str]) -> tuple[Path, dict[str, str]]:
@@ -75,6 +76,43 @@ def read_visuals(params: dict[str, Any]) -> dict[str, Any]:
     return visuals.load(directory, keys)
 
 
+def capture_operation(params: dict[str, Any], method: str) -> dict[str, Any]:
+    _params(params, set())
+    # Preserve the original lexical path so capture rejects symlink/junction
+    # components instead of accepting a resolved redirect from the reader helper.
+    return getattr(capture.manager, method)(params["gameDir"])
+
+
+def statistics_explain(params: dict[str, Any]) -> dict[str, Any]:
+    if set(params) not in ({"gameDir", "sequence"}, {"gameDir", "sequence", "sessionId"},
+                           {"gameDir", "sequence", "sessionId", "snapshot"}, {"gameDir", "latest", "sessionId"}):
+        raise ProtocolError("INVALID_PARAMS", "公式详情须指定事件序号，或指定最近分类与计时会话；两种选择不能混用。")
+    _params({"gameDir": params["gameDir"]}, set())
+    session = None
+    if "sessionId" in params:
+        session = params["sessionId"]
+        if not isinstance(session, str) or not session.strip() or len(session) > 128 or not session.isprintable():
+            raise ProtocolError("INVALID_PARAMS", "计时会话编号无效。")
+    if "latest" in params:
+        try:
+            selector = validate_latest_selector(params["latest"])
+        except StatisticsError as error:
+            raise ProtocolError("INVALID_PARAMS", str(error)) from error
+        return capture.manager.explain_latest(params["gameDir"], selector, session)
+    sequence = params["sequence"]
+    if type(sequence) is not int or not 0 <= sequence <= 2**53 - 1:
+        raise ProtocolError("INVALID_PARAMS", "事件序号必须是非负安全整数。")
+    if "snapshot" in params:
+        try:
+            snapshot = validate_detail_snapshot(params["snapshot"])
+        except StatisticsError as error:
+            raise ProtocolError("INVALID_PARAMS", str(error)) from error
+        return capture.manager.explain_snapshot(params["gameDir"], sequence, session, snapshot)
+    if session is not None:
+        return capture.manager.explain(params["gameDir"], sequence, session)
+    return capture.manager.explain(params["gameDir"], sequence)
+
+
 def register(registry: MethodRegistry) -> None:
     def handler(operation: Callable[[dict[str, Any]], dict[str, Any]]):
         def call(params: dict[str, Any]) -> MethodResult:
@@ -92,3 +130,8 @@ def register(registry: MethodRegistry) -> None:
     registry.register("tower.inspect", handler(inspect))
     registry.register("tower.analyze", handler(analyze))
     registry.register("tower.visuals", handler(read_visuals))
+    for name, method in (("capture.status", "status"), ("capture.install", "install"),
+                         ("capture.remove", "remove"), ("statistics.start", "start"),
+                         ("statistics.stop", "stop"), ("statistics.status", "status")):
+        registry.register("tower." + name, handler(lambda params, method=method: capture_operation(params, method)))
+    registry.register("tower.statistics.explain", handler(statistics_explain))

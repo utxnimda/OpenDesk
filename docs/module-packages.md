@@ -2,6 +2,8 @@
 
 目标：App 包含宿主与默认页签包；用户可导入新页签/更新；不兼容时保留原包和错误；同页签多版本并存并选择。范围不包含市场、远程自动更新或安全沙箱。
 
+**当前发布准备**：App 0.18.0 仅随附塔防助手 0.8.2，并将同一 0.8.2 包作为独立页签附件发布；源码提交、推送及两个 Release 已获授权，干净构建、验证与上传尚待完成。0.8.2 与已验证的本地 0.8.1 功能一致，0.8.1 dirty 包保留，不能改写其来源或摘要。测试 fixture、作品管理器附件、外部导入包及本机数据均不属于本次附件清单；当前公开 App 0.17.0／塔防 0.1.9 保持不变。
+
 0.16.0 开发版新增可选 `hostApi: 2`，为已有 HTTP 服务的完整应用提供受控嵌套页面及安全停用协议，详见[本地 Web 应用接入](module-web-apps.md)。本文的静态模块示例继续使用 `hostApi: 1`，原包无需升级。
 
 ## 包格式
@@ -74,6 +76,24 @@ SDK 保留 0.8.0 引入的可选 `surfaceEffects` 以兼容已有包。当前宿
 
 模块外层固定占据宿主主内容区的剩余空间，移除重复的外层标题和卡片边框。iframe 占满可用区域，模块 body 负责自身纵向滚动；宿主不读取或测量 iframe 的业务 DOM，也不根据内部内容高度扩张外层。公共表面样式由 SDK 提供，模块的具体业务布局仍由模块自己负责。
 
+## 可选模块第二视图
+
+开发宿主 **0.18.0**（`core.module-packages` **0.7.0**）新增通用原生透明窗口 `module-surface`，通用原生窗口链路已通过验证，视觉叠加效果尚未验收，尚未公开发布。它是 protocol 1 / `hostApi: 1` 的可选扩展；旧包可以忽略，旧宿主不会提供 `host.surface`。塔防 0.7.0 在旧 0.17.0 宿主上仍可使用基本功能，只有透明窗口入口提示需升级宿主。
+
+模块通过 `createModuleBridge()` 握手后使用以下 SDK 契约，不直接调用 Tauri：
+
+| SDK 接口 | 用途与边界 |
+|---|---|
+| `host.surface?.context` | 主页面为 `null`；第二视图为 `{view: string, data: Record<string, unknown>}`，来自宿主绑定的打开上下文 |
+| `host.surface.open({view, title, width, height, alwaysOnTop, context})` | 仅从主页面申请视图；`view` 是短标识，`context` 是最多 8 KiB 的 JSON 对象，不能传任意入口 URL、HTML 或窗口句柄 |
+| `host.surface.close()` | 仅关闭调用方绑定的第二视图，不关闭主包或 worker |
+| `host.surface.setAlwaysOnTop(enabled)` | 调整该第二视图的置顶状态 |
+| `host.surface.startDrag()` | 请求拖动该第二视图，须由模块的拖动控件触发 |
+
+连接消息通过可选 `moduleSurface: {context}` 提供能力和上下文；`surfaceEffects` 仍只负责外观描述，两者不互相替代。SDK 用同一 MessagePort 发送 `surface` 消息，操作名为 `open`、`close`、`always-on-top` 和 `start-drag`；宿主 broker 将操作绑定到已经核验的包实例。Rust 命名命令为 `module_surface_open`、`module_surface_context`、`module_surface_call`、`module_surface_close`、`module_surface_start_drag` 和 `module_surface_set_always_on_top`。`open` 只允许主窗口调用，其余命令限定 `module-surface` 自身窗口，并校验当前 generation；模块业务调用仍只允许自身 manifest 中的方法。
+
+`ModuleSurfaceApp` 是框架内通用 iframe 容器，加载宿主当前包实例的既有入口，由该包根据 `context.view` 选择第二视图；框架不导入具体业务组件或读取业务 DOM。第二视图借用同一 worker，不重新打开、激活、恢复或停止包，因此独立关闭不重置业务会话。主包关闭、停用或换包时撤销第二视图；旧 generation 的迟到请求不能控制新窗口。当前宿主同时保留一个第二视图，相同绑定与参数再次打开会聚焦，其他绑定或参数会替换窗口。窗口透明、无装饰、可调整大小，模块提供拖动/关闭控件，原生尺寸与位置受屏幕可用区域限制；不提供鼠标穿透。
+
 ## 分发范围与构建
 
 `config/distribution.json` 是正式分发范围的权威配置：`bundledModules` 指定 App 随附页签，`publicModules` 指定可独立公开的页签；前者必须是后者的子集。当前默认随附仅含 `tower-assistant`，可独立公开清单另含作品管理器 `nimda-workspace`。构建定义中的 `test-lab` 标为 `testFixture`，禁止进入这两个列表。源码开发测试归属与二进制分发范围分别管理：测试台源码保留，但产物不上传。
@@ -88,11 +108,13 @@ npm run build:module-fixtures
 
 | 命令 | 输出 | 范围 |
 |---|---|---|
-| `build:modules` | `dist/bundled-modules/app-manifest.json` 和 `tower-assistant-0.1.9.ndpkg` | 当前公开 App 0.17.0 仅随附塔防助手 |
-| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.1.9/` 下的包、manifest 与 SHA256SUMS | 0.1.9 已独立发布，正式包保持不可变 |
+| `build:modules` | `dist/bundled-modules/app-manifest.json` 和当前源码 manifest 对应页签包 | 本次 App 0.18.0 仅随附塔防 0.8.2；公开 App 0.17.0 的 0.1.9 原包及旧本地构建须保留 |
+| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.8.2/` 下的包、manifest 与 SHA256SUMS | 本次独立正式页签目标，待干净构建与验证；须与 App 随附包字节一致 |
 | `build:module-fixtures` | `dist/module-fixtures/fixtures.json`、测试台 baseline 及四个变体 | 仅本机开发验证，不进入 App 或独立 Release |
 
-构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；此前公开塔防为 `0.1.7`，本轮正式 manifest 为 `0.1.9`，保留已使用过的本地开发 `0.1.8`。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。
+构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；当前公开塔防为 `0.1.9`，待正式构建版本为 `0.8.2`，从 Git 主线开发且未合入本机 `0.3.0`，宿主为 `0.18.0`。本机常用宿主已升级，当前已运行 `0.8.1` 模块；本次准备不改变个人选择，0.8.2 尚未导入或公开发布，实际游戏视觉尚待验收。此前 `0.6.0`、`0.6.1`、`0.7.0`、`0.7.1`、`0.8.0`、`0.8.1` 本地包保留，不替换为不同摘要。既有公开与本地包均保留原身份和字节，0.8.1 的 dirty 来源不能冒充 0.8.2 的正式构建来源。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。
+
+塔防 0.7.0 延续 0.6.1 的采集和统计实现，保留 0.5.2 修复后的包根 Worker 入口布局；新增窗口只使用宿主可选能力，业务仍保持 `hostApi: 1`、`dataSchema: 1`。当前观察脚本采集工作公式、人物资料和攻击分类；构建定义显式列出 `capture/inject.js`、`capture/observer.js` 与 `capture/runtime-worker.js`，作为固定原创采集素材放入模块 worker 运行资源。包不携带游戏原包、图集、存档、安装备份、身份令牌或事件流；不从游戏目录或 `.local` 实验目录收集素材。命名采集/统计方法由宿主按 manifest 授权，前端没有任意脚本执行入口。具体 RPC、安装副作用与版本范围见[塔防模块说明](tower-assistant.md)。构建或导入该候选不等于成功激活，也不会自动安装游戏采集入口；`updateRequired` 为真时，需先退出游戏、移除并恢复原包，再安装当前入口并重启，才能获得新字段。
 
 通用宠物属于宿主能力，不是业务页签包。阿宝与阿沐的既有默认资源按用户 2026-10-22 的明确请求纳入当时 0.12.0 交付；该历史授权不自动覆盖后续动作；用户于 2026-10-23 另行明确授权执行当前 0.15.0 发布，包含已审阅的思考动作运行资源。原视频仍不上传，不附加未提供的第三方许可声明。模块构建不复制角色资源或私人图片，背景能力仍已移除。资源详情见 [宠物资源说明](companion-assets.md)。
 

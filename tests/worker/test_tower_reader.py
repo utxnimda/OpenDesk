@@ -72,6 +72,46 @@ class ReaderParsingTests(unittest.TestCase):
         self.assertEqual(result["items"][0]["iconKey"], "item:兽血1")
         self.assertEqual(result["items"][0]["qualityName"], "神话")
 
+    def test_spirit_contributions_keep_base_qi_and_unplaced_state_distinct(self):
+        result = self.snapshot()
+        warehouse, placed = result["items"]
+        self.assertEqual(warehouse["qi"], 58)
+        self.assertNotIn("currentQi", warehouse)
+        self.assertEqual(warehouse["contributions"], [])
+        self.assertEqual(placed["qi"], 42.5)
+        self.assertEqual(placed["currentQi"], 55.3)
+        self.assertEqual(placed["contributions"], [{"platformId": "building:1", "qi": 55.3}])
+
+    def test_each_overlapping_platform_has_its_own_in_range_contribution(self):
+        data = self.value["data"]
+        for field, value in enumerate([5, 66, 10028, 10011, 0, 1]):
+            data[5][field][1] = value
+        placed = next(item for item in self.snapshot()["items"] if item["location"] == "placed")
+        self.assertEqual(placed["contributions"], [
+            {"platformId": "building:1", "qi": 55.3},
+            {"platformId": "building:5", "qi": 55.3},
+        ])
+        # Distance three is included, distance four is excluded; the item's
+        # displayed pedestal-adjusted value remains real even outside range.
+        data[2][2][1] = 10027
+        self.assertEqual(len(next(i for i in self.snapshot()["items"] if i["location"] == "placed")["contributions"]), 2)
+        data[2][2][1] = 10030
+        result = self.snapshot()
+        placed = next(i for i in result["items"] if i["location"] == "placed")
+        self.assertEqual(placed["currentQi"], 55.3)
+        self.assertEqual(placed["contributions"], [{"platformId": "building:5", "qi": 55.3}])
+        self.assertEqual(next(e for e in result["entities"] if e["id"] == "building:1")["currentQi"], 0)
+
+    def test_qi_keeps_native_binary_rounding_and_zero_is_a_real_value(self):
+        self.value["data"][1][10][19] = 5
+        self.value["data"][2][5][1] = 1
+        placed = next(i for i in self.snapshot()["items"] if i["location"] == "placed")
+        self.assertEqual(placed["currentQi"], 5.7)  # Native JS, not decimal 5.8.
+        self.value["data"][1][10][19] = 0
+        placed = next(i for i in self.snapshot()["items"] if i["location"] == "placed")
+        self.assertEqual(placed["currentQi"], 0)
+        self.assertEqual(placed["contributions"], [{"platformId": "building:1", "qi": 0}])
+
     def add_character_details(self):
         data = self.value["data"]
         data[1][5][2] = "B6"
@@ -151,6 +191,13 @@ class ReaderParsingTests(unittest.TestCase):
         self.value, self.tables = fixture()
         self.value["data"][1][0][19] = 0
         with self.assertRaisesRegex(reader.ReaderError, "不存在的灵物"):
+            self.snapshot()
+
+    def test_rejects_two_pedestals_claiming_one_placed_item_before_planning(self):
+        # The item's own forward link is valid, but an additional empty pedestal
+        # claims it too. Direct inspect must reject this without planner validation.
+        self.value["data"][4][9][1] = 1
+        with self.assertRaisesRegex(reader.ReaderError, "不能重复引用同一灵物"):
             self.snapshot()
 
     def test_rejects_missing_facility_parent(self):
@@ -263,6 +310,105 @@ class ReaderFileBoundaryTests(unittest.TestCase):
             self.skipTest("Windows account cannot create symbolic links")
         with self.assertRaisesRegex(reader.ReaderError, "链接"):
             reader.discover_saves(self.root)
+
+
+class ReaderPackageVersionTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name).resolve()
+        self.value, tables = fixture()
+        self.members = {}
+        for revision in ("old", "new"):
+            members = {"data.json": json.dumps({"testRevision": revision}).encode(),
+                       "scripts/c3runtime.js": f"synthetic runtime {revision}".encode()}
+            for name in ("jz.json", "ss.json", "lw.json", "wp.json", "zy.json"):
+                rows = deepcopy(tables.get(name, [[0] * 10]))
+                if name == "jz.json":
+                    rows[1][1] = f"合成建筑{revision}"
+                members[name] = json.dumps({"c2array": True, "size": [len(rows), len(rows[0]), 1],
+                                           "data": [[[cell] for cell in row] for row in rows]}).encode()
+            self.members[revision] = members
+        profiles = {f"synthetic-{revision}": {"hashes": {name: sha256(raw).hexdigest() for name, raw in members.items()},
+                                             "saveDepth": 22 if revision == "old" else 23,
+                                             "sprites": ()}
+                    for revision, members in self.members.items()}
+        self.profile_patch = patch.dict(reader.RULE_PROFILES, profiles)
+        self.profile_patch.start()
+
+    def tearDown(self):
+        self.profile_patch.stop()
+        self.temp.cleanup()
+
+    def write_package(self, members):
+        with ZipFile(self.root / "package.nw", "w") as package:
+            package.writestr("package.json", json.dumps({"name": "com.ujwan.tfszmnq"}))
+            for name, raw in members.items():
+                package.writestr(name, raw)
+
+    def test_accepts_each_complete_profile_and_reports_its_actual_identity(self):
+        for revision in ("old", "new"):
+            with self.subTest(revision=revision):
+                self.write_package(self.members[revision])
+                tables = reader._tables(self.root)
+                snapshot = reader._normalize(self.value["data"], tables, {})
+                self.assertEqual(snapshot["rules"]["ruleProfile"], f"synthetic-{revision}")
+                self.assertEqual(snapshot["rules"]["ruleHashes"], reader.RULE_PROFILES[f"synthetic-{revision}"]["hashes"])
+                self.assertEqual(snapshot["items"][1]["currentQi"], 55.3)
+
+    def test_rejects_mix_of_known_files_instead_of_accepting_per_file_allowlists(self):
+        mixed = dict(self.members["new"])
+        mixed["scripts/c3runtime.js"] = self.members["old"]["scripts/c3runtime.js"]
+        self.write_package(mixed)
+        with self.assertRaisesRegex(reader.ReaderError, "完整规则组合尚未核实"):
+            reader._tables(self.root)
+
+    def test_rejects_changed_table_even_when_runtime_is_known(self):
+        mixed = dict(self.members["new"])
+        mixed["jz.json"] = self.members["old"]["jz.json"]
+        self.write_package(mixed)
+        with self.assertRaisesRegex(reader.ReaderError, "完整规则组合尚未核实"):
+            reader._tables(self.root)
+
+    def test_rejects_non_object_game_identity_as_a_reader_error(self):
+        for identity in (None, [], "com.ujwan.tfszmnq"):
+            with self.subTest(identity=identity):
+                with ZipFile(self.root / "package.nw", "w") as package:
+                    package.writestr("package.json", json.dumps(identity))
+                with self.assertRaisesRegex(reader.ReaderError, "不是塔防"):
+                    reader._tables(self.root)
+
+    def test_rejects_duplicate_rule_member_even_when_both_hashes_match(self):
+        self.write_package(self.members["new"])
+        with ZipFile(self.root / "package.nw", "a") as package:
+            with self.assertWarns(UserWarning):
+                package.writestr("data.json", self.members["new"]["data.json"])
+        with self.assertRaisesRegex(reader.ReaderError, "规则文件缺失或重复"):
+            reader._tables(self.root)
+
+    def test_new_profile_accepts_its_extra_save_layer_but_rejects_unknown_depth(self):
+        self.write_package(self.members["new"])
+        (self.root / "save").mkdir()
+        save = self.root / "save" / "ea1save.dat"
+        current = deepcopy(self.value)
+        current["size"][2] = 23
+        for row in current["data"]:
+            for cell in row:
+                cell.append(0)
+        save.write_text(json.dumps(current), encoding="utf-8")
+        result = reader.load_latest(self.root)
+        self.assertEqual(result["rules"]["ruleProfile"], "synthetic-new")
+        self.assertEqual(result["items"][1]["currentQi"], 55.3)
+        self.write_package(self.members["old"])
+        with self.assertRaisesRegex(reader.ReaderError, "存档版本不受支持"):
+            reader.load_latest(self.root)
+        self.write_package(self.members["new"])
+        current["size"][2] = 24
+        for row in current["data"]:
+            for cell in row:
+                cell.append(0)
+        save.write_text(json.dumps(current), encoding="utf-8")
+        with self.assertRaisesRegex(reader.ReaderError, "存档版本不受支持"):
+            reader.load_latest(self.root)
 
 
 if __name__ == "__main__":

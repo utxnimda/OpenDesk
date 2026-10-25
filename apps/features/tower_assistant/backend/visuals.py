@@ -16,7 +16,7 @@ import re
 import warnings
 from zipfile import BadZipFile, ZipFile
 
-from .reader import ReaderError, RULE_HASHES, _inside, _json, _root
+from .reader import ReaderError, RULE_PROFILES, _audited_package, _inside, _json, _root
 
 
 MAX_KEYS = 32
@@ -44,19 +44,15 @@ def _signature(path: Path) -> tuple[str, int, int, int]:
 @lru_cache(maxsize=2)
 def _catalogue(signature: tuple) -> dict[str, tuple[str, int, int, int, int]]:
     with ZipFile(signature[0]) as package:
-        manifest = package.getinfo("package.json")
-        if manifest.file_size > 65536 or _json(package.read(manifest), "游戏标识").get("name") != "com.ujwan.tfszmnq":
-            raise VisualError("所选游戏包无法提供图标。")
-        info = package.getinfo("data.json")
-        if info.file_size > 12 * 1024 * 1024:
-            raise VisualError("游戏图标索引超出支持大小。")
-        raw = package.read(info)
-        if sha256(raw).hexdigest() != RULE_HASHES["data.json"]:
-            raise VisualError("当前游戏图标映射版本尚未核实，已停止加载。")
+        try:
+            profile, members = _audited_package(package)
+        except ReaderError as error:
+            raise VisualError(str(error)) from error
+        raw = members["data.json"]
         project = _json(raw, "图标索引")["project"]
         objects = project[3]
         result = {}
-        for object_index, name, prefix in ((221, "角色形象", "person"), (420, "物品图标", "item")):
+        for object_index, name, prefix in RULE_PROFILES[profile]["sprites"]:
             sprite = objects[object_index]
             if sprite[0] != name or len(sprite[7]) > 1200:
                 raise VisualError("游戏图标对象映射不一致。")

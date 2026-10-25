@@ -1,5 +1,5 @@
 //! Explicit --module-smoke only. Uses an isolated data root supplied by the runner.
-use crate::{module_packages::ModuleManager, AppState};
+use crate::{module_packages::ModuleManager, module_surface, AppState};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
@@ -139,6 +139,77 @@ fn changed(app: &tauri::AppHandle) -> Result<(), String> {
     app.emit("modules-changed", ()).map_err(|e| e.to_string())
 }
 
+async fn surface_echo(
+    app: &tauri::AppHandle,
+    generation: &str,
+    baseline: &Value,
+) -> Result<(), String> {
+    for _ in 0..150 {
+        let state = app.state::<AppState>();
+        if let Some(reply) = state.module_ui_calls.lock().await.get(generation) {
+            if reply["version"] == baseline["version"] && reply["pid"] == baseline["workerPid"] {
+                return Ok(());
+            }
+            return Err("Auxiliary module surface used another worker identity".into());
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    Err("Real auxiliary iframe handshake/worker echo timed out".into())
+}
+
+async fn exercise_surface(app: &tauri::AppHandle, baseline: &Value) -> Result<(), String> {
+    let state = app.state::<AppState>();
+    let manager = state.modules.as_ref().map_err(Clone::clone)?;
+    let main = app
+        .get_webview_window("main")
+        .ok_or("Smoke main window is unavailable")?;
+    let token = field(baseline, "token")?;
+    let options = module_surface::SurfaceOptions {
+        view: "smoke".into(),
+        title: "OpenDesk 模块第二视图验证".into(),
+        width: 480.0,
+        height: 620.0,
+        always_on_top: true,
+        context: json!({}),
+    };
+    let context = module_surface::open(app, &state, &main, token, options.clone()).await?;
+    if context.instance != *baseline {
+        return Err("Auxiliary view replaced the existing module instance".into());
+    }
+    surface_echo(app, &context.generation, baseline).await?;
+    let native = app
+        .get_webview_window(module_surface::LABEL)
+        .ok_or("Auxiliary native window missing")?;
+    if native.is_decorated().map_err(|e| e.to_string())?
+        || !native.is_resizable().map_err(|e| e.to_string())?
+        || !native.is_always_on_top().map_err(|e| e.to_string())?
+    {
+        return Err("Auxiliary native window flags differ from the requested surface".into());
+    }
+    let repeated = module_surface::open(app, &state, &main, token, options.clone()).await?;
+    if repeated.generation != context.generation {
+        return Err("Repeated auxiliary view request recreated its window".into());
+    }
+    module_surface::close_native(app, &state, &context.generation).await?;
+    if app.get_webview_window(module_surface::LABEL).is_some()
+        || manager.describe_existing(token).await? != *baseline
+    {
+        return Err("Closing auxiliary view changed the owning module instance".into());
+    }
+    let echo = manager
+        .call(token, "test.echo", json!({"text":"after auxiliary close"}))
+        .await?;
+    if echo["pid"] != baseline["workerPid"] {
+        return Err("Closing auxiliary view stopped or replaced its worker".into());
+    }
+    // Leave a confirmed second view open for the existing version-switch test.
+    let reopened = module_surface::open(app, &state, &main, token, options).await?;
+    if reopened.generation == context.generation {
+        return Err("Reopening auxiliary view reused a revoked generation".into());
+    }
+    surface_echo(app, &reopened.generation, baseline).await
+}
+
 async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, String> {
     let fixtures = fixtures.canonicalize().map_err(|e| e.to_string())?;
     let index_path = fixtures
@@ -194,6 +265,7 @@ async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, Stri
     if first["version"] != baseline_version {
         return Err("Baseline worker version mismatch".into());
     }
+    exercise_surface(app, &baseline).await?;
     let independent = manager.open("tower-assistant").await?;
 
     let rejected = manager.import_package(&incompatible_fixture.path).await?;
@@ -219,6 +291,10 @@ async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, Stri
     let imported = manager.import_package(&update_fixture.path).await?;
     let newer_digest = digest(&imported, "test-lab", "1.1.0")?;
     manager.select("test-lab", "1.1.0", &newer_digest).await?;
+    module_surface::reconcile(app, &state).await?;
+    if app.get_webview_window(module_surface::LABEL).is_some() {
+        return Err("Switching the owner did not close its auxiliary view".into());
+    }
     changed(app)?;
     let newer = manager.open("test-lab").await?;
     ui_ready(app, &newer).await?;
@@ -373,7 +449,8 @@ async fn exercise(app: &tauri::AppHandle, fixtures: &Path) -> Result<Value, Stri
     }
     restarted.shutdown().await?;
     Ok(
-        json!({"status":"passed","appVersion":env!("CARGO_PKG_VERSION"),"initialBundleOnlyTower":true,"baselineImportedFromFixture":true,"baselineFixtureSha256":original_digest,"realIframeVersions":[baseline_version,"1.1.0",baseline_version],"realIframeWorkerRoundTrip":true,"baseline":first,"updated":second,"reverted":third,"recoveredAfterUiFailure":recovered_reply,"newModule":extra_reply,"incompatibleOriginalRetained":true,"staleSessionRejected":true,"disabledExecutionRejected":true,"independentModuleUnchanged":true,"selectionPersisted":true}),
+        json!({"status":"passed","appVersion":env!("CARGO_PKG_VERSION"),"initialBundleOnlyTower":true,"baselineImportedFromFixture":true,"baselineFixtureSha256":original_digest,"realIframeVersions":[baseline_version,"1.1.0",baseline_version],"realIframeWorkerRoundTrip":true,"baseline":first,"updated":second,"reverted":third,"recoveredAfterUiFailure":recovered_reply,"newModule":extra_reply,"incompatibleOriginalRetained":true,"staleSessionRejected":true,"disabledExecutionRejected":true,"independentModuleUnchanged":true,"selectionPersisted":true,
+        "moduleSurface":{"realIframeWorkerEcho":true,"sameWorkerPidAndToken":true,"closePreservesWorker":true,"reopenCreatesGeneration":true,"ownerSwitchClosesWindow":true,"undecorated":true,"resizable":true,"alwaysOnTop":true,"visualTransparencyVerified":false}}),
     )
 }
 

@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import App from '../../framework/frontend/src/App.vue';
+import ModuleSurfaceApp from '../../framework/frontend/src/components/ModuleSurfaceApp.vue';
 import DesktopCompanionApp from '../../framework/frontend/src/companions/DesktopCompanionApp.vue';
 import DesktopCompanionMenuApp from '../../framework/frontend/src/companions/DesktopCompanionMenuApp.vue';
 import { companions } from './companions';
@@ -11,7 +12,10 @@ const releaseContextMenuPolicy = installContextMenuPolicy(document);
 if (import.meta.hot) import.meta.hot.dispose(releaseContextMenuPolicy);
 
 const surface = new URLSearchParams(window.location.search).get('surface');
-if (surface === 'companion-menu') {
+if (surface === 'module-surface') {
+  document.documentElement.dataset.surface = 'module-surface';
+  createApp(ModuleSurfaceApp).mount('#app');
+} else if (surface === 'companion-menu') {
   document.documentElement.dataset.surface = 'companion-menu';
   createApp(DesktopCompanionMenuApp, { catalog: companions }).mount('#app');
 } else if (surface === 'companion') {

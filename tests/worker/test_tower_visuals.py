@@ -23,7 +23,7 @@ class VisualTests(unittest.TestCase):
         self.member = "images/角色形象-sheet0.webp"
         self.frame = [self.member, 0, 10, 20, 40, 80]
         self.item_frame = ["images/物品图标-sheet0.webp", 0, 0, 0, 100, 100]
-        self.hash_patch = patch.dict(visuals.RULE_HASHES)
+        self.hash_patch = patch.dict(visuals.RULE_PROFILES)
         self.hash_patch.start()
         self.write_package()
 
@@ -34,13 +34,19 @@ class VisualTests(unittest.TestCase):
         self.temp.cleanup()
 
     def write_package(self, *, name="com.ujwan.tfszmnq", atlas_size=(120, 120),
-                      duplicate=False, omit_atlas=False, image_format="WEBP"):
-        objects = [[] for _ in range(421)]
+                      duplicate=False, omit_atlas=False, image_format="WEBP", current_revision=False):
+        person_index, item_index = (224, 423) if current_revision else (221, 420)
+        objects = [[] for _ in range(item_index + 1)]
         animation = ["B6", 0, 0, 0, 0, 0, 0, [self.frame]]
-        objects[221] = ["角色形象", 0, 0, 0, 0, 0, 0, [animation] * (2 if duplicate else 1)]
-        objects[420] = ["物品图标", 0, 0, 0, 0, 0, 0, [["兽血1", 0, 0, 0, 0, 0, 0, [self.item_frame]]]]
+        objects[person_index] = ["角色形象", 0, 0, 0, 0, 0, 0, [animation] * (2 if duplicate else 1)]
+        objects[item_index] = ["物品图标", 0, 0, 0, 0, 0, 0, [["兽血1", 0, 0, 0, 0, 0, 0, [self.item_frame]]]]
         raw = json.dumps({"project": [0, 0, 0, objects]}, ensure_ascii=False).encode()
-        visuals.RULE_HASHES["data.json"] = sha256(raw).hexdigest()
+        members = {"data.json": raw, "scripts/c3runtime.js": b"synthetic runtime",
+                   **{name: b"synthetic table" for name in ("jz.json", "ss.json", "lw.json", "wp.json", "zy.json")}}
+        visuals.RULE_PROFILES["synthetic-visual"] = {
+            "hashes": {name: sha256(value).hexdigest() for name, value in members.items()},
+            "sprites": ((person_index, "角色形象", "person"), (item_index, "物品图标", "item")),
+        }
         with Image.new("RGBA", atlas_size, (0, 0, 255, 255)) as image:
             image.paste((255, 0, 0, 255), (10, 20, 50, 100))
             stream = BytesIO()
@@ -48,7 +54,8 @@ class VisualTests(unittest.TestCase):
             pixels = stream.getvalue()
         with ZipFile(self.root / "package.nw", "w") as package:
             package.writestr("package.json", json.dumps({"name": name}))
-            package.writestr("data.json", raw)
+            for member, value in members.items():
+                package.writestr(member, value)
             if not omit_atlas:
                 package.writestr(self.member, pixels)
                 package.writestr("images/物品图标-sheet0.webp", pixels)
@@ -82,11 +89,21 @@ class VisualTests(unittest.TestCase):
                 visuals.load(self.root, keys)
 
     def test_unknown_package_revision_and_wrong_game_are_rejected(self):
-        visuals.RULE_HASHES["data.json"] = "0" * 64
+        visuals.RULE_PROFILES["synthetic-visual"]["hashes"]["data.json"] = "0" * 64
         with self.assertRaisesRegex(visuals.VisualError, "尚未核实"):
             visuals.load(self.root, ["person:B6"])
         self.write_package(name="another-game")
-        with self.assertRaisesRegex(visuals.VisualError, "无法提供"):
+        with self.assertRaisesRegex(visuals.VisualError, "不是塔防"):
+            visuals.load(self.root, ["person:B6"])
+
+    def test_current_revision_uses_audited_shifted_sprite_indices(self):
+        self.write_package(current_revision=True)
+        result = visuals.load(self.root, ["person:B6", "item:兽血1"])
+        self.assertEqual(set(result["sprites"]), {"person:B6", "item:兽血1"})
+
+    def test_icon_index_does_not_bypass_complete_rule_profile(self):
+        visuals.RULE_PROFILES["synthetic-visual"]["hashes"]["scripts/c3runtime.js"] = "0" * 64
+        with self.assertRaisesRegex(visuals.VisualError, "完整规则组合尚未核实"):
             visuals.load(self.root, ["person:B6"])
 
     def test_frame_cannot_read_an_arbitrary_zip_member(self):
