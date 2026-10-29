@@ -546,6 +546,71 @@ async fn modules_open(id: String, state: State<'_, AppState>) -> Result<Value, S
 }
 
 #[tauri::command]
+async fn modules_tools_list(
+    window: tauri::WebviewWindow,
+    token: String,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    if window.label() != "main" {
+        return Err("TOOLS_WINDOW_DENIED".into());
+    }
+    state
+        .modules
+        .as_ref()
+        .map_err(Clone::clone)?
+        .list_tools(&token)
+        .await
+}
+
+#[tauri::command]
+async fn modules_tools_grant(
+    window: tauri::WebviewWindow,
+    token: String,
+    tools: Vec<module_packages::ToolIdentity>,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    if window.label() != "main" {
+        return Err("TOOLS_WINDOW_DENIED".into());
+    }
+    let manager = state.modules.as_ref().map_err(Clone::clone)?;
+    let prepared = manager.prepare_tool_grant(&token, &tools).await?;
+    let message = prepared.message.clone();
+    let decision = tauri::async_runtime::spawn_blocking(move || {
+        rfd::MessageDialog::new()
+            .set_title("OpenDesk · 插件数据授权")
+            .set_description(&message)
+            .set_level(rfd::MessageLevel::Info)
+            .set_buttons(rfd::MessageButtons::YesNo)
+            .show()
+    })
+    .await
+    .map_err(|_| "TOOLS_APPROVAL_FAILED")?;
+    if decision != rfd::MessageDialogResult::Yes {
+        return Err("TOOLS_PERMISSION_DECLINED".into());
+    }
+    manager.grant_tools(&token, prepared).await
+}
+
+#[tauri::command]
+async fn modules_tools_call(
+    window: tauri::WebviewWindow,
+    token: String,
+    tool: module_packages::ToolIdentity,
+    arguments: Value,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    if window.label() != "main" {
+        return Err("TOOLS_WINDOW_DENIED".into());
+    }
+    state
+        .modules
+        .as_ref()
+        .map_err(Clone::clone)?
+        .call_tool(&token, tool, arguments)
+        .await
+}
+
+#[tauri::command]
 async fn modules_call(
     token: String,
     method: String,
@@ -1173,6 +1238,9 @@ pub fn run() {
             modules_enable,
             modules_open,
             modules_call,
+            modules_tools_list,
+            modules_tools_grant,
+            modules_tools_call,
             modules_close,
             modules_ui_ready,
             modules_load_failed,

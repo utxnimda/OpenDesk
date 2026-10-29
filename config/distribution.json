@@ -1,5 +1,11 @@
 {
   "schemaVersion": 1,
-  "bundledModules": ["tower-assistant"],
-  "publicModules": ["tower-assistant", "nimda-workspace"]
+  "bundledModules": [
+    "tower-assistant"
+  ],
+  "publicModules": [
+    "tower-assistant",
+    "nimda-workspace",
+    "ai-workbench"
+  ]
 }

@@ -114,6 +114,23 @@ def statistics_explain(params: dict[str, Any]) -> dict[str, Any]:
 
 
 def register(registry: MethodRegistry) -> None:
+    def describe_tools(params: dict[str, Any]) -> MethodResult:
+        if params:
+            raise ProtocolError("INVALID_PARAMS", "工具目录不接受参数。")
+        return MethodResult({"contractVersion": 1, "tools": [{
+            "name": "runtime_summary", "method": "tower.ai.summary", "title": "读取当前塔防统计摘要",
+            "description": "只读当前插件实例已有的工作和战斗统计；不读取其他目录，不安装或启动采集。未采集时如实返回空状态。",
+            "contractVersion": 1, "readOnly": True,
+            "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+        }]})
+
+    def ai_summary(params: dict[str, Any]) -> MethodResult:
+        if params:
+            raise ProtocolError("INVALID_PARAMS", "统计摘要工具不接受参数或路径。")
+        return MethodResult(capture.manager.readonly_summary())
+
+    registry.register("tools.describe", describe_tools)
+    registry.register("tower.ai.summary", ai_summary)
     def handler(operation: Callable[[dict[str, Any]], dict[str, Any]]):
         def call(params: dict[str, Any]) -> MethodResult:
             try:

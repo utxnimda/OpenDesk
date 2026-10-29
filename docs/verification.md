@@ -2,6 +2,154 @@
 
 # 验证记录
 
+## 2026-10-29：完成本地替换与源码提交
+
+用户明确要求替换本地新包并提交 Git。启动前确认没有 OpenDesk 进程，重新核对昨日候选摘要及文件清单；将原 `dist/OpenDesk` 完整保留到 `.local/local-switch-20261029/previous-build/OpenDesk`，再把已验证的 0.19.1 候选放回原启动路径，并通过既有便携打包脚本复核 60 文件清单、记录本地构建收据。
+
+通过正常桌面上下文启动，实际进程 PID 14060、路径 `dist/OpenDesk/OpenDesk.exe`、产品版本 0.19.1、摘要 `0e624547d1b2c9453c9e9e7179a4aeb5dad128d704a9347c567ac658cdf4706b`。功能管理已导入并选择 AI 0.4.2，摘要与候选一致；默认随附塔防 0.9.1，用户仍选择原有的 0.8.2，没有自动切换其他页签。
+
+原生页面确认重复面包屑/成功版本横条消失，主工作面连续铺满；实际拖动侧栏从 238 到 338 px 成功，随后保留用户自行调整的 422 px。原有会话仍可见，实际旧回复的列表及行内代码按 Markdown 呈现；此轮没有发送模型推理。系统剪贴板复制仍未单独做原生字节验收，不将浏览器复制按钮的成功提示作为该项证明。
+
+更新前后宿主设置、其他页签选择、私有部署工作台注册信息摘要全部一致，AI 0.4.2 选择/摘要一致。新进程 frontend.ready、桌面宠物就绪和正常响应检查通过，启动日志无 error。复用昨日完整工程 675 项检查、服务保护回归及原生隔离烟测证据，今天核对产物字节一致并补齐正常用户实例验收。
+
+提交范围审查为 30 个已跟踪修改和 70 个新增文件（其中 AI 目录 64），均属于 AI 插件、通用工具/凭据接口、塔防只读适配、宿主 UI、版本、测试和文档。未发现真实凭据、聊天数据库、私有部署源码或生成包进入候选；`dist`、`.local`、`.tools`、`workspaces`、`runtime` 忽略规则有效。本轮只执行本地 Git 提交，不推送、不创建标签、不发布 Release。现有二进制保留提交前 `6689d2383b2c58a9ef458a4a8b1f003a63132a16`、dirty:true 的真实构建来源，源码提交不会把旧包改称干净构建。
+
+本轮证据位于 `.local/local-switch-20261029/`：`launch.json`、`portable.log`、`build-receipt.log`、`preferences-before.json`、`preferences-verification.json`、`startup-verification.json`。10-28 候选构建与预览记录保留如下；其“待切换”描述为当时状态。
+
+## 2026-10-28：单层模块工作面、可调侧栏与 Markdown（候选构建）
+
+本轮按截图调整宿主与 AI 组合界面。新候选为宿主 0.19.1（core.workbench 0.8.1、core.module-packages 0.8.1）、AI 0.4.2、随附/独立塔防 0.9.1；当时全部未提交或公开发布。当时正常运行的便携路径 `dist/OpenDesk` 仍是 0.19.0。已请求用户从托盘正常退出；替换前发现 PID 43020 仍在，移动保护明确拒绝，没有移动或覆盖旧目录。以下候选构建、独立烟测和浏览器结果不能代替 10-29 的用户实例切换验收。
+
+宿主模块页移除重复面包屑，PackageFrame 就绪后移除重复版本状态横条；加载/失败保留。二次元模块外卡边距/圆角清除，品牌区保留风格快捷入口。二次元与薄荷的设置、功能管理和宠物选择等内容面板/内层卡片/控件圆角分层收敛，玻璃风格的矩形结构保持。AI 同时清除 SDK 默认 20 px body 内边距，侧栏与聊天区直接组成主工作面。
+
+AI 侧栏支持 pointer capture 拖动、方向键/Shift/Home/End、双击/Enter 复位与 Esc 取消。后台保存 180–480 px 整数，默认 238；窄窗口临时夹宽不写回，≤700 px 回到抽屉布局。布局查询与保存拒绝未知/损坏记录。Markdown 使用锁定 markdown-it 15.0.3 与 highlight.js 11.12.0，转为白名单 Vue 结构，支持标题、列表、引用、表格、行内代码、显式语言高亮和复制按钮；模型 HTML 不执行，远端图片不自动加载。代码/表格独立横滚，长内容降级保留完整原文。依赖许可随最终 AI web 资源附带。
+
+| 检查 | 实际结果 |
+|---|---|
+| 完整工程检查 | 版本、类型与架构边界通过；56 项版本/分发、237 项宿主前端、166 项框架 worker、38 项采集、46 项 AI 前端、132 项 AI Python，共 675 项通过。最后布局异常写保护另跑服务回归通过 |
+| 组合浏览器 | 真实 App、PackageFrame、SDK、AI wrapper/UI 使用三个独立本机来源及合成适配器。七种风格均没有重复成功版本条，宿主内容/包容器/AI body padding 为 0，尺寸和滚动范围一致；设置薄荷面板实测 16 px |
+| 侧栏交互 | 实际 pointer drag 238→358 px，方向键到 350 px；消息草稿保留，重新加载后仍为 350 px。临时布局偏好仅写入合成服务 |
+| 回答渲染 | 实际 DOM 验证标题、嵌套列表、表格、行内代码与高亮关键词；无 script/img 节点。复制按钮收到 Clipboard API 成功结果，但 Browser Use 虚拟剪贴板没有暴露页面写入，因此未证明系统剪贴板字节；原生复制仍待验证 |
+| 浏览器操作边界 | 跨两个来源的 iframe 可观察但自动点击/键盘工具报目标失效；独立 AI 文档交互通过。没有用脚本修改页面隐藏状态冒充操作成功 |
+| 宿主构建 | Tauri release 与 NSIS 成功，候选便携包 `dist/OpenDesk-0.19.1` 已独立组装，不替换正在运行的旧目录 |
+| 原生隔离烟测 | 新 target/release 宿主 IPC、设置往返、worker 启停/重启通过；模块导入、版本更新/回退、失败恢复、旧会话拒绝及持久选择通过。使用独立数据根，旧用户实例继续运行 |
+| AI 冻结包 | 0.4.2 类型/Vite/PyInstaller、冻结身份/HTTP鉴权/静态UI/排空通过。0.4.0、0.4.1 验收候选保留，最终包另出版本，不覆盖字节 |
+| 范围审计 | 新便携目录 60 文件，默认仅塔防 0.9.1；与独立塔防包字节相同。AI 包 73 条目，含依赖许可。没有私有部署工作台、测试包、真实聊天/凭据或本机索引进入交付候选 |
+
+候选摘要：宿主 EXE `0e624547d1b2c9453c9e9e7179a4aeb5dad128d704a9347c567ac658cdf4706b`；NSIS `9697f07c2334da7cc4d37354b1ec19e64b0187ac8f7e7452e4139b7c2cbfa979`；塔防 0.9.1 `b5083fa9bb7f99653d0d300ae7e9b31be9b03ab5bcfc4a844c83756f3f9dd397`；AI 0.4.2 `a7fb9bd22234a7ef046c1077433c34f0200f00e95177d7b49ea863d756d9b217`。模块来源为 `6689d2383b2c58a9ef458a4a8b1f003a63132a16`、dirty:true。
+
+证据位于 `.local/ai-layout-20261028/`：`check.log`、`service-final.log`、`host-build.log`、`ai-package-0.4.2.log`、`smoke.log`、`module-smoke.log`、`shell-matrix.json`、`interaction-evidence.json`、`delivery-audit.json` 及各预览截图。尚待正常用户实例切换、原生拖动/回答/复制验收与最终数据摘要比较；未执行干净机器安装、发布或 Git 提交/推送。
+
+## 2026-10-28：隐藏不可用工作区（AI 0.3.1）
+
+用户在 0.3.0 原生验收时要求不可用工作区不再显示。0.3.1 在树状投影完成目录合并后过滤不可用项，连接默认目录或旧对话引用不会把失效目录重新加回侧栏；两个工作区选择入口也仅列可用目录。后台注册和历史数据不删除，目录恢复可用后刷新可重新显示。目录存在但代理连接暂时离线的历史仍可阅读，不冒充可执行的新任务。
+
+Vue 类型检查、32 项前端及 129 项 Python 检查通过，共 161 项；新增回归验证失效目录即使有历史/默认目录引用也隐藏，恢复后原会话重新出现。版本检查、前后端构建、冻结 worker 身份/HTTP鉴权/排空及实际包清单审计通过。原生应用已选择 0.3.1，侧栏显示 7 个可用 Codex 目录和 9 个可用 Cursor 目录，不再显示上一版的灰色失效目录；Codex 选择框同样只有 7 个可用目录。其他功能保持原版本，原生证据为 `native-hidden-workspaces.json` 与 `native-ai-0.3.1.png`。
+
+最终包 `dist/modules/ai-workbench/0.3.1/ai-workbench-0.3.1.ndpkg`，10,197,661 字节、72 条目，SHA-256 `f435a410fa95941fabe977642381199cfd382754f28e1fc03bc43ca2d327f0ce`。宿主仍为原 0.19.0；0.3.0 原包保持不可变。证据在 `.local/ai-agents-20261028/` 的 `check-0.3.1.log`、`package-0.3.1.log`、`package-audit-0.3.1.json`、`preferences-verification-0.3.1.json`。没有额外模型推理，没有提交、推送或公开发布。
+
+## 2026-10-28：Agent 工作区树、连接健康与模型参数（AI 0.3.0）
+
+用户要求移除失效/重复 Codex 选择、选择模型实际参数，并将左侧组织为 Agent 类型 → 工作区 → 对话。此轮仅更新 AI 页签及文档；宿主仍为已有 0.19.0，不重新打包或修改其他插件。
+
+本地连接在进入页签、恢复焦点和实际执行边界检查。严格匹配当前用户官方 Codex 版本目录的失效路径可解析到同安装根的当前程序，任意手填失效路径不回退。相同 Agent、实际程序及默认目录用 duplicateOf 合并新任务入口，原连接/历史不删除；已有选择失效则清空选择并保留草稿，不自动把内容转给另一提供方。官方升级路径保持同连接身份后，修改名称/默认目录仍可保存。
+
+模型目录返回每模型参数描述。Codex effort 与 serviceTierForTurn 使用本机协议实际值，Standard 显式传 default，Fast 传 priority；缺省继承在界面单独标识。Cursor 协商 parameterizedModelPicker，通过 session/set_config_option 设置模型和参数，再核对返回实际值；不能仅拼新 variant ID。参数由后台目录及执行进程双重校验，目录缓存同时绑定工作目录，过时结果不能写回；查询直到缓存写回完成都计入安全排空。
+
+工作区合并手动登记、连接默认目录、OpenDesk 对话目录和原生目录。Codex 使用 project/list；Cursor 只读 ACP session/list 的 cwd，以及 App 白名单目录字段/数据库唯一固定的最近工作区 metadata key；不读取聊天正文、凭据或加载外部会话。工作区树按类型和规范化路径合并，空目录折叠、已有对话/当前目录展开；单连接来源放在提示内。新增手动目录只写本插件数据。兼容添加 workspaces 表及可选字段，dataSchema 仍为 1。
+
+| 检查 | 实际结果 |
+|---|---|
+| 类型与回归 | Vue 类型检查、31 项前端和 129 项 Python 检查通过，共 160 项；版本检查及 diff 空白检查通过。新增覆盖健康/去重、历史绑定、模型参数、目录来源、缓存失效、查询排空和草稿不重定向 |
+| Codex 实际目录 | 旧官方路径自动修复后成功读取 8 模型；各模型 effort 取自目录，6.1 Sol 等提供 low 至 ultra，Luna 等最多 max；8 项都提供 Standard/Fast。project/list 读取 11 工作区 |
+| Cursor 实际参数 | 32 项模型目录中 26 项提供参数。使用真实参数化 ACP 将指定模型 reasoning/fast 设为所选值并核对，恢复原值、确认拥有进程退出；此轮没有发送推理。App 与 Agent 目录去重合并为 14 个工作区 |
+| 服务集成 | 隔离临时 Store 实测旧路径修复、重复身份保留、两提供方目录、模型参数验证与持久化、手动目录；查询后活动数为 0，安全排空完成 |
+| 浏览器 | 生产包装页/SDK/UI 通过 49 种风格配色组合，参数与草稿保留、页面无额外横纵溢出；完整工作区树、无效/重复项过滤、旧会话继承值、模型参数修改与手动添加目录通过，640 宽参数区可用 |
+| 冻结包 | 0.3.0 前端/PyInstaller 及冻结 worker 身份、HTTP 鉴权、静态页面和排空检查通过；72 个 ZIP 条目、CRC、内外 manifest 和文件范围审计通过 |
+| 原生应用 | 已导入并启用 0.3.0；自动读到工作区树，Codex 顶层仅一个有效新任务连接，旧官方路径提示已找到更新程序；模型选择器显示真实档位，Ultra/Fast 可选择并显示用量说明，随后恢复 Low/Standard，没有发送消息 |
+| 范围与数据 | 原有两条会话继续保留。升级前后宿主设置、其他页签选择与私有部署工作台注册摘要一致；保留本轮开始时的 anime/sand 外观。包中无工作区索引、真实聊天、凭据、私有页签或 Cursor CLI |
+
+最终包 `dist/modules/ai-workbench/0.3.0/ai-workbench-0.3.0.ndpkg`，10,197,665 字节，SHA-256 `056b2eb9002063b26a0940c78b7cc1b65e84d86a7d1e28d63d6f6328fe3474cd`。来源仍为 `6689d2383b2c58a9ef458a4a8b1f003a63132a16`、dirty:true；宿主 EXE 摘要仍为 `b9b2ecb4b0410c42a8904372c8545e2649655662256427eda17fbda9d82e0385`。
+
+证据在 `.local/ai-agents-20261028/`：`check-final.log`、`version-check.log`、`package.log`、`package-audit.json`、`live-registry.json`、`ui-matrix.json`、`ui-interactions.json`、`preferences-verification.json`；Codex 实测在 `.local/ai-codex-20261028/model-parameters-live.json`，Cursor 参数实测在 `.local/ai-refinement-20261028/cursor-cli/parameters-workspaces-verification.json`。新参数没有逐模型实际推理，本轮未重跑全套宿主 Rust 测试或干净机器安装；程序存在、目录返回、参数被接受和模型推理额度分别判断。没有 Git 提交、推送、标签或公开发布。
+
+## 2026-10-28：Cursor 接入、Codex 模型与工作区、聊天界面整理（AI 0.2.1）
+
+此次只更新 AI 独立页签，宿主继续使用原本地 0.19.0。修复模型 datalist 按当前文本过滤候选、已有会话只能显示固定模型的问题，改为完整目录选择器、显式刷新和手填；回合间换模型由后台确认，运行中拒绝修改。Codex 空路径自动发现已安装 CLI；旧显式路径失效不静默换程序，另存新的自动发现连接并保留原会话绑定。模型/工作区查询同样计入后台活动和进程清理，关闭过程不会漏掉查询进程。
+
+Cursor 使用官方 Agent CLI 的 ACP，先确认 Ask 模式和具体模型，再发送消息；仅一次性审批，未知交互拒绝。真实验证发现 CLI `--list-models` 的 270 个命令行别名不能直接用于 ACP，改读 `cursor/list_available_models` 的 32 项结构化目录；保留完整配置 ID，无参数模型也附 `[]`。全部拥有的 ACP 启动加入官方 `--disable-auto-update`。CLI 是本机依赖，不装入页签包；没有改写 Cursor IDE，也没有复制认证文件。
+
+Codex 工作区来自本机 CLI 已实现的实验性 `project/list`，仅目录查询启用实验协议，不扫描聊天或私有数据库。不同平台绝对路径、UNC 和已移动目录显示为不可用；不因远程项目使本地列表整体失败，不探测网络共享。界面参考 Codex 的会话侧栏、正文和底部输入结构，移除装饰星形、宣传标题和重复卡片，复用 Lucide 图标及 OpenDesk 颜色/材质。原生验收修正了隐藏 iframe 初次加载时的窄屏判断，以及切换连接后旧模型数量提示残留；0.2.0 候选原字节保留，最终另发本地 0.2.1 包。
+
+| 检查 | 实际结果 |
+|---|---|
+| 类型和自动化 | Vue 类型检查通过；21 项前端及 92 项 Python 测试通过，共 113 项。覆盖完整模型目录、回合间模型切换、目录权限边界、关闭等待、Cursor/Codex 协议及失败/取消/清理重试 |
+| Codex 实机 | CLI 0.165.0-alpha.1.2 返回 8 个模型；project/list 返回 11 个工作区、7 个本机目录可用。本轮 Codex 未执行真实推理 |
+| Cursor 实机 | 官方 CLI 2026.10.22-27dcf5f 登录后返回 32 项 ACP 模型；32/32 ID 均经真实 session/set_model 接受。最小 Ask 推理完成，回答含 Cursor Auto 路由提示及 OpenDesk connected；没有工具审批，独立空目录不变，拥有进程退出码 0。逐项模型选择检查没有额外推理 |
+| 浏览器 UI | 生产包装页/SDK/UI，49 个风格×配色组合同步，语义文字色和强调色与宿主一致，草稿保留，页面无额外横纵溢出；操作图标几何居中。920/640/480 宽设置面板保持在视口内 |
+| 冻结构建 | 0.2.1 类型/Vite/PyInstaller 构建和冻结 worker 身份、HTTP 鉴权、静态页面与排空检查通过。ZIP CRC、72 项实际文件清单、内外 manifest、版本和摘要通过 |
+| 正常原生应用 | 功能管理导入并选择 0.2.1，原会话仍显示；保存 Codex 自动发现和 Cursor 连接，冻结包分别读到 8 与 32 个模型，工作区列表可用。最终侧栏在隐藏页签显示后恢复桌面布局，切换连接清除旧数量提示 |
+| 数据与范围 | 升级前后设置、其他页签选择及私有部署工作台注册信息摘要一致；保留 anime/sakura 外观。没有部署工作台、测试包、会话、凭据或官方 Cursor CLI 混入产物 |
+
+最终包 `dist/modules/ai-workbench/0.2.1/ai-workbench-0.2.1.ndpkg`，SHA-256 `181f426b5b5300977b1c2c0d4dbf7e56ccf230fbfe2875268f3f058fd234eecf`，10,168,547 字节；来源 `6689d2383b2c58a9ef458a4a8b1f003a63132a16`、dirty:true。宿主 EXE 摘要仍为 `b9b2ecb4b0410c42a8904372c8545e2649655662256427eda17fbda9d82e0385`。测试模型目录不证明每个模型都具有账号推理额度，也没有逐个推理；Cursor 当前为 Ask 模式，尚未接入 OpenDesk 动态插件工具。API 推理、全套宿主 Rust 回归和干净机器安装未在本轮重跑。
+
+证据：`.local/ai-refinement-20261028/` 的 `check-0.2.1.log`、`package-0.2.1.log`、`package-audit-0.2.1.json`、`ui-matrix.json`、`ui-responsive.json`、`preferences-verification.json`，以及 `cursor-cli/model-selection-verification.json`、`cursor-cli/final-verification.json`；Codex 目录实测在 `.local/ai-codex-20261028/live-evidence.json`。旧 Cursor 命令行别名检查和修正前失败证据保留原义，不冒充最终模型目录结果。预览浏览器/服务已关闭，窗口尺寸覆盖已恢复。没有 Git 提交、推送、标签或公开 Release。
+
+## 2026-10-26：AI 风格完整跟随宿主（AI 0.1.4）
+
+用户指出宿主切换风格后 AI 面板仍为薄荷。确认 0.1.2 的包装页仅转发 theme，漏掉 uiStyle；AI CSS 又以自己的薄荷/绿黑色板覆盖宿主。此次仅修改 AI 页签的外观链路与样式，宿主仍为已有 0.19.0，没有重建宿主或修改其他业务、凭据与会话格式。
+
+包装页初始片段和带 source/origin/nonce 校验的实时消息现同时传递 theme、uiStyle、surfaceEffects；监听风格独立变化及材质属性，iframe load 后补发当前状态。内层不再固定薄荷颜色，直接复用宿主主题、风格和材质来源，并对七种风格适配密度、圆角与表面。消息只更新样式属性，不重载 iframe 或后台。实际渲染还修正了紧凑侧栏标题换行。
+
+| 检查 | 实际结果 |
+|---|---|
+| AI 回归 | Vue 类型检查、18 项前端/外观契约测试和 54 项后台/代理/凭据测试通过；包括初始值、只切风格、预览回退、非法消息和伪造来源拒绝 |
+| 浏览器真实渲染 | 使用生产模块 SDK、包装页和 AI UI 的本地合成宿主，49 个风格×配色组合均同步，正文/强调色与宿主语义变量一致，草稿保留，包装页仅载入一次；最终品牌标题单行 |
+| 小窗口 | 860×620 下七种风格设置面板均位于视口内，连接草稿和聊天草稿保留，body 无横向/纵向溢出；640 宽度的抽屉边界通过；取消预览恢复 simple/light |
+| 打包 | AI 0.1.4 独立包完成类型、Vite、PyInstaller、冻结程序身份/HTTP鉴权/关闭检查，72 条目；0.1.3 构建候选保留，不覆盖已有同版本产物 |
+| 原生应用 | 通过正常功能管理导入并选择0.1.4；首次打开即匹配当前 Codex/light。真实设置中保存 Cursor，返回已打开AI面板观察到紧凑样式与原草稿；随后恢复 Codex/light，草稿仍在，再清除本次临时草稿，没有发送消息 |
+| 数据与范围 | 旧0.1.2包保留；数据schema仍为1，原本地Codex连接仍可见；没有模型请求、没有私有插件或运行数据进入包。最终数据摘要核对保存在本机证据中 |
+
+AI 包 SHA-256 为 `9222406a342bed1596c9a44b0fe5d9b3dcd00ab7f7e6baea7c27a58efb88e8e1`；源码来源仍为 `6689d2383b2c58a9ef458a4a8b1f003a63132a16`、dirty:true。宿主 EXE 摘要保持 `b9b2ecb4b0410c42a8904372c8545e2649655662256427eda17fbda9d82e0385`。原生验收后进程已关闭，因此最终偏好校验与运行状态分开记录，不将已关闭实例报告为仍在运行。
+
+证据位于 `.local/ai-style-sync-20261026/`：`check.log`、`package-0.1.4.log`、`package-audit.json`、`final-matrix.json`、`browser-results.json`、`native-codex.png`、`glass-dark.png`、`anime-sakura.png`、`preferences-verification.json`。浏览器页面仅含合成消息；原生截图是已安装的AI页签。预览页和服务已清理，临时浏览器尺寸覆盖已恢复。未执行真实模型推理、重新发布或全套宿主Rust回归；本轮没有Git提交、推送或Release。
+
+## 2026-10-26：AI 工作台第一阶段（本地 0.19.0 / AI 0.1.2）
+
+用户确认方案后授权先更新最新 OpenDesk，再开始第一阶段实现。源码从 `23b8658` 快进到远端最新 `6689d2383b2c58a9ef458a4a8b1f003a63132a16`（0.18.0 正式基线）；随后新增宿主可选只读工具能力，开发宿主版本为 0.19.0，AI 独立包 0.1.2，塔防工具适配 0.9.0。本轮没有创建 Git 提交、推送、标签或 Release。所有开发产物真实记录 dirty:true，不能当作新的干净公开发布包。
+
+AI 包提供 API 连接/动态模型、Responses 与 Chat Completions 流式适配、SQLite 会话、Windows DPAPI 密钥、取消与状态、Codex App Server 及审批。宿主工具目录/原生授权绑定完整工具快照与目标版本、摘要、代次，首期仅支持已打开目标的无参数只读工具。塔防导出当前统计摘要，既不启动采集也不读取任意路径。Cursor、WorkBuddy、通用 MCP 适配和可写业务工具尚未实现，Codex 本期不使用 OpenDesk 动态工具列表。
+
+| 验证 | 实际结果 |
+|---|---|
+| 源码与类型 | 最终 `npm run check` 通过：56 版本/分发、237 宿主前端、166 Python、38 采集脚本、14 AI 前端、54 AI 后台/代理/凭据测试，共 565 项 |
+| Rust | 最终 75/75 通过，与源码检查合计 **640 项**；包括授权快照漂移、排队调用关闭、真实双线程准入竞争、关闭重试与退出幂等 |
+| 构建 | 0.19.0 Tauri、NSIS、60 文件便携包通过；App 仅随附塔防 0.9.0。AI 0.1.2 另行冻结与打包，72 条目、10,132,855 字节 |
+| AI 冻结程序 | 烘焙身份、精确 capabilities、静态页面、无凭据 API 拒绝、带凭据状态访问与 prepareShutdown / runtime.shutdown 通过；没有真实推理 |
+| API 协议 | 本机合成 HTTP/SSE 服务覆盖模型发现、两种协议文本/工具往返、未授权调用拒绝、取消、异常/空完成/截断、重定向不携带密钥；不是生产模型服务验收 |
+| Codex | 23 项假 app-server 及真实 Windows Job 回收测试；对本机 CLI 只做真实 model/list，返回 7 个模型；未读取原有聊天或发起推理 |
+| UI | 本机模拟 API 浏览器验收连接保存/Key 清空、模型、流式、取消中/已取消、审批、错误、历史；1280×720 和 860×620 无 body 双向溢出，聊天只有消息区滚动，graphite 可读 |
+| 宿主原生回归 | 最终核心 smoke 与模块导入/升级/回退/失败恢复 smoke 通过，测试实例正常退出 |
+| 真实工具闭环 | 在独立数据根通过真实 Tauri UI 导入并启用 AI 0.1.2，打开真实塔防 0.9.0；先在原生授权框选“否”，模型模拟服务的越权请求被拒绝；再明确授权，API→AI 后台→宿主→同一塔防 worker→模型模拟服务往返成功 |
+| 工具结果证据 | 共 3 次本地 Responses 请求（1 次拒绝探针 + 2 次正常工具循环），仅 1 次 tool_request / tool_result。来源版本及摘要与塔防包一致，返回 configured:false、eventCount:0、state:idle，未伪造战斗数据或启动采集；宿主错误数 0 |
+| 正常使用环境 | 开发宿主经 Explorer 启动 PID 59128；正常界面导入/选择/启用 AI 0.1.2，配置本地 Codex 并实际显示 7 个模型。没有填入真实 API Key、没有发送聊天。框架设置、除新增 AI 外的既有页签选择及部署工作台登记摘要保持一致，宠物就绪 |
+| 包范围 | AI 包内外 manifest 一致，PYZ151项仅含7个AI业务模块；不含塔防或私有部署业务、测试fixture、数据库、DPAPI凭据或用户配置；6项UI/包装资源和8项AI/凭据语义字节码与最终源码一致 |
+
+主要摘要：
+
+- 最终 `OpenDesk.exe`：`b9b2ecb4b0410c42a8904372c8545e2649655662256427eda17fbda9d82e0385`。
+- `ai-workbench-0.1.2.ndpkg`：`a535403a23349c63e5d22c5a3d0291b89813541787925e433a492f7379168f71`。
+- `tower-assistant-0.9.0.ndpkg`：`fe9606967a061408097b291839a02861e036bca6c165ac79ceaf208e0d4bfd18`。
+
+原生回归发现并修复重复 shutdown 被误判为“正在关闭”的问题；增加成功后幂等返回、进行中拒绝以及失败/取消可重试测试，最终原生回归通过。另补充已有会话不能更换提供方地址/代理程序的限制，同 endpoint 的重命名和 Key 轮换仍允许，保存连接会撤销旧工具选择授权并清空模型缓存。AI 0.1.0/0.1.1 候选保留，本次实际安装0.1.2，不覆盖同版本包。
+
+旧 0.18.0 正式便携目录保留于 `.local/ai-stage1-20261026/previous-build/dist/OpenDesk/`。隔离测试使用 `.local/ai-native-20261026-frontend/data/`，其中仅有塔防和AI；测试宿主正常关闭，模拟服务只按已核对命令/PID/启动时间清理。原生控制子任务曾授权超时，主会话随后通过正常原生UI完成导入、选择与授权，没有直接改写注册表或绕过审批。
+
+本机证据：`.local/ai-check-delivery.log`、`.local/ai-rust-delivery.log`、`.local/ai-host-build-delivery.log`、`.local/ai-package-0.1.2.log`；`.local/ai-stage1-20261026/{package-audit-0.1.2.json,core-smoke-final.log,module-smoke-final.log,startup-verification.json,launch.json}`；`.local/ai-native-20261026-frontend/{verification.json,model-evidence.json}`；`.local/ai-ui-preview/{browser-results.json,chat-1280.png,approval-860.png,connection-error-860.png,graphite-860.png}`。原生画面通过工具观察，未保存成上述浏览器截图；浏览器截图明确使用模拟接口。
+
+未执行真实 API Key 推理、Codex 实际模型推理、干净机器安装/卸载、长时运行或公开 CI；安装器未签名。当前可直接在已打开的AI页签选择Codex模型，或新增自己的API连接。使用塔防只读工具需由用户在功能管理选择0.9.0并打开；既有固定0.1.4选择保持不变。操作说明见[AI 工作台](ai-workbench.md)。
+
+
 ## 2026-10-26：App 0.18.0 / 塔防 0.8.2 正式交付
 
 用户授权源码提交、推送及 App／塔防两个 Release 后，从干净提交 `036ba0ace3583cbff410a0ae1155b46a44386e13` 构建正式 App 0.18.0 与塔防 0.8.2。0.8.2 与下方本地 0.8.1 功能一致，使用新版本保留旧 dirty 产物、来源和摘要；本节记录新产物的独立验证，下方所有历史结果仍保留当时版本与执行范围。

@@ -44,6 +44,38 @@
   ],
   "releases": [
     {
+      "summary": "精简模块工作区的重复层级，并统一宿主各页面的圆角层次。",
+      "version": "0.19.1",
+      "date": "2026-10-28",
+      "changes": [
+        {
+          "type": "fixed",
+          "version": "0.8.1",
+          "featureId": "core.workbench",
+          "description": "移除模块页重复面包屑与外层卡片，保留风格快捷入口，协调二次元及薄荷风格的内容面板、内层卡片和控件圆角。"
+        },
+        {
+          "type": "fixed",
+          "version": "0.8.1",
+          "featureId": "core.module-packages",
+          "description": "模块就绪后不再重复展示版本状态横条，加载和失败状态继续明确呈现，保持独立iframe与滚动责任。"
+        }
+      ]
+    },
+    {
+      "version": "0.19.0",
+      "date": "2026-10-26",
+      "summary": "新增独立AI工作台及经授权的只读插件工具接口。",
+      "changes": [
+        {
+          "featureId": "core.module-packages",
+          "version": "0.8.0",
+          "type": "changed",
+          "description": "增加可选只读工具目录与原生授权，调用绑定当前插件版本、摘要和运行代次，复用已有实例；兼容旧页签。独立AI工作台以Web App包提供API聊天与Codex适配。"
+        }
+      ]
+    },
+    {
       "version": "0.18.0",
       "date": "2026-10-26",
       "summary": "新增通用透明模块第二视图，复用当前模块的运行实例。",

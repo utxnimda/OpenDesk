@@ -1,5 +1,6 @@
 import { BRIDGE_PROTOCOL, errorMessage, getBaseTheme, isRecord, matchesSource, resolveMessageSurfaceEffects } from '../../../module-sdk/src/index';
 import type { Appearance, SurfaceEffects, UIStyle } from '../../../module-sdk/src/index';
+import { parseToolOperation, type ToolOperation } from '../../../module-sdk/src/module-tools';
 import { parseSurfaceOperation, type SurfaceOperation } from '../../../module-sdk/src/module-surface';
 
 /** Protocol 1 keeps its base theme valid for already installed module SDKs. */
@@ -13,7 +14,7 @@ export function isModuleHello(event: { origin: string; source: unknown; data: un
 }
 
 /** A broker is bound to a host-owned token by its caller, never by module input. */
-export function createPackageBroker(generation: string, call: (method: string, params: Record<string, unknown>) => Promise<unknown>, onReady: (identity: Record<string, unknown>) => void | Promise<void>, surface?: (operation: SurfaceOperation) => Promise<unknown>) {
+export function createPackageBroker(generation: string, call: (method: string, params: Record<string, unknown>) => Promise<unknown>, onReady: (identity: Record<string, unknown>) => void | Promise<void>, surface?: (operation: SurfaceOperation) => Promise<unknown>, tools?: (operation: ToolOperation) => Promise<unknown>) {
   let active = true;
   let ready = false;
   let preparing = false;
@@ -31,10 +32,21 @@ export function createPackageBroker(generation: string, call: (method: string, p
         finally { preparing = false; }
         return;
       }
-      if ((data.type !== 'call' && data.type !== 'surface') || typeof data.id !== 'string' || data.id.length > 200) return;
+      if ((data.type !== 'call' && data.type !== 'surface' && data.type !== 'tools') || typeof data.id !== 'string' || data.id.length > 200) return;
       const id = data.id;
       if (!ready) { reply({ type: 'result', generation, id, ok: false, error: 'MODULE_NOT_READY: 尚未完成模块身份校验。' }); return; }
       if (pending.has(id)) return;
+      if (data.type === 'tools') {
+        try {
+          if (!tools) throw new Error('当前宿主不支持插件工具。');
+          const operation = parseToolOperation(data.action, data.params);
+          pending.add(id);
+          const result = await tools(operation);
+          if (active) reply({ type: 'result', generation, id, ok: true, result });
+        } catch (error) { if (active) reply({ type: 'result', generation, id, ok: false, error: errorMessage(error) }); }
+        finally { pending.delete(id); }
+        return;
+      }
       if (data.type === 'surface') {
         try {
           if (!surface) throw new Error('当前宿主不支持此独立窗口操作。');

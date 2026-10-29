@@ -1,4 +1,6 @@
 //! Independently versioned local module packages. No remote downloads or generic execution API.
+mod tools;
+pub use tools::ToolIdentity;
 mod runtime;
 mod static_server;
 mod store;
@@ -10,7 +12,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         Arc, Mutex,
     },
 };
@@ -75,6 +77,7 @@ impl Slot {
 struct Cell {
     slot: tokio::sync::Mutex<Slot>,
     transition: AtomicBool,
+    active_tool_reads: AtomicUsize,
     ui_revision: AtomicU64,
 }
 struct Transition(Arc<Cell>);
@@ -82,6 +85,13 @@ impl Transition {
     fn begin(cell: &Arc<Cell>) -> Result<Self, String> {
         if cell.transition.swap(true, Ordering::SeqCst) {
             return Err("MODULE_BUSY: another lifecycle operation is in progress".into());
+        }
+        if cell.active_tool_reads.load(Ordering::SeqCst) != 0 {
+            cell.transition.store(false, Ordering::SeqCst);
+            return Err(
+                "MODULE_BUSY: an admitted plugin tool read is still finishing; retry shortly"
+                    .into(),
+            );
         }
         Ok(Self(cell.clone()))
     }
@@ -92,12 +102,51 @@ impl Drop for Transition {
     }
 }
 
+/// A short caller-side admission, not a general headless-runtime lease. The
+/// paired SeqCst checks ensure lifecycle and read admission cannot both win.
+struct ToolReadAdmission(Arc<Cell>);
+impl ToolReadAdmission {
+    fn begin(cell: &Arc<Cell>, stopping: &AtomicBool) -> Result<Self, String> {
+        if stopping.load(Ordering::SeqCst) || cell.transition.load(Ordering::SeqCst) {
+            return Err("MODULE_SWITCHING".into());
+        }
+        cell.active_tool_reads.fetch_add(1, Ordering::SeqCst);
+        let admission = Self(cell.clone());
+        if stopping.load(Ordering::SeqCst) || cell.transition.load(Ordering::SeqCst) {
+            return Err("MODULE_SWITCHING".into());
+        }
+        Ok(admission)
+    }
+}
+impl Drop for ToolReadAdmission {
+    fn drop(&mut self) {
+        self.0.active_tool_reads.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+/// A dropped/failed shutdown attempt remains retryable. Only the owner that
+/// acquired `stopping` creates this guard, so a concurrent rejected request
+/// cannot clear another attempt's state.
+struct ShutdownAttempt<'a> {
+    stopping: &'a AtomicBool,
+    complete: &'a AtomicBool,
+}
+impl Drop for ShutdownAttempt<'_> {
+    fn drop(&mut self) {
+        if !self.complete.load(Ordering::SeqCst) {
+            self.stopping.store(false, Ordering::SeqCst);
+        }
+    }
+}
+
 pub struct ModuleManager {
     store: Arc<Mutex<Store>>,
     cells: Mutex<HashMap<String, Arc<Cell>>>,
     tokens: Mutex<HashMap<String, (String, String)>>,
+    tool_grants: Mutex<HashMap<String, Vec<tools::ToolGrant>>>,
     diagnostics: Arc<Diagnostics>,
     stopping: AtomicBool,
+    shutdown_complete: AtomicBool,
 }
 
 impl ModuleManager {
@@ -111,8 +160,10 @@ impl ModuleManager {
             store: Arc::new(Mutex::new(store)),
             cells: Mutex::new(HashMap::new()),
             tokens: Mutex::new(HashMap::new()),
+            tool_grants: Mutex::new(HashMap::new()),
             diagnostics,
             stopping: AtomicBool::new(false),
+            shutdown_complete: AtomicBool::new(false),
         })
     }
     fn cell(&self, id: &str) -> Result<Arc<Cell>, String> {
@@ -142,6 +193,9 @@ impl ModuleManager {
         Ok(())
     }
     fn revoke(&self, session: &Session) {
+        if let Ok(mut grants) = self.tool_grants.lock() {
+            grants.remove(&session.token);
+        }
         if let Ok(mut tokens) = self.tokens.lock() {
             tokens.remove(&session.token);
         }
@@ -722,6 +776,7 @@ impl ModuleManager {
             return Ok(());
         };
         let cell = self.cell(&id)?;
+        let _transition = Transition::begin(&cell)?;
         let mut slot = cell.slot.lock().await;
         slot.finish_retained().await?;
         if slot
@@ -740,16 +795,38 @@ impl ModuleManager {
         Ok(())
     }
     pub async fn shutdown(&self) -> Result<(), String> {
-        self.stopping.store(true, Ordering::SeqCst);
+        if self.shutdown_complete.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+        if self.stopping.swap(true, Ordering::SeqCst) {
+            // The previous attempt may have finished between the first read and
+            // swap. A genuinely active attempt is not a successful shutdown.
+            if self.shutdown_complete.load(Ordering::SeqCst) {
+                return Ok(());
+            }
+            return Err("MODULE_HOST_STOPPING".into());
+        }
+        let _attempt = ShutdownAttempt {
+            stopping: &self.stopping,
+            complete: &self.shutdown_complete,
+        };
         let cells = match self.cells.lock() {
             Ok(cells) => cells.values().cloned().collect::<Vec<_>>(),
             Err(_) => {
-                self.stopping.store(false, Ordering::SeqCst);
                 return Err("MODULE_LOCK_UNAVAILABLE".into());
             }
         };
+        // Preflight every cell before stopping any worker. A short tool read or
+        // an existing lifecycle operation must not cause a partial shutdown.
+        let mut transitions = Vec::new();
         for cell in &cells {
-            cell.transition.store(true, Ordering::SeqCst);
+            match Transition::begin(cell) {
+                Ok(transition) => transitions.push(transition),
+                Err(error) => {
+                    drop(transitions);
+                    return Err(error);
+                }
+            }
         }
         let result = async {
             for cell in &cells {
@@ -771,11 +848,9 @@ impl ModuleManager {
             Ok(())
         }
         .await;
-        if result.is_err() {
-            self.stopping.store(false, Ordering::SeqCst);
-            for cell in &cells {
-                cell.transition.store(false, Ordering::SeqCst);
-            }
+        drop(transitions);
+        if result.is_ok() {
+            self.shutdown_complete.store(true, Ordering::SeqCst);
         }
         result
     }
@@ -786,7 +861,7 @@ mod tests {
     use super::*;
     use std::{fs, io::Write};
 
-    fn test_manager() -> (PathBuf, ModuleManager) {
+    pub(super) fn test_manager() -> (PathBuf, ModuleManager) {
         let root = std::env::temp_dir().join(format!(
             "opendesk-module-lifecycle-{}",
             uuid::Uuid::new_v4()
@@ -800,7 +875,7 @@ mod tests {
         .unwrap();
         (root, manager)
     }
-    fn install(manager: &ModuleManager, root: &Path, id: &str, version: &str) -> String {
+    pub(super) fn install(manager: &ModuleManager, root: &Path, id: &str, version: &str) -> String {
         let path = root.join(format!("{id}-{version}.ndpkg"));
         let mut archive = zip::ZipWriter::new(fs::File::create(&path).unwrap());
         let options = zip::write::SimpleFileOptions::default();
@@ -830,7 +905,7 @@ mod tests {
             .unwrap()
             .clone()
     }
-    async fn ready(manager: &ModuleManager, session: &Value) {
+    pub(super) async fn ready(manager: &ModuleManager, session: &Value) {
         manager
             .validate_session(
                 session["token"].as_str().unwrap(),
@@ -840,6 +915,77 @@ mod tests {
             )
             .await
             .unwrap();
+    }
+
+    #[test]
+    fn completed_shutdown_is_idempotent_for_outer_cleanup() {
+        tauri::async_runtime::block_on(async {
+            let (root, manager) = test_manager();
+            let digest = install(&manager, &root, "shutdown-fixture", "1.0.0");
+            manager
+                .select("shutdown-fixture", "1.0.0", &digest)
+                .await
+                .unwrap();
+            manager.set_enabled("shutdown-fixture", true).await.unwrap();
+            let session = manager.open("shutdown-fixture").await.unwrap();
+            ready(&manager, &session).await;
+            manager.shutdown().await.unwrap();
+            assert!(manager.shutdown_complete.load(Ordering::SeqCst));
+            assert!(manager.tokens.lock().unwrap().is_empty());
+            // Mirrors module smoke's exercise shutdown followed by outer cleanup.
+            manager.shutdown().await.unwrap();
+            manager.shutdown().await.unwrap();
+            assert!(manager.open("shutdown-fixture").await.is_err());
+            std::fs::remove_dir_all(root).unwrap();
+        });
+    }
+
+    #[test]
+    fn in_progress_shutdown_is_not_success_and_cancelled_attempt_can_retry() {
+        tauri::async_runtime::block_on(async {
+            let (root, manager) = test_manager();
+            let manager = Arc::new(manager);
+            let digest = install(&manager, &root, "shutdown-fixture", "1.0.0");
+            manager
+                .select("shutdown-fixture", "1.0.0", &digest)
+                .await
+                .unwrap();
+            manager.set_enabled("shutdown-fixture", true).await.unwrap();
+            let session = manager.open("shutdown-fixture").await.unwrap();
+            ready(&manager, &session).await;
+            let cell = manager.cell("shutdown-fixture").unwrap();
+            let held = cell.slot.lock().await;
+            let attempt = {
+                let manager = manager.clone();
+                tokio::spawn(async move { manager.shutdown().await })
+            };
+            tokio::time::timeout(std::time::Duration::from_secs(2), async {
+                while !manager.stopping.load(Ordering::SeqCst) {
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .unwrap();
+            assert_eq!(
+                manager.shutdown().await.unwrap_err(),
+                "MODULE_HOST_STOPPING"
+            );
+            assert!(!manager.shutdown_complete.load(Ordering::SeqCst));
+            assert!(held.session.is_some());
+            attempt.abort();
+            assert!(attempt.await.unwrap_err().is_cancelled());
+            assert!(!manager.stopping.load(Ordering::SeqCst));
+            assert!(!manager.shutdown_complete.load(Ordering::SeqCst));
+            assert!(!cell.transition.load(Ordering::SeqCst));
+            drop(held);
+            assert!(manager
+                .describe_existing(session["token"].as_str().unwrap())
+                .await
+                .is_ok());
+            manager.shutdown().await.unwrap();
+            manager.shutdown().await.unwrap();
+            std::fs::remove_dir_all(root).unwrap();
+        });
     }
 
     #[test]

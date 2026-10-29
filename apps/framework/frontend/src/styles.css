@@ -27,6 +27,8 @@ button svg { flex-shrink: 0; }
 .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; color: var(--brand-mark-text); border: 1px solid var(--brand-mark-border); border-radius: 11px; background: var(--brand-mark-bg); }
 .brand strong { display: block; font-size: 18px; color: var(--sidebar-strong); font-weight: 650; letter-spacing: -.45px; }
 .brand div > span { display: block; font-size: 8px; letter-spacing: 1.9px; margin-top: 4px; color: var(--sidebar-muted); font-weight: 600; }
+.brand-style-switch { display: inline-flex; align-items: center; gap: 5px; margin: 3px 0 0; padding: 2px 0; border: 0; border-radius: 3px; background: transparent; color: var(--sidebar-muted); font-size: 10px; line-height: 1.4; }
+.brand-style-switch:hover { color: var(--sidebar-strong); }
 .sidebar-rule { height: 1px; background: var(--sidebar-line); margin: 29px 11px 25px; }
 .navigation-label { padding: 0 13px; margin-bottom: 12px; color: var(--sidebar-label); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; }
 .navigation { display: flex; flex-direction: column; gap: 5px; }
@@ -204,12 +206,9 @@ code { font-size: .95em; background: var(--surface-soft); border: 1px solid var(
 .import-details label { display: flex; flex-direction: column; gap: 6px; }
 .import-details code { padding: 8px; font-size: 10px; overflow-wrap: anywhere; }
 .package-frame-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; overflow: hidden; background: var(--bg); position: relative; border: 0; border-radius: 0; }
-.package-running-strip { display: flex; flex: 0 0 auto; align-items: center; gap: 10px; padding: 6px 20px; font-size: 10px; border-bottom: 1px solid var(--border); background: var(--surface); }
-.package-running-strip code { border: 0; font-size: 10px; color: var(--muted); background: none; }
-.package-runtime-status { margin-left: auto; color: var(--muted); font-size: 10px; }
 .package-iframe { flex: 1; min-height: 0; min-width: 0; width: 100%; height: 0; display: block; border: 0; background: var(--bg); }
 .package-iframe.is-loading { visibility: hidden; }
-.package-loading { position: absolute; top: 90px; left: 30px; color: var(--muted); font-size: 12px; }
+.package-loading { position: absolute; top: 30px; left: 30px; right: 30px; color: var(--muted); font-size: 12px; line-height: 1.7; }
 .package-frame-panel > .alert { margin: 20px; }
 .flipped { transform: rotate(180deg); }
 @keyframes spin { to { transform: rotate(360deg); } }

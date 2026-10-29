@@ -1,4 +1,6 @@
 /** Browser-only module SDK. It deliberately has no Tauri or host-process imports. */
+import { parseToolOperation, toolIdentity, type ModuleToolsClient, type HostTool } from './module-tools';
+export type { HostTool, HostToolIdentity, ModuleToolsClient } from './module-tools';
 import { isSurfaceContext, parseSurfaceOperation, type ModuleSurfaceClient, type ModuleSurfaceContext } from './module-surface';
 export type { ModuleSurfaceClient, ModuleSurfaceContext, ModuleSurfaceOptions } from './module-surface';
 export const BRIDGE_PROTOCOL = 1;
@@ -38,6 +40,7 @@ export interface LimitedHost {
   readonly available: boolean;
   /** Undefined on older hosts; context is null in the owning main view. */
   readonly surface?: ModuleSurfaceClient;
+  readonly tools?: ModuleToolsClient;
   callWorker<T>(method: string, params?: Record<string, unknown>): Promise<T>;
 }
 export interface ModuleServices { host: LimitedHost }
@@ -50,6 +53,7 @@ export interface ConnectMessage {
   /** Optional extension: older hosts retain an opaque, motion-free module surface. */
   surfaceEffects?: unknown;
   moduleSurface?: unknown;
+  moduleTools?: unknown;
 }
 export interface ModuleBridge {
   host: LimitedHost;
@@ -110,6 +114,7 @@ export function createModuleBridge(): ModuleBridge {
   const generation = fragment.get('nd-generation') ?? '';
   let active = true;
   let accepted = false;
+  let tools: ModuleToolsClient | undefined;
   let port: MessagePort | null = null;
   let sequence = 0;
   let surface: ModuleSurfaceClient | undefined;
@@ -122,6 +127,11 @@ export function createModuleBridge(): ModuleBridge {
   function receive(event: MessageEvent) {
     if (!active || port || !matchesSource(event, window.parent, parentOrigin) || !isConnectMessage(event.data, generation) || event.ports.length !== 1) return;
     port = event.ports[0];
+    if (event.data.moduleTools === 1) tools = {
+      list: () => toolRequest('list', {}) as Promise<HostTool[]>,
+      grant: async items => { await toolRequest('grant', { tools: items.map(toolIdentity) }); },
+      call: (tool, args) => toolRequest('call', { tool: toolIdentity(tool), arguments: args }),
+    };
     const identity = event.data.identity;
     document.documentElement.dataset.theme = resolveMessageAppearance(event.data.theme, event.data.appearance)!;
     document.documentElement.dataset.uiStyle = resolveMessageUIStyle(event.data.uiStyle);
@@ -180,9 +190,22 @@ export function createModuleBridge(): ModuleBridge {
       catch (error) { pending.delete(id); clearTimeout(timer); reject(new Error(errorMessage(error))); }
     });
   }
+  async function toolRequest(action: string, params: unknown): Promise<unknown> {
+    const operation = parseToolOperation(action, params);
+    await ready;
+    if (!active || !port || !tools) throw new Error('当前宿主尚未提供插件工具接口，请升级 OpenDesk。');
+    const id = generation + ':' + (++sequence);
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { pending.delete(id); reject(new Error('工具请求超时；没有自动重试。')); }, 180000);
+      pending.set(id, { resolve, reject, timer });
+      try { port!.postMessage({ type: 'tools', generation, id, ...operation }); }
+      catch (e) { pending.delete(id); clearTimeout(timer); reject(e); }
+    });
+  }
   const host: LimitedHost = {
     get available() { return active && accepted && port !== null; },
     get surface() { return surface; },
+    get tools() { return tools; },
     async callWorker<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
       await ready;
       if (!active || !port) throw new Error('模块实例已关闭，不能继续调用。');

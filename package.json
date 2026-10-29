@@ -1,6 +1,6 @@
 {
   "name": "opendesk",
-  "version": "0.18.0",
+  "version": "0.19.1",
   "private": true,
   "type": "module",
   "description": "A local desktop workbench framework; business modules are added explicitly.",
@@ -31,11 +31,14 @@
     "build": "node scripts/desktop.mjs build",
     "desktop:check": "node scripts/desktop.mjs check",
     "desktop:test": "node scripts/desktop.mjs test",
-    "doctor": "node scripts/doctor.mjs"
+    "doctor": "node scripts/doctor.mjs",
+    "test:ai": "node plugins/ai-workbench/check.mjs"
   },
   "dependencies": {
     "@lucide/vue": "1.57.0",
     "@tauri-apps/api": "2.12.4",
+    "highlight.js": "11.12.0",
+    "markdown-it": "15.0.3",
     "vue": "3.5.44"
   },
   "devDependencies": {

@@ -6,6 +6,9 @@ import { dirname, join, resolve } from 'node:path';
 export const MODULE_DEFINITIONS = Object.freeze({
   'tower-assistant': Object.freeze({ folder: 'tower_assistant', backend: 'apps.features.tower_assistant.backend.service', marker: 'tower-baseline', testFixture: false,
     workerData: Object.freeze(['capture/inject.js', 'capture/observer.js', 'capture/runtime-worker.js']) }),
+  'ai-workbench': Object.freeze({ sourcePath: 'plugins/ai-workbench/integrations/opendesk', testFixture: false,
+    externalBuilder: Object.freeze({ script: 'build.mjs', projectPath: 'plugins/ai-workbench', workDirectory: '.cache/ai-workbench-build',
+      pythonEnv: 'OPENDESK_AI_PYTHON', pythonEnvAliases: Object.freeze(['OPENDESK_PYTHON']), pythonConfig: 'aiPython', pythonConfigAliases: Object.freeze(['python']) }) }),
   'test-lab': Object.freeze({ folder: 'test_lab', backend: 'apps.features.test_lab.backend.service', marker: 'v1-baseline', testFixture: true }),
   'nimda-workspace': Object.freeze({ sourcePath: 'plugins/media-manager/integrations/opendesk', testFixture: false,
     externalBuilder: Object.freeze({ script: 'build.mjs', projectPath: 'plugins/media-manager', workDirectory: '.cache/media-manager-build',

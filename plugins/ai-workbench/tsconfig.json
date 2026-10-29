@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": { "@opendesk/module-sdk": ["apps/framework/module-sdk/src/index.ts"] }
+  },
+  "include": ["frontend/**/*.ts", "frontend/**/*.vue", "integrations/opendesk/frontend/**/*.ts", "../../apps/framework/module-sdk/src/env.d.ts"],
+  "exclude": ["frontend/**/*.test.ts"]
+}

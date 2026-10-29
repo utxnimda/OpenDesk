@@ -80,6 +80,11 @@ function receive(event: MessageEvent) {
   }, async (operation) => {
     if (operation.action !== 'open') throw new Error('请在独立窗口中操作其关闭、拖动和置顶。');
     await props.host.openPackageSurface(owned.token, operation.params);
+  }, async operation => {
+    if (operation.action === 'list' && props.host.listPackageTools) return props.host.listPackageTools(owned.token);
+    if (operation.action === 'grant' && props.host.grantPackageTools) return props.host.grantPackageTools(owned.token, operation.params.tools);
+    if (operation.action === 'call' && props.host.callPackageTool) return props.host.callPackageTool(owned.token, operation.params.tool, operation.params.arguments);
+    throw new Error('当前宿主不支持此工具操作。');
   });
   transport.port1.onmessage = (message: MessageEvent) => {
     void broker?.receive(message.data, (value) => { if (!closed) transport.port1.postMessage(value); });
@@ -90,6 +95,7 @@ function receive(event: MessageEvent) {
     identity: { moduleId: owned.moduleId, version: owned.version, digest: owned.digest, generation: owned.generation },
     ...packageAppearance(props.theme, props.uiStyle, props.surfaceEffects),
     moduleSurface: { context: null },
+    moduleTools: 1,
   }, origin, [transport.port2]);
 }
 watch(() => [props.theme, props.uiStyle, props.surfaceEffects] as const, ([theme, uiStyle, effects]) => {
@@ -122,9 +128,8 @@ onUnmounted(() => {
 
 <template>
   <section class="package-frame-panel" :aria-label="module.label">
-    <div class="package-running-strip"><code>v{{ module.selectedVersion }}</code><span class="package-runtime-status" role="status">{{ ready ? '独立运行' : failure ? '启动失败' : '正在连接…' }}</span></div>
-    <div v-if="failure" class="alert alert-error" role="alert">{{ failure }}</div>
-    <div v-else-if="!ready" class="package-loading" role="status">正在启动此版本的界面与后台…</div>
+    <div v-if="failure" class="alert alert-error" role="alert"><strong>{{ module.label }} · v{{ module.selectedVersion }}</strong><span>{{ failure }}</span></div>
+    <div v-else-if="!ready" class="package-loading" role="status">正在启动 {{ module.label }} v{{ module.selectedVersion }} 的界面与后台…</div>
     <iframe v-if="source" ref="frame" :src="source" :title="`${module.label} v${module.selectedVersion}`" class="package-iframe" :sandbox="sandbox" referrerpolicy="no-referrer" allow="" :class="{ 'is-loading': !ready }" @error="reportLoadFailure('模块页面资源加载失败。')"></iframe>
   </section>
 </template>

@@ -58,7 +58,6 @@
 :root[data-ui-style="glass"] .package-frame-panel,
 :root[data-ui-style="glass"] .package-iframe { background: transparent; }
 :root[data-ui-style="glass"] .workbench-statusbar { height: 25px; padding: 0 22px; color: var(--muted); border-top: 1px solid var(--border); background: var(--glass-fill); font-size: 9px; }
-:root[data-ui-style="glass"] .package-running-strip { background: var(--glass-fill); border-color: var(--border); }
 :root[data-ui-style="glass"] .page-stack { gap: 22px; }
 :root[data-ui-style="glass"] .page-intro { padding: 0 0 12px; border-bottom: 1px solid var(--border); }
 :root[data-ui-style="glass"] .page-intro h2 { font-size: 22px; font-weight: 450; margin-top: 4px; letter-spacing: 0; }
@@ -125,8 +124,8 @@
 .ui-style-panel .style-options { grid-template-columns: repeat(3,minmax(0,1fr)); }
 
 /* Personalization controls. */
-.settings-sections { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 5px; border: 1px solid var(--border); background: color-mix(in srgb,var(--surface) 82%,transparent); border-radius: 16px; width: fit-content; }
-.settings-sections button { border: 0; border-radius: 11px; padding: 10px 15px; color: var(--muted); background: transparent; font-size: 12px; }
+.settings-sections { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 5px; border: 1px solid var(--border); background: color-mix(in srgb,var(--surface) 82%,transparent); border-radius: 12px; width: fit-content; }
+.settings-sections button { border: 0; border-radius: 8px; padding: 10px 15px; color: var(--muted); background: transparent; font-size: 12px; }
 .settings-sections button.active { color: var(--text); background: var(--accent-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent); }
 .settings-sections button:hover { color: var(--accent); }
 .companion-modes button.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }

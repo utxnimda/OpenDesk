@@ -180,6 +180,20 @@ class CaptureManager:
         if self._thread is not None:
             self._thread.join(timeout=1)
 
+    def readonly_summary(self) -> dict:
+        """Read this worker's existing interval; never select a path or start collection."""
+        with self._lock:
+            snapshot = self._statistics.snapshot()
+            fields = ("schemaVersion", "sessionId", "state", "elapsedRealSeconds", "eventCount", "lastSequence", "summary")
+            result = {key: snapshot[key] for key in fields}
+            result["sampledAtMs"] = round(self._now() * 1000)
+            result["configured"] = self._root is not None
+            result["totals"] = snapshot["totals"][:20]
+            result["totalRows"] = len(snapshot["totals"])
+            result["truncated"] = len(snapshot["totals"]) > 20
+            result["scope"] = "当前已打开插件实例的计时快照；未读取存档、未启动采集。"
+            return result
+
     def _response(self, root: Path) -> dict:
         capture = {"state": "not-installed", "message": "尚未安装采集器。请先在游戏中保存并退出，再点击安装。",
                    "installed": None, "gameRunning": None, "canInstall": False, "canRemove": False,

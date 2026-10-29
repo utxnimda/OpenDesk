@@ -86,8 +86,8 @@ async function select(modelId: string | null) {
 :root[data-ui-style="glass"] .companion-choice-avatar { border-radius: 2px; box-shadow: none; border-color: var(--glass-line); background: var(--glass-fill); }
 :root[data-ui-style="glass"] .companion-choice.selected { border-color: var(--accent); background: var(--accent-soft); box-shadow: none; }
 :root[data-ui-style="mint"] .companion-options { grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 16px; }
-:root[data-ui-style="mint"] .companion-choice { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 5px 14px; align-content: center; padding: 17px; border-radius: 22px; background: var(--surface-soft); }
-:root[data-ui-style="mint"] .companion-choice-avatar { grid-row: 1 / 3; width: 76px; height: 86px; border: 0; border-radius: 16px; background: transparent; }
+:root[data-ui-style="mint"] .companion-choice { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 5px 14px; align-content: center; padding: 17px; border-radius: 12px; background: var(--surface-soft); }
+:root[data-ui-style="mint"] .companion-choice-avatar { grid-row: 1 / 3; width: 76px; height: 86px; border: 0; border-radius: 8px; background: transparent; }
 :root[data-ui-style="mint"] .companion-choice-heading { align-self: end; }
 :root[data-ui-style="mint"] .companion-choice-description { align-self: start; }
 :root[data-ui-style="mint"] .companion-choice.selected { border-color: var(--mint-toggle); background: var(--accent-soft); box-shadow: 0 0 0 3px color-mix(in srgb,var(--mint-toggle) 12%,transparent); }

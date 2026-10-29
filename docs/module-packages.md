@@ -174,3 +174,7 @@ npm run release:stage -- module tower-assistant
 脚本创建全新的 `.local/module-smoke/<时间戳-唯一后缀>` 框架数据根，清理子进程的源码/Python覆盖，以 Hidden 方式启动 `--module-smoke`，最多等待140秒，读取 `module-smoke-result.json` 并检查退出码以及本次数据根下无残留 module-worker。最后恢复调用者环境。超时只停止持有的本次进程对象，不停止其他正常应用或按名字杀进程。WebView2缓存不包含在框架数据根隔离保证中；只有实际运行后生成的结果才能证明桌面链路通过。
 
 直接调用 EXE 时，`--module-smoke` 与另外两种 `--smoke-test`、`--companion-smoke` 一样，必须显式设置绝对路径的 `OPENDESK_DATA_DIR`，才允许跳过单实例并与正常用户实例并存。缺失、空值或相对路径，以及重复/混用 smoke 模式，在启动阶段退出 2。调用方仍需选择独立目录；路径检查不会自动判定它是否与用户数据重叠，也不隔离默认 WebView2 浏览器缓存。
+
+## 可选只读工具扩展（本地 0.19.0）
+
+宿主通过 moduleTools:1 宣告可选工具客户端，旧包可忽略。工具导出沿用已登记短 RPC tools.describe，manifest 不增加未知字段；工具目录与参数严格校验。AI 包使用现有 API2 Web App 契约，其他插件无需升级即可继续原功能。塔防 0.9.0 增加只读统计摘要。调用、授权快照和版本失效规则见 [AI 工作台](ai-workbench.md)。

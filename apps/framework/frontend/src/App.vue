@@ -202,7 +202,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-shell" :data-ui-style="uiStyle">
+  <div class="app-shell" :class="{ 'has-module': Boolean(selectedModule) }" :data-ui-style="uiStyle">
     <header v-if="uiStyle === 'glass'" class="glass-header">
       <button class="glass-brand" aria-label="返回工作台" @click="navigate('workspace')"><Boxes :size="20" :stroke-width="1.5" /><strong>OpenDesk</strong></button>
       <nav class="glass-tabs" aria-label="主导航"><button v-for="item in builtinNavigation" :key="item.id" :class="{ active: currentPage === item.id || (item.id === 'workspace' && Boolean(selectedModule)) }" :aria-current="currentPage === item.id ? 'page' : undefined" @click="navigate(item.id)">{{ item.label }}</button><button :class="{ active: currentPage === 'settings' }" :aria-current="currentPage === 'settings' ? 'page' : undefined" @click="navigate('settings')">设置</button></nav>
@@ -214,7 +214,7 @@ onMounted(async () => {
       <button class="activity-settings" aria-label="设置" title="设置" :class="{ active: currentPage === 'settings' }" @click="navigate('settings')"><Settings2 :size="21" /></button>
     </nav>
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark"><Boxes :size="23" :stroke-width="1.7" /></span><div><strong>OpenDesk</strong><span>{{ uiStyle === 'mint' ? 'MINT WORKSPACE' : 'LOCAL WORKSPACE' }}</span></div></div>
+      <div class="brand"><span class="brand-mark"><Boxes :size="23" :stroke-width="1.7" /></span><div><strong>OpenDesk</strong><button v-if="selectedModule && uiStyle !== 'glass'" class="brand-style-switch" aria-label="切换界面风格" @click="navigate('settings')"><Palette :size="11" /><span>{{ activeStyle.label }}</span></button><span v-else>{{ uiStyle === 'mint' ? 'MINT WORKSPACE' : 'LOCAL WORKSPACE' }}</span></div></div>
       <div class="sidebar-rule"></div>
       <div class="sidebar-scroll">
       <div class="navigation-label">{{ uiStyle === 'cursor' ? '工作区 · EXPLORER' : uiStyle === 'glass' ? '工作区导航' : '工作空间' }}</div>
@@ -225,8 +225,8 @@ onMounted(async () => {
       <div class="sidebar-bottom"><div class="sidebar-note"><div class="note-icon"><CircleHelp :size="16" /></div><p>一个框架，<br />容纳你的下一个想法。</p><ArrowUpRight :size="15" /></div><button class="nav-item" :class="{ active: currentPage === 'settings' }" :aria-current="currentPage === 'settings' ? 'page' : undefined" @click="navigate('settings')"><Settings2 :size="18" :stroke-width="1.65" /><span>设置</span></button><button class="sidebar-version" :class="{ 'has-changes': buildVersion.git.dirty === true }" aria-label="查看应用版本与更新记录" @click="navigate('version')"><span class="version-dot"></span><span>{{ buildVersion.git.dirty === true ? '未提交构建' : '本地运行' }}</span><span class="version-number">{{ buildVersion.appVersion === 'unknown' ? '版本未知' : `v${buildVersion.appVersion}` }}</span></button></div>
     </aside>
     <div class="main-shell">
-      <header class="topbar">
-        <div class="breadcrumb"><Sparkles v-if="uiStyle === 'anime'" :size="17" /><span>OpenDesk</span><ChevronRight :size="13" /><strong>{{ pageLabel }}</strong><span v-if="selectedModule" class="current-module-version">v{{ selectedModule.selectedVersion }}</span></div>
+      <header v-if="!selectedModule" class="topbar">
+        <div class="breadcrumb"><Sparkles v-if="uiStyle === 'anime'" :size="17" /><span>OpenDesk</span><ChevronRight :size="13" /><strong>{{ pageLabel }}</strong></div>
         <div class="topbar-actions"><button class="style-switch" aria-label="切换界面风格" @click="navigate('settings')"><Palette :size="15" /><span>{{ activeStyle.label }}</span></button><span class="environment-pill"><Monitor :size="13" />{{ host.available ? '桌面环境' : '浏览器预览' }}</span></div>
       </header>
       <nav v-if="uiStyle === 'cursor'" class="workbench-tabs" aria-label="工作区标签"><button v-for="tab in workspaceTabs" :key="tab.id" :class="{ active: currentPage === tab.id }" :aria-current="currentPage === tab.id ? 'page' : undefined" @click="navigate(tab.id)"><Grid2X2 v-if="tab.id === 'workspace'" :size="13" /><Blocks v-else :size="13" />{{ tab.label }}</button></nav>
