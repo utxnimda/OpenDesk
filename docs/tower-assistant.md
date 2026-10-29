@@ -2,9 +2,11 @@
 
 本模块是 OpenDesk 的一个内置业务模块，包含「灵物总览」「渡劫布局」与「工作与战斗」。前端位于 `apps/features/tower_assistant/frontend`，存档读取、规划、采集管理与统计位于同模块的 `backend`，固定原创观察脚本位于 `capture`，由应用组合层注册。没有迁入以前独立规划器或自动搬迁助手的代码。
 
-**正式交付（2026-10-26）**：[塔防助手 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.8.2) 与 [App 0.18.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.18.0) 从干净提交 `036ba0ace3583cbff410a0ae1155b46a44386e13` 构建；App 仅随附塔防 0.8.2，独立页签与随附包字节一致。2026-10-26 已公开发布，App 6 个附件与模块 4 个附件均已重新下载并核对 SHA-256。 本次附件不含测试包、作品管理器附件或本机数据；历史公开塔防 0.1.9 保留。
+**正式交付（2026-10-29）**：[塔防助手 0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3) 与 [App 0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3) 从干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50` 构建；App 仅随附塔防 0.9.3，独立页签与随附包字节一致。[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 同轮独立发布，三个 Release 的 14 个附件均已重新下载并核对 SHA-256。本次附件不含测试包、部署工作台、作品管理器附件或本机数据，历史公开版本和本地开发包保留。
 
-0.8.2 与已完成本地限定范围验证的 0.8.1 功能一致，保留主页面紧凑表格、透明窗游戏条形榜、工作分类多榜、伤害属性/职业筛选和历史明细公式快照修复。0.8.2 已完成独立的干净构建、冻结包 RPC 和产物审计；既有 0.8.1 dirty 包及历史验证结果保留，不能改写成正式 0.8.2 的构建证据。本次发布不改变便携配置、个人选择、`runtime` 数据、游戏文件或存档，已有用户需自行导入并选择新页签版本。
+0.9.3 同步新版宿主公共外观，并提供经宿主明确授权的只读统计摘要 `tower.ai.summary`。AI 的 API 会话只能读取已打开塔防实例的当前摘要，不会因此启动采集、打开任意路径或修改游戏文件；该工具能力需要 0.19.0 或更新宿主，推荐使用 0.19.3。升级 App 不自动切换用户固定的塔防版本；已有用户需在「功能管理」导入并选择 0.9.3。原有存档分析、工作／战斗统计和透明排行功能继续保留。
+
+历史 0.8.2 与当时已完成本地限定范围验证的 0.8.1 功能一致，保留主页面紧凑表格、透明窗游戏条形榜、工作分类多榜、伤害属性/职业筛选和历史明细公式快照修复。0.8.2 已完成独立的干净构建、冻结包 RPC 和产物审计；既有 0.8.1 dirty 包及历史验证结果保留，不能改写成其他版本的构建证据。本次发布不改变便携配置、个人选择、`runtime` 数据、游戏文件或存档。
 
 0.7.0 的透明统计排行榜已完成构建、自动化和通用原生窗口链路验证，游戏上的透明叠加视觉尚未验收；这些结果不代替 0.7.1 的验证。此前 **0.6.1** 保留为已完成限定范围本地验收的不可变包。模块从 Git 主线的 0.1.9 继续开发，保留 0.4.0 候选的灵物总览能力，没有恢复或合并本机 0.3.0。稳定功能 ID 沿用 `tower.spirit-inventory`（灵物总览）、`tower.output-statistics`（采集与计时统计）、`tower.damage-explanation`（逐击公式与局部敏感度）、`tower.work-explanation`（实际工作公式与取整步骤）和 `tower.statistics-overlay`（透明统计排行榜）；已有 `tower.save-reader`、`tower.map-details`、`tower.tribulation-plan` 保持含义，不改写宿主历史记录或既有验证结论。
 

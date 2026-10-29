@@ -2,11 +2,15 @@
 
 本手册描述可重复执行的公开交付流程，命令块供后续发布参考，不应原样重复创建已发布版本。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
 
-## 2026-10-29 发布准备：App 0.19.3 / AI 工作台 0.4.4 / 塔防 0.9.3
+## 2026-10-29 发布结果：App 0.19.3 / AI 工作台 0.4.4 / 塔防 0.9.3
 
 本次用户明确授权源码提交、推送及 EXE／页签包 Release。交付范围为 App 安装器、便携 ZIP、随附塔防 0.9.3，以及塔防 0.9.3 和 AI 工作台 0.4.4 两个独立页签 Release。App 仍只随附塔防；作品管理器 0.3.1 沿用既有 Release，本轮不重建、不重复上传。部署工作台、模块测试台二进制、外部导入包、私人配置、会话、凭据与运行数据均排除。
 
-先前已本地使用的 App 0.19.1、AI 0.4.2、塔防 0.9.1 保留原包和真实 dirty 来源。第一轮候选 0.19.2 / 0.4.3 / 0.9.2 从干净提交 `74a84d36674466d3cd9dbfd21ef427e6e0918003` 完成本地构建与审计，但 GitHub CI 发现 AI 终态读取竞态和 Cursor 测试对 Windows 短路径的错误假设，因此没有创建对应 Release 或标签；候选包继续留在本地。修复后再提升 patch，以新干净提交构建，不复用或改写旧包来源。当前处于发布准备；只有完成构建、暂存、远端发布和下载核验后，才更新下载索引为已交付。
+先前已本地使用的 App 0.19.1、AI 0.4.2、塔防 0.9.1 保留原包和真实 dirty 来源。第一轮候选 0.19.2 / 0.4.3 / 0.9.2 从干净提交 `74a84d36674466d3cd9dbfd21ef427e6e0918003` 完成本地构建与审计，但 GitHub CI 发现 AI 终态读取竞态和 Cursor 测试对 Windows 短路径的错误假设，因此没有创建对应 Release 或标签；候选包继续留在本地。修复后再提升 patch，以新干净提交构建，不复用或改写旧包来源。
+
+最终从干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50` 发布 [App 0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3)、[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4)、[塔防 0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3)。源码与三个附注标签已推送并核对远端 SHA；三个 Release 均为公开正式版本，App 标为最新，两个独立页签不覆盖最新 App 入口。App 6 个附件及两个页签各 4 个附件全部重新下载，文件名、大小、SHA-256 与校验清单一致。随附与独立塔防摘要相同。结果文档另作后续提交，构建标签不移动。
+
+本轮完整检查 676 项、Rust 75 项、AI 冻结 worker 及独立数据根的原生核心／模块 smoke 通过。逐文件审计便携 60 文件、AI 73 条目、塔防 76 条目，校验 NSIS 生成输入与便携包一致。没有执行安装器载荷解包、干净机器安装／卸载、发布者签名、真实模型全矩阵或长时间运行。CI 首次失败及重试情况与完整证据边界见[验证记录](verification.md)，下载方式见[下载索引](downloads.md)。
 
 ## 2026-10-26 发布结果：App 0.18.0 / 塔防 0.8.2
 
@@ -196,6 +200,8 @@ git ls-remote origin refs/heads/main "refs/tags/$appTag^{}" "refs/tags/$moduleTa
 核对远端分支和注解标签解析后的 commit 与预期一致。查看对应 GitHub Actions 运行；当前 `.github/workflows/check.yml` 只有读取权限，只执行检查和前端构建，**不会自动制作安装器、创建 Release 或上传附件**。CI 的成功/失败状态单独记录，不能用本地通过冒充远端通过。
 
 将用户可读的 App 和页签说明分别写入 `.local/release-app-0.15.0.md`、`.local/release-tower-0.1.9.md`，内容包含实际改动、兼容性、随附版本、校验方法及验证限制。使用 UTF-8 文本和 `--notes-file` 保留真正换行，不把正文插值拼进 shell 命令。
+
+包含中文标题的发布脚本使用 PowerShell 7 执行；若必须使用 Windows PowerShell 5.1，脚本文件应保存为 UTF-8 BOM，避免中文参数按系统代码页误读。`--notes-file` 正文继续使用 UTF-8。发布后读取 `name` 与 `body`，核对中文标题和实际正文；只修正文案不应改变标签或替换附件。
 
 ```powershell
 $appDir = 'dist/releases/app/0.15.0'

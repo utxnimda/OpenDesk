@@ -2,6 +2,30 @@
 
 # 验证记录
 
+## 2026-10-29：公开发布 App 0.19.3、AI 工作台 0.4.4、塔防 0.9.3
+
+用户明确授权创建 Release、发布 EXE／页签附件并提交推送 Git。最终源码和三个构建标签固定在干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50`；`v0.19.3`、`modules/ai-workbench/v0.4.4`、`modules/tower-assistant/v0.9.3` 已原子推送，远端解析 SHA 一致。结果文档单独提交，不改变构建标签。
+
+第一轮候选 App 0.19.2／AI 0.4.3／塔防 0.9.2 来自 `74a84d36674466d3cd9dbfd21ef427e6e0918003`，本地检查、构建和 smoke 通过，但发布前 CI 检出 AI 终态快照竞态和两个 Windows 短路径测试错误。因此该轮没有创建标签或 Release，旧字节、暂存目录及失败日志保留。修复让 `run()` 与终态事件写入共享服务锁；新增回归人为暂停最终事件，旧无锁实现被该测试明确检出，修复通过。Cursor 测试只规范化预期路径，没有放松运行校验。
+
+| 检查 | 实际结果 |
+|---|---|
+| 最终完整工程检查 | 版本、类型、架构通过；56 版本／分发、237 宿主前端、166 框架 Python、38 采集、46 AI 前端、133 AI Python，共 676 项通过 |
+| Rust 宿主测试 | 75 项通过；零失败／跳过 |
+| 构建与冻结运行 | Tauri release、NSIS、便携包及两个正式页签构建通过；AI 冻结身份、带认证 HTTP、静态 UI 与排空退出通过，未发起模型请求 |
+| 原生核心 smoke | 最终 EXE 的前端、IPC、设置往返、worker 启停／重启通过；独立测试根 `.local/smoke/20261029-201858-534` |
+| 原生模块 smoke | 导入、升级／回退、不兼容拒绝、UI 失败恢复、迟到会话拒绝与选择持久化通过；独立根 `.local/module-smoke/20261029-201904-490-87c121fe`，旧 fixture baseline 实际为 1.0.6，未纳入发布 |
+| 分发审计 | 便携 60 文件、AI 73 条目、塔防 76 条目；包内外 manifest、干净来源、冻结 Python 模块归属、AI 8 项依赖通知及 NSIS 生成输入摘要通过；App 只随附塔防，与独立包字节相同 |
+| 远端发布核验 | 三个公开非预发布 Release；App 为 latest。重新下载 App 6 个附件、AI 4 个、塔防 4 个，14 个大小与 SHA-256 全部一致，11 条校验和记录全部通过 |
+| CI | 构建提交 main、App 标签、塔防标签均首次通过；AI 标签首次运行在非法 Content-Type 拒绝测试出现 Windows HTTP `WinError 10053`，唯一一次失败作业重试通过。四项最终均成功。保留首次日志，本地同一 HTTP 测试套件额外 10 轮共 80 项通过；未据此声称该偶发传输问题已在生产代码中修复 |
+| 未执行 | 安装器编译载荷解包、干净机器安装／卸载、发布者数字签名、全部模型真实推理、系统剪贴板逐字节检查、真实游戏透明叠加及长时间稳定性；不能用构建和 smoke 冒充这些验收 |
+
+安装器 SHA-256：`d98c735c5d1525e5272716b39f4ed281f768605933999dd7fc4947f9629c8dc9`；便携 ZIP：`ed870449f3e2dd9d404d350b54d51efcbc4b72dd868a6f5b4ff0e1c159ca4014`；AI 包：`6e83e2f5bd877ed490ea0c48fd359cb87307d7e38e4f1ce12e9439ec07c6c6c6`；塔防包：`5f94831ef3952937873c3a3c41e53a74f4a201d475eac9b12a82774f3f6b246a`。
+
+本机部署工作台、测试台二进制、外部导入包、配置、聊天库、凭据、游戏／存档及原视频均排除；构建从显式源码白名单收集资源，未扫描个人插件目录。没有更改个人页签选择或游戏文件，也没有执行 SVN/P4 提交。旧运行包保留在 `.local/release-20261029/previous-build`，被 CI 拦截的候选保留在 `candidate-0192` 与既有不可变模块／暂存目录。本轮未启动新的个人主窗口。
+
+本地证据：`.local/release-20261029/check-final.log`、`rust-tests-final.log`、`build-final.log`、`build-ai-final.log`、`core-smoke-final.log`、`module-smoke-final.log`、`artifact-audit-20261029T121906Z-6882e52d/audit-result.json`、`download-verification-{app,ai,tower}.json` 与 `ci-release-results.json`。原始失败、回归证明和重试记录均保留。直接下载链接见[下载索引](downloads.md)。
+
 ## 2026-10-29：完成本地替换与源码提交
 
 用户明确要求替换本地新包并提交 Git。启动前确认没有 OpenDesk 进程，重新核对昨日候选摘要及文件清单；将原 `dist/OpenDesk` 完整保留到 `.local/local-switch-20261029/previous-build/OpenDesk`，再把已验证的 0.19.1 候选放回原启动路径，并通过既有便携打包脚本复核 60 文件清单、记录本地构建收据。

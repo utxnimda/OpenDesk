@@ -2,7 +2,7 @@
 
 本文包含用户授权的本地版本化页签包。实现范围与运行证据分开，具体检查结果见 README 和验证记录。
 
-当前正式交付 [App 0.18.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.18.0) 与[塔防助手 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.8.2)，来源为干净提交 `036ba0ace3583cbff410a0ae1155b46a44386e13`。App 只随附该塔防页签，独立包与随附包字节一致。2026-10-26 已公开发布，App 6 个附件与模块 4 个附件均已重新下载并核对 SHA-256。 0.8.2 沿用已验证本地 0.8.1 的功能，旧 dirty 包及历史证据保留。测试包、作品管理器附件与本机数据未进入本次交付。
+当前正式交付为 [App 0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3)、[塔防助手 0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3) 和 [AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4)，来源为干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50`。App 只随附塔防，独立塔防包与随附包字节一致，AI 独立下载导入。2026-10-29 三个 Release 的 14 个附件均已重新下载并核对 SHA-256。作品管理器 0.3.1 沿用既有独立 Release；测试包、部署工作台与本机数据未进入本次交付。历史 0.18.0／0.8.2 的来源与验证记录保留。
 
 OpenDesk 的应用标识为 `net.nimda.opendesk`。可执行文件、worker、构建目录及环境变量使用 OpenDesk / opendesk / OPENDESK 命名。默认配置与包选择归属该应用的数据目录，不自动迁入或删除旧应用数据；版本历史和历史验证记录保留原始身份及证据含义。
 
@@ -16,7 +16,7 @@ OpenDesk 的应用标识为 `net.nimda.opendesk`。可执行文件、worker、�
 
 框架不能导入具体业务；构建组合选择源码模块并产出包，运行组合由已验证清单和宿主选择决定。塔防算法保留在原模块中，框架只管理其包及生命周期。
 
-宿主 Vite 根入口为 `apps/composition/frontend`。组合层选择主界面、宠物、宠物菜单或通用模块第二视图；宠物目录仍通过 `CompanionCatalog` 注入。当前正式宿主 0.18.0 / `core.module-packages` 0.7.0 新增 `module-surface` 窗口，塔防 0.7.0 首先使用这一通用契约，通用原生链路已验证，实际游戏视觉仍待验收。已公开的 0.15.0（core.companion 0.6.0、core.workbench 0.8.0）新增薄荷奶油风格与共享宠物菜单面板；既有媒体，包括 0.13.1 的透明思考 WebM，摘要保持不变。框架只认识媒体与交互契约，不导入角色目录。0.15.0 已于 2026-10-23 发布并完成远端附件核验，0.12.0 保留为历史；历史媒体结果与当前类型、自动化、构建、运行证据分别记录。
+宿主 Vite 根入口为 `apps/composition/frontend`。组合层选择主界面、宠物、宠物菜单或通用模块第二视图；宠物目录仍通过 `CompanionCatalog` 注入。宿主 0.18.0 / `core.module-packages` 0.7.0 当时新增 `module-surface` 窗口，塔防 0.7.0 首先使用这一通用契约，通用原生链路已验证，实际游戏视觉仍待验收。已公开的 0.15.0（core.companion 0.6.0、core.workbench 0.8.0）新增薄荷奶油风格与共享宠物菜单面板；既有媒体，包括 0.13.1 的透明思考 WebM，摘要保持不变。框架只认识媒体与交互契约，不导入角色目录。0.15.0 已于 2026-10-23 发布并完成远端附件核验，0.12.0 保留为历史；历史媒体结果与当前类型、自动化、构建、运行证据分别记录。
 
 ```mermaid
 flowchart TB
@@ -38,7 +38,7 @@ flowchart TB
 
 `config/version.json` 保留宿主/core 与已有发布历史；包内 `manifest.json` 描述独立模块版本；App 索引说明本次默认随附内容；本机选择及成功激活状态说明用户实际使用版本。旧中央业务历史不能冒充当前包版本。
 
-正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定：默认随附仍只有 `tower-assistant`，允许独立发布的源码另含 `nimda-workspace`（作品管理器，见 [统一工程说明](media-manager.md)）。当前公开的 0.18.0 App 随附已独立发布的塔防助手 0.8.2；历史 0.17.0 App 随附 0.1.9、0.12.0 App 随附 0.1.7 的事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
+正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定：默认随附仍只有 `tower-assistant`，允许独立发布的源码另含 `nimda-workspace`（作品管理器，见 [统一工程说明](media-manager.md)）与 `ai-workbench`（见 [AI 工作台](ai-workbench.md)）。当前公开的 0.19.3 App 随附塔防助手 0.9.3；AI 0.4.4 独立发布，作品管理器 0.3.1 保留原包。历史 0.18.0／0.8.2、0.17.0／0.1.9、0.12.0／0.1.7 的随附事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
 
 模块前端由自己的 `frontend/index.html` 启动，使用相对路径资源。通过 `apps/framework/module-sdk` 的 `createModuleBridge()` 完成身份握手后访问 `bridge.host`。页面不直接导入 Tauri API，宿主核对当前包及其 manifest 业务方法。旧页面的消息不能被当作新版本结果。
 
@@ -86,7 +86,7 @@ OpenDesk 0.9.0 移除背景导入、背景显示、粒子和氛围调节，设�
 
 既有六种风格保留，新增 `mint`“薄荷奶油”，建议浅色，以静态浅粉/薄荷渐变、深青文字、圆角卡片、中心内容列与轻导航呈现；选择风格不改主题，深色与石墨夜保留各自语义色。`glass` 仍显示为“深海透明”，采用深蓝黑半透明、青色细边、低圆角紧凑分区和顶部标签栏。`surfaceEffects` 继续作为 protocol 1 的可选兼容字段，当前宿主仅按风格生成固定材质与透明度描述，关闭表面动效；没有用户背景图片、材质、浓度或氛围设置。消息不含图片 ID、路径、data URL 或图片字节。
 
-七种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。薄荷布局和公共控件样式放在既有 `workbench-styles.css`，随模块构建指纹变化，因此正式塔防使用新包版本 0.1.9，不覆盖公开 0.1.7。App 升级仍保留用户固定选择，模块内部采用新风格需要手动选中已安装的 0.1.9 或兼容新版本（当前为 0.8.2）。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
+七种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。薄荷布局和公共控件样式放在既有 `workbench-styles.css`，随模块构建指纹变化，因此正式塔防使用新包版本 0.1.9，不覆盖公开 0.1.7。App 升级仍保留用户固定选择，模块内部采用新风格需要手动选中已安装的 0.1.9 或兼容新版本（当前为 0.9.3）。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
 
 模块 iframe 固定填满主内容区的剩余空间，内部 body 自行滚动；宿主不测量业务 DOM。设置变化不改变模块身份、版本选择或业务数据。
 
@@ -126,7 +126,7 @@ App 设置只显示角色卡和「不启用宠物」，不复制宠物菜单。�
 
 `scripts/module-pack.mjs` 负责独立 Vite 构建、worker 冻结、真实冻结 worker 验证和 ZIP 打包，`module-pack-archive.py` 只封装普通文件。摘要放在外部索引，不进入包内自引用。
 
-`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.8.2/`；App 0.18.0 的新构建仅随附塔防 0.8.2，并写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
+`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.9.3/`；`npm run build:module -- ai-workbench` 输出 `dist/modules/ai-workbench/0.4.4/`。App 0.19.3 仅随附塔防 0.9.3，并写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
 
 `scripts/release-artifacts.mjs` 只在本地按版本准备 `dist/releases/app/<App版本>/` 和 `dist/releases/modules/<模块ID>/<模块版本>/`，核对干净提交、App 构建收据、正式模块来源和摘要，并拒绝重复版本目录。2026-10-23 公开的 App `v0.15.0` 与模块 `modules/tower-assistant/v0.1.9` 分别对应独立 Release，均来源于干净提交 `aa7bdd7346fc1544bebff939b79ed40886c215a2`；10 个远端附件均已下载核验。旧 0.15.0 / 0.1.8 本地开发产物的 dirty 事实保持，本轮未直接发布这些旧包，而是保留旧包和缓存、升塔防到 0.1.9 后重新构建。此前公开 0.12.0 / 0.1.7 不覆盖。完整步骤见[发布手册](releasing.md)，实际下载见 [downloads.md](downloads.md)；构建提交不随后续结果文档提交而变化。
 
@@ -140,4 +140,4 @@ App 设置只显示角色卡和「不启用宠物」，不复制宠物菜单。�
 
 AI 会话、模型适配和本地代理属于独立 ai-workbench Web App 包；宿主增加可选 ModuleToolsClient，负责显式目录、原生授权、当前运行实例与版本身份校验。Python 通用凭据服务提供 Windows DPAPI，AI 业务只保存引用。首版仅允许已打开目标的无参数只读工具，没有跨插件无界面租约或通用 MCP 服务。权限、退出和 API 边界见 [AI 工作台](ai-workbench.md)，旧 API1/2 包继续兼容。
 
-本地 0.19.1 简化宿主功能页容器：模块页面隐藏重复面包屑，PackageFrame 就绪后不再显示重复版本横条；加载/失败保留明确反馈，版本归功能管理展示。品牌区保留风格快捷入口。主内容面和 iframe 仍固定占据剩余空间，不测量业务 DOM；二次元/薄荷内容面板、内层卡片与按钮的圆角分层收敛。共享样式由新构建模块采纳，随附塔防因此使用新的 0.9.1 包；用户旧选项及私有插件不被自动改写。AI 0.4.2 内部侧栏宽度与 Markdown 排版属于插件自身，不增加通用宿主业务状态。
+本地 0.19.1 引入的功能页容器精简已随正式 0.19.3 交付：模块页面隐藏重复面包屑，PackageFrame 就绪后不再显示重复版本横条；加载/失败保留明确反馈，版本归功能管理展示。品牌区保留风格快捷入口。主内容面和 iframe 仍固定占据剩余空间，不测量业务 DOM；二次元/薄荷内容面板、内层卡片与按钮的圆角分层收敛。共享样式由正式塔防 0.9.3 与 AI 0.4.4 采纳；用户旧选项及私有插件不被自动改写。AI 的侧栏宽度、Markdown 排版和终态事件一致性属于插件自身，不增加通用宿主业务状态。
