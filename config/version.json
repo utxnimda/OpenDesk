@@ -44,6 +44,19 @@
   ],
   "releases": [
     {
+      "summary": "修复发布检查发现的 AI 终态读取竞态，并使用新的独立版本完成交付。",
+      "version": "0.19.3",
+      "date": "2026-10-29",
+      "changes": [
+        {
+          "featureId": "core.module-packages",
+          "version": "0.8.3",
+          "type": "fixed",
+          "description": "更新正式交付来源与随附塔防 0.9.3，AI 工作台 0.4.4 独立发布；保留被 CI 拦截的本地候选包，不覆盖既有版本摘要。"
+        }
+      ]
+    },
+    {
       "summary": "以独立新版本交付 AI 工作台、精简工作区界面与正式页签，保留本地开发包。",
       "version": "0.19.2",
       "date": "2026-10-29",

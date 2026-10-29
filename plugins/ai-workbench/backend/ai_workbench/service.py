@@ -662,9 +662,11 @@ class AiService:
     def run(self, identity, after=0):
         if not isinstance(after, int) or after < 0 or after > 10_000_000:
             raise ApiError("INVALID_CURSOR", "事件游标无效。")
-        run = self._get("runs", identity)
-        events = self.store.events(identity, after)
-        return {"run": run, "events": events, "nextSequence": events[-1]["sequence"] if events else after}
+        # Final status and its last events must be observed as one completed snapshot.
+        with self._lock:
+            run = self._get("runs", identity)
+            events = self.store.events(identity, after)
+            return {"run": run, "events": events, "nextSequence": events[-1]["sequence"] if events else after}
 
     def cancel(self, identity):
         with self._lock:

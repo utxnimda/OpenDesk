@@ -158,6 +158,51 @@ class ServiceTests(unittest.TestCase):
         self.service = AiService(self.base / "data", self.web, vault=self.vault, provider_factory=Provider)
         self.assertEqual(self.service.conversation(conversation["id"])["messages"][-1]["text"], "你好 test-model")
 
+    def test_terminal_poll_waits_for_final_events_before_returning(self):
+        final_event_pending = threading.Event()
+        release_final_event = threading.Event()
+        poll_started = threading.Event()
+        poll_finished = threading.Event()
+        observed = {}
+        original_emit = self.service._emit
+
+        def pause_final_event(rid, event):
+            if event.get("type") == "status" and event.get("status") == "completed":
+                final_event_pending.set()
+                if not release_final_event.wait(5):
+                    raise AssertionError("Test did not release final event publication")
+            return original_emit(rid, event)
+
+        def poll(rid):
+            poll_started.set()
+            try:
+                observed["result"] = self.service.run(rid)
+            except Exception as error:
+                observed["error"] = error
+            finally:
+                poll_finished.set()
+
+        with patch.object(self.service, "_emit", side_effect=pause_final_event):
+            rid = self.service.start_run(self.conversation()["id"], {"text": "Hello"})["runId"]
+            reader = threading.Thread(target=poll, args=(rid,))
+            try:
+                self.assertTrue(final_event_pending.wait(2))
+                reader.start()
+                self.assertTrue(poll_started.wait(2))
+                self.assertFalse(poll_finished.wait(.1), "Terminal polling exposed an incomplete event stream")
+            finally:
+                release_final_event.set()
+                if reader.ident is not None:
+                    reader.join(3)
+                self.service._runs[rid].thread.join(3)
+        self.assertTrue(poll_finished.is_set())
+        self.assertNotIn("error", observed)
+        result = observed["result"]
+        self.assertEqual(result["run"]["status"], "completed")
+        self.assertEqual(result["events"][-1]["type"], "completed")
+        self.assertEqual(result["events"][-1]["text"], "你好 test-model")
+        self.assertEqual(self.service.run(rid, result["nextSequence"])["events"], [])
+
     def test_cancel_is_request_then_terminal_and_shutdown_rejects_work(self):
         Provider.action = "wait"
         conversation = self.conversation()

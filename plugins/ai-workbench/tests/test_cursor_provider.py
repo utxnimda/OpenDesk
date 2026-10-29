@@ -202,7 +202,7 @@ class CursorProviderTests(unittest.TestCase):
         runtime.touch()
         entry = self.root / "index.js"
         entry.touch()
-        self.assertEqual(provider._command(str(launcher)), [str(runtime), str(entry)])
+        self.assertEqual(provider._command(str(launcher)), [str(runtime.resolve()), str(entry.resolve())])
 
     def test_provider_environment_does_not_inherit_other_connection_secrets(self):
         self.patch_client()
@@ -273,7 +273,7 @@ class CursorProviderTests(unittest.TestCase):
             info=provider.inspect_connection(str(launcher))
             missing=provider.inspect_connection(str(self.root/"absent.cmd"))
         self.assertTrue(info["available"])
-        self.assertEqual(info["executable"],str(launcher))
+        self.assertEqual(info["executable"],str(launcher.resolve()))
         self.assertFalse(missing["available"])
 
 
