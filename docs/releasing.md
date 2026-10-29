@@ -2,6 +2,12 @@
 
 本手册描述可重复执行的公开交付流程，命令块供后续发布参考，不应原样重复创建已发布版本。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
 
+## 2026-10-29 发布准备：App 0.19.2 / AI 工作台 0.4.3 / 塔防 0.9.2
+
+本次用户明确授权源码提交、推送及 EXE／页签包 Release。交付范围为 App 安装器、便携 ZIP、随附塔防 0.9.2，以及塔防 0.9.2 和 AI 工作台 0.4.3 两个独立页签 Release。App 仍只随附塔防；作品管理器 0.3.1 沿用既有 Release，本轮不重建、不重复上传。部署工作台、模块测试台二进制、外部导入包、私人配置、会话、凭据与运行数据均排除。
+
+先前已本地使用的 App 0.19.1、AI 0.4.2、塔防 0.9.1 保留原包和真实 dirty 来源。本轮分别提升 patch 版本，从新的干净提交构建，不能提交后复用旧 dirty 缓存冒充正式包。当前处于发布准备；只有完成构建、暂存、远端发布和下载核验后，才更新下载索引为已交付。
+
 ## 2026-10-26 发布结果：App 0.18.0 / 塔防 0.8.2
 
 用户已授权审阅后的源码提交、推送，以及 App 与塔防页签两个 Release。本次从干净提交 `036ba0ace3583cbff410a0ae1155b46a44386e13` 构建 [App 0.18.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.18.0) 与[塔防助手 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.8.2)，源码已推送；标签 `v0.18.0` 与 `modules/tower-assistant/v0.8.2` 的远端内容和本地一致。2026-10-26 已公开发布，App 6 个附件与模块 4 个附件均已重新下载并核对 SHA-256。 历史 App 0.17.0 与塔防 0.1.9 继续保留，下方旧发布结果和旧版本命令保持历史含义，不原样重跑。
@@ -32,7 +38,7 @@ App 构建前核对现有塔防包与公开原包摘要相同，通过本地临�
 
 ## 2. 公开范围以白名单为准
 
-`config/distribution.json` 是正式分发权威：`bundledModules` 表示 App 随附页签，`publicModules` 表示可独立公开页签，前者必须为后者子集。当前 `bundledModules` 只有 `tower-assistant`，`publicModules` 另含作品管理器 `nimda-workspace`。实际文件必须与该清单相符，不能只检查 manifest 中声明的名称。
+`config/distribution.json` 是正式分发权威：`bundledModules` 表示 App 随附页签，`publicModules` 表示可独立公开页签，前者必须为后者子集。当前 `bundledModules` 只有 `tower-assistant`，`publicModules` 另含作品管理器 `nimda-workspace` 和 AI 工作台 `ai-workbench`。每次只发布实际更新并纳入当次范围的页签，不因为在白名单中就重复发布未更新模块。实际文件必须与该清单相符，不能只检查 manifest 中声明的名称。
 
 | 内容 | Git 源码 | App Release | 独立页签 Release |
 |---|---|---|---|
