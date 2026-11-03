@@ -2,7 +2,9 @@
 
 OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk`，使用 OpenDesk 名称、构建产物和独立数据目录。本仓库从经过检查的源码快照建立全新 Git 历史，不导入旧提交、标签或生成产物。既有版本历史和验证记录保留原始名称、路径及历史含义，不能代替当前 OpenDesk 的构建与运行验证。
 
-**正式交付（2026-10-29）**：[App 0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3)、[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 和[塔防山贼助手 0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3) 均从干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50` 构建并公开发布。App 仅随附塔防，AI 页签单独下载导入。三个 Release 共 14 个附件已重新下载并逐项核对 SHA-256；部署工作台、测试包、个人配置、聊天记录和凭据未进入交付。
+**正式交付（2026-11-03）**　[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。
+
+**历史交付（2026-10-29）**：[App 0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3)、[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 和[塔防山贼助手 0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3) 均从干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50` 构建并公开发布。App 仅随附塔防，AI 页签单独下载导入。三个 Release 共 14 个附件已重新下载并逐项核对 SHA-256；部署工作台、测试包、个人配置、聊天记录和凭据未进入交付。
 
 **历史交付（2026-10-26）**：[App 0.18.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.18.0) 与 [塔防助手 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.8.2) 从干净提交 `036ba0ace3583cbff410a0ae1155b46a44386e13` 构建；App 仅随附塔防 0.8.2，独立页签使用字节一致的同一包。2026-10-26 已公开发布，App 6 个附件与模块 4 个附件均已重新下载并核对 SHA-256。 测试包、作品管理器附件和本机数据不在本次交付范围内，旧公开版本及本地开发包保持不变。
 
@@ -10,17 +12,17 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 面向 Windows 的本地桌面工具台，用于挂载和开发独立功能。基于 **Tauri 2 + Vue 3 / TypeScript + Python worker**，通用框架管理窗口、设置和后台通信，业务模块各自负责界面与逻辑。
 
-**最新公开版本：[v0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3)**（2026-10-29） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
+**最新公开版本：[v0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)**（2026-11-03） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
 
 ## 正式页签与本地开发测试
 
-**当前源码的发布候选**为 OpenDesk 0.20.1、塔防山贼助手 0.9.5 和虚拟伙伴 0.8.2。App 只随附塔防，虚拟伙伴单独打包。已公开的版本与附件见[下载索引](docs/downloads.md)。
+OpenDesk 0.20.1 为主视图页签提供可选的桌宠头像接口，虚拟伙伴可从已登记角色的动作中选择一帧作头像。[页签包契约](docs/module-packages.md)
 
-当前公开 App 0.19.3 只随附「塔防山贼助手 0.9.3」，该页签也已[独立发布](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3)。[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 单独下载导入；作品管理器 nimda-workspace 0.3.1 沿用既有独立 Release。旧公开版本保持不可变，模块测试台和 fixture 仅用于开发验证，部署工作台及其他私有模块不在公开清单内。
+当前 App 随附的塔防页签也可独立下载。虚拟伙伴、AI 工作台 0.4.4 与作品管理器 0.3.1 均按需单独导入。[下载索引](docs/downloads.md)
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
 
-当前正式塔防版本为 **0.9.3**，宿主为 **0.19.3**。塔防新增供 AI 工作台 API 会话使用的授权只读统计摘要，并同步共享外观样式；既有存档分析、统计排行与明细公式功能保留。升级 App 保留个人固定选择，需要在「功能管理」手动选择新页签版本。透明窗口需要宿主 0.18.0 或更新，AI 工具中介需要 0.19.0 或更新；实际游戏视觉和长时间性能仍以既有验收边界为准。
+当前正式塔防版本为 **0.9.5**，宿主为 **0.20.1**。塔防提供供 AI 工作台 API 会话使用的授权只读统计摘要，并同步共享外观样式；既有存档分析、统计排行与明细公式功能保留。升级 App 保留个人固定选择，需要在「功能管理」手动选择新页签版本。透明窗口需要宿主 0.18.0 或更新，AI 工具中介需要 0.19.0 或更新；实际游戏视觉和长时间性能仍以既有验收边界为准。
 
 0.7.0 新增复用同一模块 worker 的原生透明排行榜窗口，已完成构建、自动化和通用原生窗口链路验证，游戏上的透明叠加视觉尚未验收。这些结果不代替 0.7.1 的验证；此前 **0.6.1** 也保留为已完成本地限定范围验收的不可变包。塔防继续基于 Git 主线 0.1.9 开发，没有合入本机 0.3.0；保留指定存档的灵物地图、灵气排名和 23 层存档支持，以及人物工作统计、伤害分类、固定人物与公式详情。用户此前确认 0.5.2 修复入口的游戏画面正常、采集初始化成功；此前已只读核对游戏内三份采集脚本与当前源码一致，无需为本次明细修复重装入口；新字段的实际工作/伤害事件与长时间性能尚未完整验证，具体实现范围见[模块说明](docs/tower-assistant.md)。
 
@@ -61,7 +63,7 @@ npm run build:module -- media-manager
 |---|---|---|---|
 | `core.workbench` | 七种界面风格，新增薄荷奶油；独立配色、分类设置与外观保存 | 0.8.1 | 0.19.1（已随 0.19.3 交付） |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
-| `core.module-packages` | 独立页签、Web 应用、模块第二视图、经授权的只读工具调用与桌宠头像帧 | 0.9.1 | 0.20.1（源码候选） |
+| `core.module-packages` | 独立页签、Web 应用、模块第二视图、经授权的只读工具调用与桌宠头像帧 | 0.9.1 | 0.20.1 |
 | `core.personalization` | 已移除：背景图片、材质与氛围调节；保留历史 ID | 0.2.0 | 0.9.0 |
 | `core.companion` | 双模式宠物、共享菜单面板、受控独立菜单窗口与即时角色选择 | 0.6.0 | 0.15.0 |
 | `tower.save-reader` | 存档与仓库读取 | 0.1.0 | 0.2.0 |

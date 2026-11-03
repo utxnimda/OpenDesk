@@ -1,6 +1,8 @@
 # 虚拟伙伴
 
-虚拟伙伴是 Windows x64 的独立页签，模块 ID 为 `virtual-partner`。当前源码版本为 0.8.2，沿用 hostApi 1 和 dataSchema 1。可以给伙伴取名、设置圆形头像、编辑性格，为不同 API 选择模型，也可以在记忆簿里翻看它从 B 站带回的见闻。[大肥鱼](https://github.com/SAKURAfan1023/dafeiyu-bot)提供了人格与独立记忆的交互参考。
+虚拟伙伴是 Windows x64 的独立页签，模块 ID 为 `virtual-partner`。当前公开版本为 0.8.2，沿用 hostApi 1 和 dataSchema 1。可以给伙伴取名、设置圆形头像、编辑性格，为不同 API 选择模型，也可以在记忆簿里翻看它从 B 站带回的见闻。[大肥鱼](https://github.com/SAKURAfan1023/dafeiyu-bot)提供了人格与独立记忆的交互参考。
+
+下载 Windows x64 独立页签包后即可导入。SHA-256 为 `eeab07ccf244016739e4da76b1917788a15fc96d8f90aad5e969e51aad804017`。[下载页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Fvirtual-partner%2Fv0.8.2/virtual-partner-0.8.2.ndpkg) · [版本说明与校验清单](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)
 
 ## 使用
 

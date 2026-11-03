@@ -48,9 +48,9 @@ hostApi、dataSchema 与包语义版本独立。代码回退不代表数据回�
 
 ## 交付边界
 
-2026-11-03 为本地开发版本 App `0.20.0`、塔防 `0.9.4` 和虚拟伙伴 `0.8.1` 分配独立的发布候选版本，依次为 `0.20.1`、`0.9.5` 和 `0.8.2`。App 默认只随附塔防，虚拟伙伴单独分发。构建和发布结果以[验证记录](verification.md)与[下载索引](downloads.md)为准。
+2026-11-03 已发布 [OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)、[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) 与[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)，构建提交为 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5`。此前本地开发的 0.20.0、0.9.4 和 0.8.1 保留其原有来源和摘要。App 仅随附塔防，虚拟伙伴独立分发。[验证记录](verification.md) · [下载索引](downloads.md)
 
-2026-10-29 当前公开版本为 App `0.19.3`、塔防 `0.9.3` 和 AI 工作台 `0.4.4`，均从干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50` 构建；三个 Release 共 14 个附件已重新下载并核对 SHA-256。App 只随附塔防，AI 独立下载，作品管理器 `0.3.1` 沿用既有 Release。本轮标签固定在实际构建提交，不随后续发布结果文档提交移动。
+2026-10-29 公开版本为 App `0.19.3`、塔防 `0.9.3` 和 AI 工作台 `0.4.4`，均从干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50` 构建；三个 Release 共 14 个附件已重新下载并核对 SHA-256。App 只随附塔防，AI 独立下载，作品管理器 `0.3.1` 沿用既有 Release。本轮标签固定在实际构建提交，不随后续发布结果文档提交移动。
 
 0.19.3 交付时，`config/distribution.json` 的 `bundledModules` 仅含 `tower-assistant`，`publicModules` 另含 `nimda-workspace` 与 `ai-workbench`。构建代码将 `test-lab` 标为测试 fixture，不允许将它加入正式分发列表。测试台源码可以保留为开发测试代码，但其二进制包、本机导入的部署工作台、其他私有或外部分支产物均未纳入本次发布。此前版本的随附事实保留在历史中，不回写旧记录；用户已导入的包也不会因此被自动卸载或覆盖。
 

@@ -2,6 +2,22 @@
 
 # 验证记录
 
+## 2026-11-03 发布结果 · OpenDesk 0.20.1、塔防 0.9.5、虚拟伙伴 0.8.2
+
+[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。
+
+- **构建与测试。** 完整 `npm run check` 的七组自动化测试合计 800 项通过。Rust 75 项通过。隔离数据根的原生核心和模块 smoke 通过，涵盖设置读写、worker 重启、初始随附清单、页签切换和失败恢复。
+
+- **虚拟伙伴。** 以 0.8.2 独立包在隔离 Chrome 中运行冻结 worker，读取 0.7.0 保存的两条外出记忆。用本机模拟模型验证流式及历史消息的中文粗体、标题、列表、代码高亮和可选中链接。手动输入的来评与回复草稿重启后可恢复。B 站自动评论及收件箱自动回复已暂缓。
+
+- **包内容。** 逐文件核对便携 ZIP 的 60 个文件、塔防包的 76 个条目和伙伴包的 69 个条目。解出 NSIS 载荷并核对 60 个应用文件。安装器内宿主和便携宿主相差 3 个字节，对应 Tauri 的 `NSS`／`UNK` 标记。未运行安装或卸载流程。
+
+- **摘要。** 随附与独立塔防 SHA-256 均为 `e192b95c659de1c5be3564567fdbc9f9e5654c5147f40b728d06568955152d44`，虚拟伙伴为 `eeab07ccf244016739e4da76b1917788a15fc96d8f90aad5e969e51aad804017`。两个独立包均声明 Windows x64、hostApi 1、dataSchema 1。
+
+- **远端 CI。** 主分支、App 标签和虚拟伙伴标签的 Check 首次通过。塔防标签的首次检查在 AI 工作台 `test_layout_endpoint_requires_auth_and_rejects_out_of_range_values` 测试中遇到 `ConnectionAbortedError [WinError 10053]`，本机 HTTP 连接中止。使用同一构建提交重试后，第二次 Check 通过。[main](https://github.com/utxnimda/OpenDesk/actions/runs/41594116109) · [v0.20.1](https://github.com/utxnimda/OpenDesk/actions/runs/41594410635) · [塔防首次](https://github.com/utxnimda/OpenDesk/actions/runs/41594410288/attempts/1) · [塔防重试](https://github.com/utxnimda/OpenDesk/actions/runs/41594410288/attempts/2) · [modules/virtual-partner/v0.8.2](https://github.com/utxnimda/OpenDesk/actions/runs/41594410651)
+
+证据位于 `.local/release-20261103/` 的 `artifact-audit-*/audit-result.json`、`packaged-browser-result.json`、`download-verification-*.json`、`remote-content-verification.json` 和 `ci-results.json`。真实账号的付费模型调用、登录 B 站后的操作、游戏内视觉与长时间使用均未在此次验收中测试。
+
 ## 2026-11-03：虚拟伙伴 0.8.1 的回复排版、外出记忆和来评拟稿
 
 使用实际页签包、冻结 worker、隔离 Chrome 和一份 0.7.0 测试档案完成验收。旧档案的两条外出记录首次在新版打开即出现在「记忆簿 → 外出经历」。使用本机模拟模型复现用户截图中的原句，流式阶段和最终消息中的“公开标题和简介”均显示为粗体，标题、列表、代码高亮可见，点击链接可选中实际地址。重新打开后历史消息继续按相同规则排版。

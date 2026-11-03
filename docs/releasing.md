@@ -2,6 +2,12 @@
 
 本手册描述可重复执行的公开交付流程，命令块供后续发布参考，不应原样重复创建已发布版本。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
 
+## 2026-11-03 发布结果 · OpenDesk 0.20.1、塔防 0.9.5、虚拟伙伴 0.8.2
+
+[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。发布标签固定在构建提交。
+
+塔防标签的 Check 首次遇到 Windows HTTP 连接中止，第二次检查在同一提交通过。主分支、App 标签和伙伴标签均首次通过。[验证记录](verification.md) · [下载索引](downloads.md)
+
 ## 2026-10-29 发布结果：App 0.19.3 / AI 工作台 0.4.4 / 塔防 0.9.3
 
 本次用户明确授权源码提交、推送及 EXE／页签包 Release。交付范围为 App 安装器、便携 ZIP、随附塔防 0.9.3，以及塔防 0.9.3 和 AI 工作台 0.4.4 两个独立页签 Release。App 仍只随附塔防；作品管理器 0.3.1 沿用既有 Release，本轮不重建、不重复上传。部署工作台、模块测试台二进制、外部导入包、私人配置、会话、凭据与运行数据均排除。

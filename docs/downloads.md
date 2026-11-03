@@ -1,11 +1,12 @@
 # App 与页签下载
 
-App 与正式页签分别按版本发布。每个版本保留独立下载页与 SHA-256 清单，二进制附件不进入源码 Git。2026-10-29 已发布 App 0.19.3、AI 工作台 0.4.4 与塔防 0.9.3，三个 Release 共 14 个附件已重新下载核对大小与 SHA-256。旧版本和历史核验记录继续保留。
+App 与正式页签分别按版本发布。2026-11-03 已公开 [OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)、[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) 与[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。历史版本的下载链接及核验记录保留在下方。
 
 ## App
 
 | 版本 | Windows x64 下载 | 随附页签 |
 |---|---|---|
+| [0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.20.1/OpenDesk_0.20.1_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.20.1/OpenDesk_0.20.1_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.20.1/SHA256SUMS.txt) | 塔防山贼助手 0.9.5（与独立包一致） |
 | [0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.19.3/OpenDesk_0.19.3_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.19.3/OpenDesk_0.19.3_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.19.3/SHA256SUMS.txt) | 塔防山贼助手 0.9.3（与独立包一致）；AI 单独下载 |
 | [0.18.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.18.0) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.18.0/OpenDesk_0.18.0_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.18.0/OpenDesk_0.18.0_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.18.0/SHA256SUMS.txt) | 塔防山贼助手 0.8.2（与独立包一致） |
 | [0.17.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.17.0) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.17.0/OpenDesk_0.17.0_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.17.0/OpenDesk_0.17.0_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.17.0/SHA256SUMS.txt) | 塔防山贼助手 0.1.9（沿用公开原包） |
@@ -13,9 +14,17 @@ App 与正式页签分别按版本发布。每个版本保留独立下载页与 
 | [0.12.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.12.0) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.12.0/OpenDesk_0.12.0_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.12.0/OpenDesk_0.12.0_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.12.0/SHA256SUMS.txt) | 塔防山贼助手 0.1.7 |
 | [0.6.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.6.0) | 历史 Release 中保留原产物与校验文件 | 以该历史版本清单为准 |
 
-便携包需要完整解压后启动 `OpenDesk.exe`。当前 App 0.19.3 只随附塔防 0.9.3；AI 工作台 0.4.4 和作品管理器 0.3.1 按需单独导入。升级 App 保留已有精确版本选择，不自动切换或删除个人插件。部署工作台、模块测试台二进制、外部导入包和私人数据不属于公开交付。
+便携包需要完整解压后启动 `OpenDesk.exe`。当前 App 0.20.1 只随附塔防 0.9.5。虚拟伙伴 0.8.2、AI 工作台 0.4.4 和作品管理器 0.3.1 按需单独导入。升级 App 保留已有精确版本选择，不自动切换或删除个人插件。部署工作台、模块测试台二进制、外部导入包和私人数据不属于公开交付。
 
 ## 正式页签
+
+### virtual-partner / 虚拟伙伴
+
+| 版本 | 独立下载 | 契约 |
+|---|---|---|
+| [0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Fvirtual-partner%2Fv0.8.2/virtual-partner-0.8.2.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Fvirtual-partner%2Fv0.8.2/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1。推荐搭配 OpenDesk 0.20.1 使用桌宠头像 |
+
+可在多个话题间保留记忆，归档 B 站外出见闻并为手动粘贴的来评拟回复。包 SHA-256 为 `eeab07ccf244016739e4da76b1917788a15fc96d8f90aad5e969e51aad804017`。[虚拟伙伴使用说明](virtual-partner.md)
 
 ### ai-workbench / AI 工作台
 
@@ -37,10 +46,13 @@ App 与正式页签分别按版本发布。每个版本保留独立下载页与 
 
 | 版本 | 独立下载 | 契约 |
 |---|---|---|
+| [0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.5/tower-assistant-0.9.5.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.5/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1。App 随附相同的包 |
 | [0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.3/tower-assistant-0.9.3.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.3/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1；AI 只读工具需宿主 0.19.0 或更新 |
 | [0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.8.2) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.8.2/tower-assistant-0.8.2.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.8.2/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1；透明排行榜需 OpenDesk 0.18.0 |
 | [0.1.9](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.9/tower-assistant-0.1.9.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.9/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1；支持薄荷奶油 |
 | [0.1.7](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.7) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.7/tower-assistant-0.1.7.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.7/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1 |
+
+0.9.5 的独立包与 App 随附包 SHA-256 均为 `e192b95c659de1c5be3564567fdbc9f9e5654c5147f40b728d06568955152d44`。
 
 下载 `.ndpkg` 后，在 OpenDesk「功能管理」中导入、选择对应版本并启用。不同版本可并存，同 ID/版本但摘要不同的包会被拒绝，数据不兼容也不会静默降级。只有本仓库明确列入分发清单的正式页签有独立下载；本机额外导入、其他开发分支、私有模块与测试 fixture 不会自动上传。
 
