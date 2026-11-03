@@ -13,6 +13,7 @@ import { EMPTY_CATALOG, canOpenPackage, packageKey, type PackageCatalog } from '
 import { uiStylePreset } from './core/ui-styles';
 import CompanionOverlay from './companions/CompanionOverlay.vue';
 import { canDisplayCompanion, type CompanionCatalog } from './companions/contracts';
+import { createPetPortraitProvider } from './companions/portraits';
 import { clonePersonalization, type Personalization } from './core/personalization';
 import { surfaceEffects } from './core/appearance-state';
 
@@ -35,6 +36,9 @@ const initializing = ref(host.available);
 const infoError = ref(''); const settingsError = ref(''); const packageError = ref('');
 const runtimeError = ref('');
 const settingsReady = ref(false);
+const petPortraits = host.available && props.companions
+  ? createPetPortraitProvider(props.companions, () => settingsReady.value ? settings.value.personalization.pet : null)
+  : undefined;
 const hostError = computed(() => [infoError.value, settingsError.value].filter(Boolean).join('；'));
 const catalog = ref<PackageCatalog>(EMPTY_CATALOG);
 const catalogLoading = ref(false);
@@ -61,6 +65,7 @@ watch(uiStyle, (value) => { document.documentElement.dataset.uiStyle = value; },
 systemTheme.addEventListener('change', applyTheme);
 onUnmounted(() => {
   unmounted = true;
+  petPortraits?.dispose();
   settingsRequest++;
   systemTheme.removeEventListener('change', applyTheme);
   unsubscribe.forEach((dispose) => dispose());
@@ -242,7 +247,7 @@ onMounted(async () => {
         <SettingsPage v-else-if="currentPage === 'settings'" :host="host" :settings="settings" :settings-ready="settingsReady" :companions="companions" @saved="updateSettings" @preview-theme="previewTheme" @preview-style="previewStyle" @preview-personalization="previewPersonalization" />
         <VersionPage v-else-if="currentPage === 'version'" :host-version="info?.appVersion" />
         <PackagesPage v-else-if="currentPage === 'packages'" :host="host" :catalog="catalog" :loading="catalogLoading" @changed="updateCatalog" @refresh="refreshCatalog" @open="navigate" />
-        <PackageFrame v-for="module in mountedModules" v-show="currentPage === module.id" :key="packageKey(module)" :module="module" :host="host" :theme="resolvedTheme" :ui-style="uiStyle" :surface-effects="resolvedSurfaceEffects" @failure="runtimeError = $event" />
+        <PackageFrame v-for="module in mountedModules" v-show="currentPage === module.id" :key="packageKey(module)" :module="module" :host="host" :theme="resolvedTheme" :ui-style="uiStyle" :surface-effects="resolvedSurfaceEffects" :pet-portraits="petPortraits" @failure="runtimeError = $event" />
         <footer v-if="!selectedModule" class="main-footer"><span>OPENDESK / PERSONAL TOOLKIT</span><span>清晰的边界 · 按需的能力</span></footer>
       </main>
       <footer v-if="uiStyle === 'cursor' || uiStyle === 'glass'" class="workbench-statusbar"><span><span class="version-dot"></span>{{ host.available ? '桌面工作区' : '界面预览' }}</span><span>{{ pageLabel }}</span><span>OpenDesk v{{ buildVersion.appVersion }}</span></footer>

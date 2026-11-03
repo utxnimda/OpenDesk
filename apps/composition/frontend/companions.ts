@@ -20,6 +20,7 @@ export const companions: CompanionCatalog = Object.freeze({
       description: '骑行时陪伴你，也可以在电脑前托腮思考片刻。',
       assets: Object.freeze({ idle: amuLoop, still: amuStill, thinking: amuThinking }),
       actionMediaTypes: Object.freeze({ thinking: 'video' }),
+      videoFrames: Object.freeze({ thinking: Object.freeze({ count: 145, fps: 24 }) }),
       actionDurationsMs: Object.freeze({ thinking: 6042 }),
       primaryAction: 'thinking',
     }),

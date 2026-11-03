@@ -3,6 +3,8 @@ import { parseToolOperation, toolIdentity, type ModuleToolsClient, type HostTool
 export type { HostTool, HostToolIdentity, ModuleToolsClient } from './module-tools';
 import { isSurfaceContext, parseSurfaceOperation, type ModuleSurfaceClient, type ModuleSurfaceContext } from './module-surface';
 export type { ModuleSurfaceClient, ModuleSurfaceContext, ModuleSurfaceOptions } from './module-surface';
+import { parsePetPortraitOperation, type PetPortraitCatalog, type PetPortraitFrame, type PetPortraitsClient } from './pet-portraits';
+export type { PetPortraitCatalog, PetPortraitPet, PetPortraitSource, PetPortraitFrame, PetPortraitsClient } from './pet-portraits';
 export const BRIDGE_PROTOCOL = 1;
 // Protocol 1 keeps its legacy nimdadesk:* messages and nd-* fragment keys so
 // already installed module packages can still connect after the OpenDesk rename.
@@ -41,6 +43,7 @@ export interface LimitedHost {
   /** Undefined on older hosts; context is null in the owning main view. */
   readonly surface?: ModuleSurfaceClient;
   readonly tools?: ModuleToolsClient;
+  readonly petPortraits?: PetPortraitsClient;
   callWorker<T>(method: string, params?: Record<string, unknown>): Promise<T>;
 }
 export interface ModuleServices { host: LimitedHost }
@@ -54,6 +57,7 @@ export interface ConnectMessage {
   surfaceEffects?: unknown;
   moduleSurface?: unknown;
   moduleTools?: unknown;
+  petPortraits?: unknown;
 }
 export interface ModuleBridge {
   host: LimitedHost;
@@ -108,13 +112,15 @@ function applySurfaceEffects(value?: unknown) {
   root.style.setProperty('--glass-opacity', `${effects.transparency}%`);
 }
 
-export function createModuleBridge(): ModuleBridge {
+export function createModuleBridge(options: { petPortraits?: boolean } = {}): ModuleBridge {
   const fragment = new URLSearchParams(window.location.hash.slice(1));
   const parentOrigin = fragment.get('nd-host-origin') ?? '';
   const generation = fragment.get('nd-generation') ?? '';
   let active = true;
   let accepted = false;
   let tools: ModuleToolsClient | undefined;
+  let petPortraits: PetPortraitsClient | undefined;
+  const portraitListeners = new Set<() => void>();
   let port: MessagePort | null = null;
   let sequence = 0;
   let surface: ModuleSurfaceClient | undefined;
@@ -131,6 +137,11 @@ export function createModuleBridge(): ModuleBridge {
       list: () => toolRequest('list', {}) as Promise<HostTool[]>,
       grant: async items => { await toolRequest('grant', { tools: items.map(toolIdentity) }); },
       call: (tool, args) => toolRequest('call', { tool: toolIdentity(tool), arguments: args }),
+    };
+    if (options.petPortraits === true && event.data.petPortraits === 1) petPortraits = {
+      list: () => portraitRequest('list', {}) as Promise<PetPortraitCatalog>,
+      frame: (petId, sourceId, index) => portraitRequest('frame', { petId, sourceId, index }) as Promise<PetPortraitFrame>,
+      onChange(listener) { portraitListeners.add(listener); return () => { portraitListeners.delete(listener); }; },
     };
     const identity = event.data.identity;
     document.documentElement.dataset.theme = resolveMessageAppearance(event.data.theme, event.data.appearance)!;
@@ -151,6 +162,10 @@ export function createModuleBridge(): ModuleBridge {
       if (!active || !isRecord(data) || data.generation !== generation) return;
       if (data.type === 'accepted') { accepted = true; clearTimeout(handshakeTimer); resolveReady(identity); return; }
       if (data.type === 'host-error') { clearTimeout(handshakeTimer); rejectReady(new Error(typeof data.error === 'string' ? data.error : '宿主未接受此模块。')); return; }
+      if (data.type === 'pet-portraits-changed' && accepted && petPortraits) {
+        for (const listener of portraitListeners) listener();
+        return;
+      }
       if (data.type === 'theme') {
         const appearance = resolveMessageAppearance(data.theme, data.appearance);
         if (appearance) {
@@ -173,7 +188,8 @@ export function createModuleBridge(): ModuleBridge {
   }
   window.addEventListener('message', receive);
   if (window.parent !== window && parentOrigin && parentOrigin !== 'null' && generation) {
-    window.parent.postMessage({ type: 'nimdadesk:hello', protocol: BRIDGE_PROTOCOL, generation }, parentOrigin);
+    window.parent.postMessage({ type: 'nimdadesk:hello', protocol: BRIDGE_PROTOCOL, generation,
+      ...(options.petPortraits === true ? { petPortraits: 1 } : {}) }, parentOrigin);
   } else {
     clearTimeout(handshakeTimer); rejectReady(new Error(BROWSER_UNAVAILABLE));
   }
@@ -194,11 +210,20 @@ export function createModuleBridge(): ModuleBridge {
     const operation = parseToolOperation(action, params);
     await ready;
     if (!active || !port || !tools) throw new Error('当前宿主尚未提供插件工具接口，请升级 OpenDesk。');
+    return sendHostRequest('tools', operation, 180_000, '工具请求超时；没有自动重试。');
+  }
+  async function portraitRequest(action: string, params: unknown): Promise<unknown> {
+    const operation = parsePetPortraitOperation(action, params);
+    await ready;
+    if (!active || !port || !petPortraits) throw new Error('当前模块实例无法读取桌宠头像。');
+    return sendHostRequest('pet-portraits', operation, 30_000, '读取桌宠头像超时，请重新选帧。');
+  }
+  function sendHostRequest(type: string, operation: object, timeout: number, timeoutMessage: string): Promise<unknown> {
     const id = generation + ':' + (++sequence);
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { pending.delete(id); reject(new Error('工具请求超时；没有自动重试。')); }, 180000);
+      const timer = setTimeout(() => { pending.delete(id); reject(new Error(timeoutMessage)); }, timeout);
       pending.set(id, { resolve, reject, timer });
-      try { port!.postMessage({ type: 'tools', generation, id, ...operation }); }
+      try { port!.postMessage({ type, generation, id, ...operation }); }
       catch (e) { pending.delete(id); clearTimeout(timer); reject(e); }
     });
   }
@@ -206,6 +231,7 @@ export function createModuleBridge(): ModuleBridge {
     get available() { return active && accepted && port !== null; },
     get surface() { return surface; },
     get tools() { return tools; },
+    get petPortraits() { return petPortraits; },
     async callWorker<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
       await ready;
       if (!active || !port) throw new Error('模块实例已关闭，不能继续调用。');
@@ -225,7 +251,7 @@ export function createModuleBridge(): ModuleBridge {
     active = false; clearTimeout(handshakeTimer); window.removeEventListener('message', receive);
     rejectReady(new Error('模块实例已关闭。'));
     for (const request of pending.values()) { clearTimeout(request.timer); request.reject(new Error('模块实例已关闭。')); }
-    pending.clear(); port?.close(); port = null;
+    pending.clear(); portraitListeners.clear(); port?.close(); port = null;
   }
   window.addEventListener('pagehide', dispose, { once: true });
   return { host, ready, dispose };

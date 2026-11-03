@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "virtual-partner",
+  "label": "虚拟伙伴",
+  "version": "0.8.2",
+  "hostApi": 1,
+  "target": "windows-x64",
+  "frontend": "frontend/index.html",
+  "worker": "worker/module-worker.exe",
+  "methods": [
+    "partner.state", "partner.profile", "partner.connection", "partner.connections",
+    "partner.connection.select", "partner.connection.upsert", "partner.catalog",
+    "partner.models", "partner.models.result", "partner.topic",
+    "partner.remember", "partner.revise", "partner.forget",
+    "partner.send", "partner.run", "partner.cancel", "partner.suggestion",
+    "partner.share", "partner.experience.edit", "partner.experience.remove",
+    "partner.outing.state", "partner.outing.interests", "partner.outing.start",
+    "partner.outing.run", "partner.outing.schedule", "partner.outing.tick",
+    "partner.outing.memories", "partner.outing.forget", "partner.outing.replies", "partner.outing.reply"
+  ],
+  "dataSchema": 1,
+  "source": {"commit": null, "dirty": true}
+}

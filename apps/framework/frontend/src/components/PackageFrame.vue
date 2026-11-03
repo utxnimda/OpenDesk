@@ -4,8 +4,9 @@ import { errorMessage, type HostAdapter, type Theme, type UIStyle } from '../cor
 import { packageSandbox, type InstalledModule, type PackageInstance } from '../core/packages';
 import { createPackageBroker, isModuleHello, packageAppearance } from '../core/package-broker';
 import type { SurfaceEffects } from '../../../module-sdk/src/index';
+import type { PetPortraitProvider } from '../companions/portraits';
 
-const props = defineProps<{ module: InstalledModule; host: HostAdapter; theme: Exclude<Theme, 'system'>; uiStyle: UIStyle; surfaceEffects?: SurfaceEffects }>();
+const props = defineProps<{ module: InstalledModule; host: HostAdapter; theme: Exclude<Theme, 'system'>; uiStyle: UIStyle; surfaceEffects?: SurfaceEffects; petPortraits?: PetPortraitProvider }>();
 const emit = defineEmits<{ failure: [message: string] }>();
 const frame = ref<HTMLIFrameElement | null>(null);
 const source = ref(''); const failure = ref(''); const ready = ref(false);
@@ -18,9 +19,11 @@ let broker: ReturnType<typeof createPackageBroker> | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let loadFailureReported = false;
 let reportingFailure = false;
+let portraitConnection: PetPortraitProvider | undefined;
 
 function detachFrame() {
   broker?.dispose(); channel?.port1.close(); channel?.port2.close(); channel = null;
+  portraitConnection = undefined;
   source.value = '';
   if (timer) clearTimeout(timer);
 }
@@ -66,6 +69,7 @@ async function reportLoadFailure(reason: string) {
 function receive(event: MessageEvent) {
   if (closed || !instance || channel || !isModuleHello(event, frame.value?.contentWindow ?? null, origin, instance.generation)) return;
   const owned = instance;
+  portraitConnection = event.data.petPortraits === 1 ? props.petPortraits : undefined;
   const transport = new MessageChannel(); channel = transport;
   broker = createPackageBroker(owned.generation, (method, params) => props.host.callPackage(owned.token, method, params), async (identity) => {
     if (identity.moduleId !== owned.moduleId || identity.version !== owned.version || identity.digest !== owned.digest) {
@@ -85,7 +89,7 @@ function receive(event: MessageEvent) {
     if (operation.action === 'grant' && props.host.grantPackageTools) return props.host.grantPackageTools(owned.token, operation.params.tools);
     if (operation.action === 'call' && props.host.callPackageTool) return props.host.callPackageTool(owned.token, operation.params.tool, operation.params.arguments);
     throw new Error('当前宿主不支持此工具操作。');
-  });
+  }, portraitConnection?.request);
   transport.port1.onmessage = (message: MessageEvent) => {
     void broker?.receive(message.data, (value) => { if (!closed) transport.port1.postMessage(value); });
   };
@@ -96,8 +100,14 @@ function receive(event: MessageEvent) {
     ...packageAppearance(props.theme, props.uiStyle, props.surfaceEffects),
     moduleSurface: { context: null },
     moduleTools: 1,
+    ...(portraitConnection ? { petPortraits: 1 } : {}),
   }, origin, [transport.port2]);
 }
+watch(() => props.petPortraits?.activeId, () => {
+  if (portraitConnection && channel && instance && ready.value && !closed) {
+    channel.port1.postMessage({ type: 'pet-portraits-changed', generation: instance.generation });
+  }
+});
 watch(() => [props.theme, props.uiStyle, props.surfaceEffects] as const, ([theme, uiStyle, effects]) => {
   if (channel && instance && !closed) channel.port1.postMessage({ type: 'theme', generation: instance.generation, ...packageAppearance(theme, uiStyle, effects) });
 }, { deep: true });

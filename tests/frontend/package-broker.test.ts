@@ -133,7 +133,7 @@ describe('module appearance updates', () => {
     vi.useRealTimers();
   });
 
-  function connectBridge(fields: Record<string, unknown>) {
+  function connectBridge(fields: Record<string, unknown>, options: { petPortraits?: boolean } = {}) {
     vi.useFakeTimers();
     const parent = { postMessage: vi.fn() };
     const listeners = new Map<string, (event: MessageEvent) => void>();
@@ -152,7 +152,7 @@ describe('module appearance updates', () => {
     vi.stubGlobal('document', { documentElement: { dataset, style: { setProperty: (name: string, value: string) => properties.set(name, value) } } });
     vi.stubGlobal('__MODULE_ID__', 'test-lab');
     vi.stubGlobal('__MODULE_VERSION__', '1.0.0');
-    const bridge = createModuleBridge();
+    const bridge = createModuleBridge(options);
     listeners.get('message')!({
       source: parent, origin: 'http://localhost:1420', ports: [port],
       data: {
@@ -162,8 +162,36 @@ describe('module appearance updates', () => {
       },
     } as unknown as MessageEvent);
     port.onmessage!({ data: { type: 'accepted', generation: 'current' } });
-    return { bridge, dataset, properties, port };
+    return { bridge, dataset, properties, port, parent };
   }
+
+  it('negotiates portraits only when both peers opt in and binds changes and frame reads to the generation', async () => {
+    for (const [advertised, requested] of [[false, true], [true, false]]) {
+      const { bridge } = connectBridge({ theme: 'light', petPortraits: advertised ? 1 : undefined }, { petPortraits: requested });
+      await bridge.ready;
+      expect(bridge.host.petPortraits).toBeUndefined();
+      bridge.dispose();
+    }
+    const { bridge, port, parent } = connectBridge({ theme: 'light', petPortraits: 1 }, { petPortraits: true });
+    await bridge.ready;
+    expect(parent.postMessage.mock.calls[0][0]).toMatchObject({ type: 'nimdadesk:hello', petPortraits: 1 });
+    const portraits = bridge.host.petPortraits!;
+    const changed = vi.fn();
+    const stop = portraits.onChange(changed);
+    for (const generation of ['stale', 'current']) port.onmessage!({ data: { type: 'pet-portraits-changed', generation } });
+    stop();
+    port.onmessage!({ data: { type: 'pet-portraits-changed', generation: 'current' } });
+    expect(changed).toHaveBeenCalledOnce();
+    const request = portraits.frame('a', 'idle', 2);
+    await Promise.resolve();
+    const message = port.postMessage.mock.calls.at(-1)![0];
+    expect(message).toMatchObject({ type: 'pet-portraits', action: 'frame', generation: 'current', params: { petId: 'a', sourceId: 'idle', index: 2 } });
+    const frame = { width: 1, height: 1, rgba: new Uint8ClampedArray(4), frameCount: 3, index: 2 };
+    port.onmessage!({ data: { type: 'result', generation: 'current', id: message.id, ok: true, result: frame } });
+    await expect(request).resolves.toEqual(frame);
+    bridge.dispose();
+    await expect(portraits.list()).rejects.toThrow('无法读取');
+  });
 
   it('applies handshake and live styles without replacing the module connection', async () => {
     const { bridge, dataset, port } = connectBridge(packageAppearance('graphite', 'cursor'));

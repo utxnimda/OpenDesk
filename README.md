@@ -14,6 +14,8 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 ## 正式页签与本地开发测试
 
+**当前源码的发布候选**为 OpenDesk 0.20.1、塔防山贼助手 0.9.5 和虚拟伙伴 0.8.2。App 只随附塔防，虚拟伙伴单独打包。已公开的版本与附件见[下载索引](docs/downloads.md)。
+
 当前公开 App 0.19.3 只随附「塔防山贼助手 0.9.3」，该页签也已[独立发布](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3)。[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 单独下载导入；作品管理器 nimda-workspace 0.3.1 沿用既有独立 Release。旧公开版本保持不可变，模块测试台和 fixture 仅用于开发验证，部署工作台及其他私有模块不在公开清单内。
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
@@ -59,7 +61,7 @@ npm run build:module -- media-manager
 |---|---|---|---|
 | `core.workbench` | 七种界面风格，新增薄荷奶油；独立配色、分类设置与外观保存 | 0.8.1 | 0.19.1（已随 0.19.3 交付） |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
-| `core.module-packages` | 独立页签、Web 应用、模块第二视图与经授权的只读工具调用 | 0.8.3 | 0.19.3 |
+| `core.module-packages` | 独立页签、Web 应用、模块第二视图、经授权的只读工具调用与桌宠头像帧 | 0.9.1 | 0.20.1（源码候选） |
 | `core.personalization` | 已移除：背景图片、材质与氛围调节；保留历史 ID | 0.2.0 | 0.9.0 |
 | `core.companion` | 双模式宠物、共享菜单面板、受控独立菜单窗口与即时角色选择 | 0.6.0 | 0.15.0 |
 | `tower.save-reader` | 存档与仓库读取 | 0.1.0 | 0.2.0 |
@@ -302,6 +304,12 @@ docs/                             工程规范、架构和验证
 仅补充文档、没有功能行为变化时，使用 `docs:` 提交，保留现有应用和功能版本，不重复创建版本标签。CI 当前覆盖版本、类型、架构边界、自动化测试及前端构建；桌面与安装验收另见验证记录。
 
 作品管理器按本次授权迁入，旧 Nimda Git 历史不合并，私人数据不随源码发布。具体已执行检查和未验证项目见 [验证记录](docs/verification.md)，不要用一次编译成功代替桌面或安装验收。
+
+## 虚拟伙伴独立页签
+
+虚拟伙伴 0.8.2 可自定义人格、通过 API 聊天，并在多个话题之间保留本地记忆。搭配 OpenDesk 0.20.1 可以使用桌宠头像。「记忆簿 → 外出经历」保留读过的 B 站视频、出处和草稿。可以带回来评原文让伙伴拟回复，再自行到 B 站发表。B 站自动评论和收件箱自动回复已暂缓。页签可用 `npm run build:module -- virtual-partner` 单独构建。[使用说明](docs/virtual-partner.md)
+
+准备开发时，从[虚拟伙伴开发手册](docs/virtual-partner-development.md)的 OpenAI 实机验收与第一轮工单开始。
 
 ## AI 工作台独立页签
 

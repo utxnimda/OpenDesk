@@ -8,7 +8,7 @@ export type CompanionMenuEntry =
   | { kind: 'group'; label: string; items: CompanionMenuEntry[] }
   | { kind: 'item'; id: CompanionMenuChoice; label: string; checked?: boolean; enabled?: boolean };
 export const PET_SIZES = [96, 128, 160, 200, 256] as const;
-const actionNames: Record<PetActionMode, string> = { idle: '默认循环', walk: '走动', wave: '挥手', sleep: '休息', thinking: '托腮思考' };
+export const actionNames: Readonly<Record<PetActionMode, string>> = { idle: '默认循环', walk: '走动', wave: '挥手', sleep: '休息', thinking: '托腮思考' };
 
 export function companionMenu(model: CompanionModel, pet: PetSettings, canAnimate: boolean): CompanionMenuEntry[] {
   const actions: PetActionMode[] = ['idle', ...companionExtraActions(model)];

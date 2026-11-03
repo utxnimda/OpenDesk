@@ -6,6 +6,7 @@
   "publicModules": [
     "tower-assistant",
     "nimda-workspace",
-    "ai-workbench"
+    "ai-workbench",
+    "virtual-partner"
   ]
 }

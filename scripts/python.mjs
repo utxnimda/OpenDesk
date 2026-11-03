@@ -4,8 +4,9 @@ import { root, worker, workerComposition, desktop, pythonExecutable, run } from 
 
 const python = pythonExecutable();
 const mode = process.argv[2];
-if (mode === 'test') {
-  run(python, ['-X', 'utf8', '-m', 'unittest', 'discover', '-s', join(root, 'tests/worker'), '-v'], {
+if (mode === 'test' || mode === 'test-partner') {
+  const tests = mode === 'test' ? 'tests/worker' : 'apps/features/virtual_partner/tests';
+  run(python, ['-X', 'utf8', '-m', 'unittest', 'discover', '-s', join(root, tests), '-v'], {
     env: { ...process.env, PYTHONPATH: worker, PYTHONDONTWRITEBYTECODE: '1' },
   });
 } else if (mode === 'bundle') {
@@ -35,5 +36,5 @@ if (mode === 'test') {
   mkdirSync(output, { recursive: true });
   copyFileSync(join(bundle, 'opendesk-worker.exe'), join(output, 'opendesk-worker-' + target + '.exe'));
 } else {
-  throw new Error('Expected test or bundle');
+  throw new Error('Expected test, test-partner or bundle');
 }

@@ -15,6 +15,8 @@ export interface CompanionModel {
   }>;
   readonly actionDurationsMs?: Readonly<Partial<Record<CompanionTransientAction, number>>>;
   readonly actionMediaTypes?: Readonly<Partial<Record<CompanionTransientAction, 'image' | 'video'>>>;
+  /** Recorded timing for constant-rate video assets that support indexed portrait reads. */
+  readonly videoFrames?: Readonly<Partial<Record<CompanionTransientAction, { count: number; fps: number }>>>;
   readonly primaryAction?: CompanionTransientAction;
 }
 

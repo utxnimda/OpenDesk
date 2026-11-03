@@ -4,6 +4,7 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileS
 import { dirname, join, resolve } from 'node:path';
 
 export const MODULE_DEFINITIONS = Object.freeze({
+  'virtual-partner': Object.freeze({ folder: 'virtual_partner', backend: 'apps.features.virtual_partner.backend.service', marker: 'virtual-partner', testFixture: false }),
   'tower-assistant': Object.freeze({ folder: 'tower_assistant', backend: 'apps.features.tower_assistant.backend.service', marker: 'tower-baseline', testFixture: false,
     workerData: Object.freeze(['capture/inject.js', 'capture/observer.js', 'capture/runtime-worker.js']) }),
   'ai-workbench': Object.freeze({ sourcePath: 'plugins/ai-workbench/integrations/opendesk', testFixture: false,

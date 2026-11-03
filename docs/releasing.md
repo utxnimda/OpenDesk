@@ -42,7 +42,7 @@ App 构建前核对现有塔防包与公开原包摘要相同，通过本地临�
 
 ## 2. 公开范围以白名单为准
 
-`config/distribution.json` 是正式分发权威：`bundledModules` 表示 App 随附页签，`publicModules` 表示可独立公开页签，前者必须为后者子集。当前 `bundledModules` 只有 `tower-assistant`，`publicModules` 另含作品管理器 `nimda-workspace` 和 AI 工作台 `ai-workbench`。每次只发布实际更新并纳入当次范围的页签，不因为在白名单中就重复发布未更新模块。实际文件必须与该清单相符，不能只检查 manifest 中声明的名称。
+`config/distribution.json` 决定正式分发范围。`bundledModules` 表示 App 随附页签，目前只有 `tower-assistant`。`publicModules` 包含所有随附页签，以及可独立公开的作品管理器 `nimda-workspace`、AI 工作台 `ai-workbench` 和虚拟伙伴 `virtual-partner`。每次只发布实际更新并纳入当次范围的页签。检查实际文件与清单一致。
 
 | 内容 | Git 源码 | App Release | 独立页签 Release |
 |---|---|---|---|

@@ -76,6 +76,10 @@ SDK 保留 0.8.0 引入的可选 `surfaceEffects` 以兼容已有包。当前宿
 
 模块外层固定占据宿主主内容区的剩余空间，移除重复的外层标题和卡片边框。iframe 占满可用区域，模块 body 负责自身纵向滚动；宿主不读取或测量 iframe 的业务 DOM，也不根据内部内容高度扩张外层。公共表面样式由 SDK 提供，模块的具体业务布局仍由模块自己负责。
 
+## 可选桌宠头像
+
+**主视图桌宠头像接口。** 从本地宿主 0.20.0 起，模块可用 `createModuleBridge({ petPortraits: true })` 申请只读头像能力。握手完成后，`host.petPortraits?.list()` 返回当前启用的桌宠 ID（关闭时为 null）、可选模型和动作标识；`frame(petId, sourceId, index)` 按零起始帧号读取已登记媒体的一帧，返回尺寸、帧号、总帧数和 RGBA 像素，最长边 512 像素。`onChange(listener)` 通知重新读取默认选择，返回取消订阅函数。接口属于当前已握手的主视图，实例关闭会中止读取。旧宿主不提供该可选能力；基础协议、hostApi、个人选择和模块沙箱保持兼容。接口不接受磁盘路径或任意媒体网址。
+
 ## 可选模块第二视图
 
 正式宿主 **0.18.0**（`core.module-packages` **0.7.0**）新增通用原生透明窗口 `module-surface`，通用原生窗口链路已通过验证，实际游戏视觉叠加效果尚未验收。它是 protocol 1 / `hostApi: 1` 的可选扩展；旧包可以忽略，旧宿主不会提供 `host.surface`。塔防 0.7.0 起使用这一扩展，0.8.2 在旧 0.17.0 宿主上仍可使用基本功能，只有透明窗口入口提示需升级宿主。
@@ -96,7 +100,7 @@ SDK 保留 0.8.0 引入的可选 `surfaceEffects` 以兼容已有包。当前宿
 
 ## 分发范围与构建
 
-`config/distribution.json` 是正式分发范围的权威配置：`bundledModules` 指定 App 随附页签，`publicModules` 指定可独立公开的页签；前者必须是后者的子集。当前默认随附仅含 `tower-assistant`，可独立公开清单另含作品管理器 `nimda-workspace` 和 AI 工作台 `ai-workbench`。构建定义中的 `test-lab` 标为 `testFixture`，禁止进入这两个列表。源码开发测试归属与二进制分发范围分别管理：测试台源码保留，但产物不上传。
+`config/distribution.json` 决定正式分发范围。`bundledModules` 指定 App 随附页签，目前只有 `tower-assistant`。`publicModules` 包含全部随附页签，以及可独立公开的作品管理器 `nimda-workspace`、AI 工作台 `ai-workbench` 和虚拟伙伴 `virtual-partner`。测试台 `test-lab` 标记为 `testFixture`，其二进制仅用于本地验证。
 
 先按 README 配置 Python venv 和锁定依赖；以下命令只构建本地文件，不提交、打标签或上传：
 
@@ -104,14 +108,16 @@ SDK 保留 0.8.0 引入的可选 `surfaceEffects` 以兼容已有包。当前宿
 npm run build:modules
 npm run build:module -- tower-assistant
 npm run build:module -- ai-workbench
+npm run build:module -- virtual-partner
 npm run build:module-fixtures
 ```
 
 | 命令 | 输出 | 范围 |
 |---|---|---|
-| `build:modules` | `dist/bundled-modules/app-manifest.json` 和当前源码 manifest 对应页签包 | 本次 App 0.19.3 仅随附塔防 0.9.3；AI 0.4.4 独立构建下载，旧公开版本及本地构建须保留 |
-| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.9.3/` 下的包、manifest 与 SHA256SUMS | 本次独立正式页签，已干净构建并验证；与 App 随附包字节一致 |
+| `build:modules` | `dist/bundled-modules/app-manifest.json` 和当前源码 manifest 对应页签包 | 宿主 0.20.1 候选的默认随附页签为塔防 0.9.5 |
+| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.9.5/` 下的包、manifest 与 SHA256SUMS | 独立分发，发布前须核对与 App 随附包字节一致 |
 | `build:module -- ai-workbench` | `dist/modules/ai-workbench/0.4.4/` 下的包、manifest 与 SHA256SUMS | 独立正式 AI 页签，不随 App 默认装配；用户下载后导入选择 |
+| `build:module -- virtual-partner` | `dist/modules/virtual-partner/0.8.2/` 下的包、manifest 与 SHA256SUMS | 独立分发，由用户在功能管理中导入、选择并启用 |
 | `build:module-fixtures` | `dist/module-fixtures/fixtures.json`、测试台 baseline 及四个变体 | 仅本机开发验证，不进入 App 或独立 Release |
 
 构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；当前公开塔防为 `0.9.3`，宿主为 `0.19.3`，从 Git 主线开发且未合入本机 `0.3.0`。本次发布不改变个人选择，实际游戏透明视觉尚待验收。此前 `0.6.0`、`0.6.1`、`0.7.0`、`0.7.1`、`0.8.0`、`0.8.1` 本地包保留，不替换为不同摘要。既有公开与本地包均保留原身份和字节，0.8.1 的 dirty 来源不能冒充 0.8.2 的正式构建来源。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。

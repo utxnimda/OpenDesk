@@ -1,6 +1,6 @@
 {
   "name": "opendesk",
-  "version": "0.19.3",
+  "version": "0.20.1",
   "private": true,
   "type": "module",
   "description": "A local desktop workbench framework; business modules are added explicitly.",
@@ -14,6 +14,7 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "test:frontend": "vitest run",
     "test:worker": "node scripts/python.mjs test",
+    "test:partner": "node scripts/python.mjs test-partner",
     "test:versioning": "node --test tests/versioning/*.test.mjs",
     "test:capture": "node --test tests/capture/*.test.cjs",
     "version:check": "node scripts/version.mjs check",
