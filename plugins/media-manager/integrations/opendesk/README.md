@@ -41,12 +41,15 @@ HTTP 服务只监听回环地址，每次进程生成会话令牌，入口片段
 ## 验证
 
 ```powershell
+# 从主插件运行完整回归时会自动包含下面的适配器测试
+& ./plugins/media-manager/scripts/test.ps1
+# 只重跑适配器
 $env:MEDIA_MANAGER_TEST_APPLICATION_ROOT = (Resolve-Path plugins/media-manager).Path
 $env:OPENDESK_TEST_ROOT = (Resolve-Path .).Path
 & ./.venvs/media-manager/Scripts/python.exe -m unittest discover -s plugins/media-manager/integrations/opendesk/tests -p "test_*.py"
 node --test plugins/media-manager/integrations/opendesk/tests/*.test.cjs
 ```
 
-回归覆盖复制路径、错误提示保留、模式切换不重建 iframe、认证边界和安全关闭。历史 0.1.1 的验证记录不代表当前重构后的构建或桌面验证结果。
+回归覆盖复制路径、错误提示保留、模式切换不重建 iframe、认证边界和安全关闭。根目录锁定的 TypeScript 不可用时包装页测试明确失败，不再静默跳过。历史 0.1.1 的验证记录不代表当前重构后的构建或桌面验证结果。
 
 单元测试使用假队列/临时工作区，不操作真实媒体目录。`tests/frozen_smoke.py` 由构建器自动执行。桌面验证还应检查嵌入、弹出、关闭弹窗返回、原页面导航、图片及原生目录选择；测试结果不能由冻结构建成功代替。

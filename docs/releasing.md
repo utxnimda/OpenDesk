@@ -113,10 +113,10 @@ if (git status --porcelain) { throw 'Commit reviewed changes before the release 
 
 ## 5. 从干净提交构建与验证
 
-先按 README 配置锁定的 Node、Python、Rust、MSVC/Windows SDK 和 WebView2 环境。以下命令依次执行，并在非零退出码时停止：
+先按 README 配置锁定的 Node、宿主 Python、作品管理器独立 Python、Rust、MSVC/Windows SDK 和 WebView2 环境。以下命令依次执行，并在非零退出码时停止：
 
 ```powershell
-npm run check
+npm run check:all
 if ($LASTEXITCODE -ne 0) { throw 'Source checks failed.' }
 npm run desktop:test
 if ($LASTEXITCODE -ne 0) { throw 'Rust tests failed.' }

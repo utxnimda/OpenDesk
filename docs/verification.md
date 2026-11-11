@@ -2,6 +2,16 @@
 
 # 验证记录
 
+## 2026-11-11：补齐 Rust、作品管理器与公开插件集成门禁
+
+本轮只调整工程检查、CI 和当前状态文档，不改变应用或页签运行行为，因此保留宿主 0.20.1 与各模块版本。GitHub Actions 新增独立的 `desktop-checks` 和 `media-manager-checks`：前者先生成 Tauri 声明的 worker/随附包资源，再执行 Rust check/test；后者使用作品管理器锁文件，运行原应用及 OpenDesk 适配器的完整回归。源码 job 继续执行快速根检查和前端构建，三个 job 都使用只读仓库权限。
+
+- **根工程。** `npm run check` 通过：58 项版本/分发、291 项前端、166 项框架 worker、38 项采集、46 项 AI 前端、133 项 AI Python、70 项虚拟伙伴，共 802 项。类型检查通过；扩展后的架构扫描自测试通过，检查 173 个源码文件，包含 `apps/` 与公开清单中的两个外部插件集成。未登记的本机插件目录不会被扫描。
+- **Rust 宿主。** `npm run desktop:check` 通过；`npm run desktop:test` 为 75 项通过、零失败。
+- **作品管理器。** 新建 Git 忽略的 Python 3.12 独立环境并按 `requirements-lock.txt` 安装；最终 `npm run test:media-manager` 通过 121 个 Python 测试文件、83 个 JavaScript 语法检查文件及 43 个 JavaScript 测试文件。完整入口现自动包含适配器回归；Node 或锁定 TypeScript 缺失时明确失败，不再跳过。
+- **文档与差异。** README、架构、添加模块、发布手册和作品管理器说明已同步 0.20.1／塔防 0.9.5／虚拟伙伴 0.8.2、实际产物路径和检查命令；`git diff --check` 通过。
+- **未验证。** 新工作流尚未在远端 GitHub Actions 或干净 Python 3.13.9 runner 上执行；本轮未重建模块/App、未运行桌面 smoke、安装器或真实业务交互。未读取或修改既有未跟踪目录 `plugins/pocket-port/`，没有 Git 提交、推送、标签或发布。
+
 ## 2026-11-03 发布结果 · OpenDesk 0.20.1、塔防 0.9.5、虚拟伙伴 0.8.2
 
 [OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。

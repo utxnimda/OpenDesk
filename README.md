@@ -32,7 +32,7 @@ OpenDesk 0.20.1 为主视图页签提供可选的桌宠头像接口，虚拟伙�
 
 原 Nimda 的当前代码位于 [`plugins/media-manager`](plugins/media-manager/README.md)，稳定模块 ID 继续使用 `nimda-workspace`，避免改名丢失旧设置。代码、测试、空配置模板和发布元数据由 OpenDesk Git 管理；SVN 数据在 OpenDesc 下按插件分目录，作品管理器使用 OpenDesc/media-manager；`workspaces/media-manager` 的真实资料与配置由独立 SVN 工作副本管理，凭据、日志和缓存不提交。
 
-本机工程入口为 `E:\OpenDesk`。 双击根目录 `OpenDesk.lnk` 启动工具台，`plugins/media-manager/作品管理器.lnk` 启动独立窗口；两者连接同一个工作区，单实例锁避免同时写入。宿主放在 `run/OpenDesk`，其 `opendesk.portable.json` 指向 `../../runtime`；导入的插件运行包、版本选择和设置集中到 `runtime`。公开产物仍输出到 `dist`，不能含此本机标记、运行状态或私人资料。WebView2 缓存沿用系统目录。目录与迁移边界见[统一工程说明](docs/media-manager.md)。
+统一工程入口是实际检出的 OpenDesk 根目录，本机快捷方式按该路径创建，不把某台机器的盘符作为公开约定。双击根目录 `OpenDesk.lnk` 启动工具台，`plugins/media-manager/作品管理器.lnk` 启动独立窗口；两者连接同一个工作区，单实例锁避免同时写入。宿主放在 `run/OpenDesk`，其 `opendesk.portable.json` 指向 `../../runtime`；导入的插件运行包、版本选择和设置集中到 `runtime`。公开产物仍输出到 `dist`，不能含此本机标记、运行状态或私人资料。WebView2 缓存沿用系统目录。目录与迁移边界见[统一工程说明](docs/media-manager.md)。
 
 ```powershell
 # 在 OpenDesk 根目录构建独立插件；依赖初始化见插件 README
@@ -209,10 +209,12 @@ npm run dev
 | `npm run dev:web` | 127.0.0.1:1420 浏览器预览，明确不提供桌面能力 |
 | `npm run build:modules` | 仅按分发清单构建 App 随附页签与默认清单，当前为塔防助手 |
 | `npm run build:module-fixtures` | 构建本地测试台 baseline 及四个变体，均不公开分发 |
-| `npm run build:module -- tower-assistant` | 按当前 manifest 独立构建塔防页签至 `dist/modules/tower-assistant/0.8.2/` |
+| `npm run build:module -- tower-assistant` | 按当前 manifest 独立构建塔防页签至 `dist/modules/tower-assistant/0.9.5/` |
 | `npm run release:stage -- app` | 校验干净提交与构建清单，本地整理 App 发布附件 |
 | `npm run release:stage -- module tower-assistant` | 本地整理塔防页签的独立版本发布附件 |
-| `npm run check` | 版本一致性、类型、架构边界、前端与 Python 子进程测试 |
+| `npm run check` | 宿主与内置页签的版本、类型、公开插件集成边界及自动化测试 |
+| `npm run test:media-manager` | 使用独立锁定环境运行作品管理器及其 OpenDesk 适配器回归 |
+| `npm run check:all` | 串行执行 `check` 与作品管理器完整回归；需先准备两套 Python 环境 |
 | `npm run version:check` | 检查版本历史、各构建版本与生成的 CHANGELOG 一致 |
 | `npm run version:prepare -- --file .local/next-release.json` | 校验并加入一次更新草稿，同步派生文件 |
 | `npm run version:sync` | 从版本清单同步构建版本并生成 CHANGELOG |
@@ -235,7 +237,7 @@ npm run dev
 
 首次运行 Rust 检查前需要 `npm run build:worker` 和 `npm run build:modules`，因为桌面构建描述引用 worker 与自带包资源。首次取得仓库应使用已有 Cargo.lock；不要在正常检查时主动更新锁文件。
 
-生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携 ZIP 应完整解压后启动，不能只复制 EXE。当前源码安装器为 `apps/framework/desktop/src-tauri/target/release/bundle/nsis/OpenDesk_0.19.3_x64-setup.exe`，App 及两个更新页签均已公开发布并下载核验。生成安装器本身不代表已安装或已签名；Git 推送不会自动上传 Release 附件。
+生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携 ZIP 应完整解压后启动，不能只复制 EXE。当前源码安装器为 `apps/framework/desktop/src-tauri/target/release/bundle/nsis/OpenDesk_0.20.1_x64-setup.exe`，App 及两个更新页签均已公开发布并下载核验。生成安装器本身不代表已安装或已签名；Git 推送不会自动上传 Release 附件。
 
 便携目录重建时若存在不属于本次产物清单的文件或目录，构建会在复制前拒绝，避免旧依赖或个人文件混入新包。请将旧输出移走后重新生成，或先检查并手工清理；脚本不自动删除未知内容。
 
@@ -303,7 +305,7 @@ docs/                             工程规范、架构和验证
 3. 更新 README 的功能说明、版本表及受影响的使用文档，执行 `npm run check` 和本次改动所需的构建或桌面验证。
 4. 获得当次 Git 授权后提交源码与文档；用 `npm run version:tags` 查看应创建的标签，推送后检查 [GitHub Actions](https://github.com/utxnimda/OpenDesk/actions/workflows/check.yml) 结果。
 
-仅补充文档、没有功能行为变化时，使用 `docs:` 提交，保留现有应用和功能版本，不重复创建版本标签。CI 当前覆盖版本、类型、架构边界、自动化测试及前端构建；桌面与安装验收另见验证记录。
+仅补充文档、没有功能行为变化时，使用 `docs:` 提交，保留现有应用和功能版本，不重复创建版本标签。CI 分为源码检查、Rust 宿主检查和作品管理器回归：覆盖版本、类型、公开插件集成边界、自动化测试、前端构建、Rust 编译/测试及作品管理器的 Python/JavaScript 测试；原生 smoke、安装和人工交互验收仍另见验证记录。
 
 作品管理器按本次授权迁入，旧 Nimda Git 历史不合并，私人数据不随源码发布。具体已执行检查和未验证项目见 [验证记录](docs/verification.md)，不要用一次编译成功代替桌面或安装验收。
 

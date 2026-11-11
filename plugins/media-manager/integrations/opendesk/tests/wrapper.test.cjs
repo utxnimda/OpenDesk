@@ -12,8 +12,9 @@ try {
   typescript = require(require.resolve('typescript', {
     paths: hostRoot ? [path.resolve(hostRoot)] : [__dirname, process.cwd()],
   }));
-} catch (_) {}
-const available = { skip: typescript ? false : 'Set OPENDESK_TEST_ROOT to an OpenDesk checkout with TypeScript installed.' };
+} catch (error) {
+  throw new Error('Set OPENDESK_TEST_ROOT to an OpenDesk checkout with locked TypeScript installed.', { cause: error });
+}
 const source = fs.readFileSync(path.join(__dirname, '../frontend/main.ts'), 'utf8');
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
@@ -109,7 +110,7 @@ async function fixture(configured = false) {
   };
 }
 
-test('configuration errors survive successful status polling until the user edits or retries', available, async () => {
+test('configuration errors survive successful status polling until the user edits or retries', async () => {
   const f = await fixture();
   const workspace = f.elements.get('workspace'), error = f.elements.get('error');
   workspace.value = 'C:/synthetic-workspace';
@@ -135,7 +136,7 @@ test('configuration errors survive successful status polling until the user edit
   assert.equal(f.frames.length, 1);
 });
 
-test('presentation errors survive status polling and a successful retry clears them', available, async () => {
+test('presentation errors survive status polling and a successful retry clears them', async () => {
   const f = await fixture(true), error = f.elements.get('error');
   f.failPresentation('The desktop window is still starting.');
   await f.elements.get('popup').dispatch('click');
@@ -150,7 +151,7 @@ test('presentation errors survive status polling and a successful retry clears t
   assert.equal(f.elements.get('detached').hidden, false);
 });
 
-test('popup and embedded transitions retain one iframe, its document and unsaved input', available, async () => {
+test('popup and embedded transitions retain one iframe, its document and unsaved input', async () => {
   const f = await fixture(true), viewport = f.elements.get('viewport');
   const frame = f.frames[0], document = frame.contentDocument;
   document.unsavedInput = 'Unsaved synthetic draft';

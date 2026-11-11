@@ -82,13 +82,13 @@ npm run build:module -- media-manager
 ## 验证
 
 ```powershell
-# 自动建立临时空工作区；不读取 SVN 业务库
+# 完整回归：自动建立临时空工作区，并包含 OpenDesk 适配器；不读取 SVN 业务库
 & ./plugins/media-manager/scripts/test.ps1
-# 适配器回归，不启动真实工作区
+# 只重跑适配器，不启动真实工作区
 $env:MEDIA_MANAGER_TEST_APPLICATION_ROOT = (Resolve-Path ./plugins/media-manager).Path
 $env:OPENDESK_TEST_ROOT = (Resolve-Path .).Path
 & ./.venvs/media-manager/Scripts/python.exe -m unittest discover -s ./plugins/media-manager/integrations/opendesk/tests -p 'test_*.py'
 node --test ./plugins/media-manager/integrations/opendesk/tests/*.test.cjs
 ```
 
-HTTP 契约测试保留迁移前 94 条路由和业务静态资源挂载；页面、目录选择、评分窗口和完整桌面行为仍需单独交互验证。基准入口 `scripts/benchmark.ps1 -WorkspaceRoot <绝对路径>` 会读取指定业务库，只在明确选择该工作区时执行。文档中的构建命令表示可用入口，不表示当前源码已经完成打包或发布。
+`test.ps1` 要求根目录已安装锁定的 Node 依赖；适配器 TypeScript 不可用时明确失败，不再静默跳过。HTTP 契约测试保留迁移前 94 条路由和业务静态资源挂载；页面、目录选择、评分窗口和完整桌面行为仍需单独交互验证。基准入口 `scripts/benchmark.ps1 -WorkspaceRoot <绝对路径>` 会读取指定业务库，只在明确选择该工作区时执行。文档中的构建命令表示可用入口，不表示当前源码已经完成打包或发布。

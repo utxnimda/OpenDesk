@@ -23,6 +23,8 @@
     "version:tags": "node scripts/version.mjs tags",
     "test:architecture": "node scripts/check-boundaries.mjs",
     "check": "node scripts/check.mjs",
+    "test:media-manager": "powershell -NoProfile -ExecutionPolicy Bypass -File plugins/media-manager/scripts/test.ps1",
+    "check:all": "npm run check && npm run test:media-manager",
     "build:web": "npm run version:check && vite build --config vite.config.ts",
     "build:worker": "node scripts/python.mjs bundle",
     "build:modules": "node scripts/module-pack.mjs bundled",

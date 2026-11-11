@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import ts from 'typescript';
 import { parse as parseVue } from 'vue/compiler-sfc';
+import { moduleSourceDirectory, readDistribution } from './distribution.mjs';
 import { pythonExecutable } from './environment.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -100,14 +101,17 @@ function literalStrings(node) {
   return undefined;
 }
 
-function inspectScript(file, text, offset = 0) {
+function inspectScript(file, text, offset = 0, frontend = true) {
   const ast = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const line = (node) => offset + ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
   for (const issue of ast.parseDiagnostics) report(file, offset + ast.getLineAndCharacterOfPosition(issue.start ?? 0).line + 1, 'parse', ts.flattenDiagnosticMessageText(issue.messageText, ' '));
   const addImport = (node, argument) => {
     const values = literalStrings(argument);
-    if (!values) report(file, line(node), 'static-import', 'Use a literal import/glob path so module boundaries can be checked.');
-    else for (const value of values) dependency(file, line(node), value, true);
+    if (!values) {
+      if (frontend) report(file, line(node), 'static-import', 'Use a literal import/glob path so module boundaries can be checked.');
+      return;
+    }
+    for (const value of values) dependency(file, line(node), value, frontend);
   };
   function visit(node) {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) addImport(node, node.moduleSpecifier);
@@ -122,7 +126,7 @@ function inspectScript(file, text, offset = 0) {
       if (['invoke', 'request', 'callWorker'].includes(name) && node.arguments[0] && ts.isStringLiteralLike(node.arguments[0]) && genericExecution.test(node.arguments[0].text)) {
         report(file, line(node), 'execution-capability', 'Expose a specific validated operation instead of a general shell/exec command.');
       }
-      if (['assign', 'defineProperty', 'defineProperties'].includes(name) && memberRoot(callee) === 'Object' && isGlobal(node.arguments[0])) {
+      if (frontend && ['assign', 'defineProperty', 'defineProperties'].includes(name) && memberRoot(callee) === 'Object' && isGlobal(node.arguments[0])) {
         report(file, line(node), 'global-registry', 'Do not publish application state or registries on window/globalThis.');
       }
       if ((name === 'eval' && ts.isIdentifier(callee)) || name === 'Function' && ts.isIdentifier(callee)) {
@@ -130,7 +134,7 @@ function inspectScript(file, text, offset = 0) {
       }
     }
     if (ts.isNewExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'Function') report(file, line(node), 'dynamic-code', 'Dynamic code execution is outside the module contract.');
-    if (ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment && isGlobal(node.left)) {
+    if (frontend && ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment && isGlobal(node.left)) {
       report(file, line(node), 'global-registry', 'Do not assign application state or registries to window/globalThis.');
     }
     ts.forEachChild(node, visit);
@@ -138,13 +142,13 @@ function inspectScript(file, text, offset = 0) {
   visit(ast);
 }
 
-function inspectFrontend(file, text) {
-  if (!file.endsWith('.vue')) return inspectScript(file, text);
+function inspectFrontend(file, text, frontend = true) {
+  if (!file.endsWith('.vue')) return inspectScript(file, text, 0, frontend);
   const parsed = parseVue(text, { filename: file });
   for (const error of parsed.errors) report(file, error.loc?.start.line ?? 1, 'vue-parse', typeof error === 'string' ? error : error.message);
   for (const block of [parsed.descriptor.script, parsed.descriptor.scriptSetup].filter(Boolean)) {
-    if (block.src) dependency(file, block.loc.start.line, block.src, true);
-    else inspectScript(file, block.content, block.loc.start.line - 1);
+    if (block.src) dependency(file, block.loc.start.line, block.src, frontend);
+    else inspectScript(file, block.content, block.loc.start.line - 1, frontend);
   }
 }
 
@@ -311,6 +315,8 @@ function selfTest() {
   expect(`invoke('execute_command', {});`, 'execution-capability');
   expect(`request();`, undefined);
   expect(`import B from '../../beta/frontend/module';`, 'feature-dependency', inspectScript, 'apps/features/alpha/frontend/module.ts');
+  const inspectBuildScript = (file, source) => inspectScript(file, source, 0, false);
+  expect(`import { spawnSync } from 'node:child_process';\nconst loaded = import(resolvePath);`, undefined, inspectBuildScript, 'plugins/example/integrations/opendesk/build.mjs');
   expect(`<template><p>window.registry = {}</p></template><script setup lang="ts">// window.registry = {}\nconst label = 'hello';</script>`, undefined, inspectFrontend, file.replace('.ts', '.vue'));
   expect(`/* #[tauri::command] fn exec() {} /* nested */ */\nconst NOTE: &str = r#"#[tauri::command] fn exec() {}"#;`, undefined, inspectRust, 'apps/framework/desktop/src-tauri/src/fixture.rs');
   expect(`#[tauri::command]\nasync fn exec(command: String) {}`, 'execution-capability', inspectRust, 'apps/framework/desktop/src-tauri/src/fixture.rs');
@@ -322,13 +328,26 @@ function selfTest() {
 try {
   if (process.argv.includes('--self-test')) selfTest();
   checkMetadata();
-  const files = filesBelow(resolve(root, 'apps'));
+  const distribution = readDistribution(root);
+  const pluginIntegrations = distribution.publicModules
+    .map((id) => moduleSourceDirectory(root, id))
+    .filter((path) => rel(path).startsWith('plugins/'));
+  const files = [...new Set([
+    ...filesBelow(resolve(root, 'apps')),
+    ...pluginIntegrations.flatMap(filesBelow),
+  ])];
   const python = [];
   let scanned = 0;
   for (const path of files) {
     const file = rel(path);
     const extension = extname(path);
-    if (['.ts', '.tsx', '.js', '.jsx', '.mjs', '.vue'].includes(extension)) { inspectFrontend(file, readFileSync(path, 'utf8')); scanned++; }
+    // A plugin's public module wrapper follows the host contract. Other integration
+    // scripts may adapt an explicitly legacy app whose private globals are not host APIs.
+    const frontend = !file.startsWith('plugins/') || file.includes('/frontend/');
+    if (['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.vue'].includes(extension)) {
+      inspectFrontend(file, readFileSync(path, 'utf8'), frontend);
+      scanned++;
+    }
     else if (extension === '.rs') { inspectRust(file, readFileSync(path, 'utf8')); scanned++; }
     else if (extension === '.py') { python.push(path); scanned++; }
   }
@@ -336,8 +355,8 @@ try {
   if (errors.length) {
     console.error(errors.join('\n'));
     process.exitCode = 1;
-  } else console.log(`Architecture boundaries passed (${scanned} source files; documents, settings schema and capabilities checked).`);
-  console.log('Coverage: static source imports, direct browser-global writes and named execution bridges. Module ID uniqueness is covered by frontend tests.');
+  } else console.log(`Architecture boundaries passed (${scanned} source files; apps plus ${pluginIntegrations.length} public plugin integrations; documents, settings schema and capabilities checked).`);
+  console.log('Coverage: static imports and named execution bridges in apps/public plugin integrations, plus direct browser-global writes in host and module-wrapper frontends. Module ID uniqueness is covered by frontend tests.');
   console.log('Limits: no alias/data-flow analysis, Rust macro expansion, dependency internals, generated code, sandbox guarantee or runtime lifecycle proof. Review new aliases and capability contracts explicitly.');
 } catch (error) {
   console.error(`Boundary check could not complete: ${error.message}`);

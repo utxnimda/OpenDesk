@@ -32,7 +32,7 @@
 
 构建组合显式导入模块注册入口并注册烘焙的 `module.identity`。每包 worker 及依赖一同冻结，不依赖使用者安装 Python。
 
-模块定义在 `scripts/distribution.mjs`，构建由 `scripts/module-pack.mjs` 执行。新增正式模块先增加受审阅的源码目录/后台入口，再明确加入 `config/distribution.json` 的 `publicModules`；需要随 App 分发时另加入 `bundledModules`。当前正式源码包含塔防助手与 `plugins/media-manager` 的作品管理器；后者通过明确的外部 builder 接入主仓构建。测试台标为 `testFixture`，源码用于开发验证，产物禁止进入两份公开列表。不要从本机导入、已安装或其他分支目录扫描待发布模块。
+模块定义在 `scripts/distribution.mjs`，构建由 `scripts/module-pack.mjs` 执行。新增正式模块先增加受审阅的源码目录/后台入口，再明确加入 `config/distribution.json` 的 `publicModules`；需要随 App 分发时另加入 `bundledModules`。当前公开源码清单包含塔防助手、虚拟伙伴、AI 工作台与作品管理器；后两者分别通过 `plugins/ai-workbench` 和 `plugins/media-manager` 的明确外部 builder 接入主仓构建。测试台标为 `testFixture`，源码用于开发验证，产物禁止进入两份公开列表。不要从本机导入、已安装或其他分支目录扫描待发布模块。
 
 宠物资源扩展属于宿主组合，不遵循业务页签包注册流程。通用渲染器消费 `CompanionCatalog`，当前组合根注册阿宝 `traveler-01` 和阿沐 `amu-01`。模型需要稳定 `id`、必需的 `still` 与 `idle`；`walk`、`wave`、`sleep` 是可选独立资源，没有素材或使用重复路径时不显示入口。两只各装配 `loop.png` 与 `still.png`；阿沐完整动作仅保存在本机产物目录，不重复加入运行时。新增素材须按 [宠物资源说明](companion-assets.md) 记录来源、帧区间、帧率、摘要和授权。当前处理后角色按用户 2026-10-22 的明确公开交付请求纳入源码与 App，原视频不上传；这不为未来新素材产生自动授权，也不附加未提供的第三方许可。
 
@@ -46,7 +46,7 @@
 
 验证正常导入、新 ID、同 ID 两版本、前端/worker 身份一致、不兼容原件保留且正常页签继续可用、同版本异摘要拒绝。后台检查非法参数和退出。
 
-源码、类型、构建、包生成、桌面导入和真实切换分别记录。构建包不等于发布；Git 提交、推送、打标签和对外上传继续遵守本次用户明确授权。
+源码、类型、构建、包生成、桌面导入和真实切换分别记录。公开清单中的外部插件 `integrations/opendesk` 会进入根架构检查，插件内部业务仍运行自己的锁定回归；两者不能互相代替。构建包不等于发布；Git 提交、推送、打标签和对外上传继续遵守本次用户明确授权。
 
 正式模块每次新增/更新后按自己的 ID/版本独立构建和发布下载。当前塔防示例：
 
@@ -55,6 +55,6 @@ npm run build:module -- tower-assistant
 npm run release:stage -- module tower-assistant
 ```
 
-前者输出 `dist/modules/tower-assistant/0.1.7/`，后者输出 `dist/releases/modules/tower-assistant/0.1.7/`。暂存要求已提交的干净源码、本仓库来源、当前开发历史内的提交、匹配 manifest 与摘要，并拒绝已有发布版本目录。它不执行提交、打标签或上传；发布时使用 `modules/tower-assistant/v0.1.7` 并维护 [下载索引](downloads.md)。
+当前 manifest 下，前者输出 `dist/modules/tower-assistant/0.9.5/`，后者输出 `dist/releases/modules/tower-assistant/0.9.5/`。暂存要求已提交的干净源码、本仓库来源、当前开发历史内的提交、匹配 manifest 与摘要，并拒绝已有发布版本目录。它不执行提交、打标签或上传；发布时使用 `modules/tower-assistant/v0.9.5` 并维护 [下载索引](downloads.md)。
 
-App 本轮为 0.12.0，仅随附塔防 0.1.7。测试台 baseline 与四个变体由 `npm run build:module-fixtures` 单独生成，在独立 smoke 根预置 baseline 后验证，全部留在本地；已导入用户配置不会因此被卸载或覆盖。发布附件只能来自审核后的正式暂存目录，不能包含 fixture、imports/installed、缓存或私有数据。
+当前 App 为 0.20.1，仅随附塔防 0.9.5。测试台 baseline 与四个变体由 `npm run build:module-fixtures` 单独生成，在独立 smoke 根预置 baseline 后验证，全部留在本地；已导入用户配置不会因此被卸载或覆盖。发布附件只能来自审核后的正式暂存目录，不能包含 fixture、imports/installed、缓存或私有数据。

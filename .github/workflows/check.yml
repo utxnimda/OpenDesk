@@ -60,3 +60,71 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build frontend
         run: npm run build:web
+
+  desktop-checks:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24.14.1'
+          cache: npm
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.9'
+          architecture: x64
+      - name: Install locked build dependencies
+        shell: pwsh
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r packaging/requirements-build.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "OPENDESK_PYTHON=$((Get-Command python).Source)" >> $env:GITHUB_ENV
+      - name: Prepare declared desktop resources
+        shell: pwsh
+        run: |
+          npm run build:worker
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build:modules
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Check and test Rust host
+        shell: pwsh
+        run: |
+          npm run desktop:check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run desktop:test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  media-manager-checks:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24.14.1'
+          cache: npm
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.13.9'
+          architecture: x64
+      - name: Install media manager dependencies
+        shell: pwsh
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r plugins/media-manager/packaging/requirements-lock.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install --no-deps ./plugins/media-manager/apps/framework/backend
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Test media manager and OpenDesk adapter
+        shell: pwsh
+        run: |
+          & ./plugins/media-manager/scripts/test.ps1 -Python (Get-Command python).Source
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
