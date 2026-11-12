@@ -74,7 +74,10 @@ class CatalogRepositoryTest(unittest.TestCase):
             root = Path(td)
             source = root / "works.yaml"
             source.write_text("[]", encoding="utf-8")
-            with patch("collection_detail.catalog_repository._catalog_yaml_paths", return_value=[source]) as membership:
+            with patch(
+                "collection_detail.catalog_repository._catalog_yaml_paths",
+                return_value=[source.resolve()],
+            ) as membership:
                 repository = CatalogRepository(_settings(root, source))
                 first = repository.read_source(source)
                 source.write_text("- attributes: []", encoding="utf-8")
