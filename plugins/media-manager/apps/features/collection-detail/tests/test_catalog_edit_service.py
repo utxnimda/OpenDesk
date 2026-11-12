@@ -312,7 +312,11 @@ class CatalogEditServiceTest(unittest.TestCase):
                             self.assertEqual(result["issues"], [])
                             self.assertEqual(result["records"][0]["ref"]["yaml_source_rel"], target.name)
                             writes = [(Path(item["path"]), item["history_name"]) for item in result["writes"]]
-                        self.assertEqual([path for path, _history in writes], [target])
+                        self.assertEqual(len(writes), 1)
+                        self.assertTrue(
+                            writes[0][0].samefile(target),
+                            f"Write target {writes[0][0]} must identify {target}",
+                        )
                         self.assertEqual(bool(writes[0][1]), existing)
                         if existing:
                             self.assertEqual((save.history_catalog_root(settings) / writes[0][1]).read_text(encoding="utf-8"), "[]\n")
