@@ -21,11 +21,22 @@ $testFiles = @($testRoots | ForEach-Object {
     Get-ChildItem -LiteralPath $_ -Recurse -File -Filter "test_*.py"
 }) | Sort-Object FullName
 
-$temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+# Use the same canonical root for fixtures and production paths on Windows.
+$temporaryRootJson = & $Python -c 'import json, tempfile; from pathlib import Path; print(json.dumps(dict(root=str(Path(tempfile.gettempdir()).resolve(strict=True)))))'
+if ($LASTEXITCODE -ne 0 -or -not $temporaryRootJson) {
+    throw "Could not resolve the temporary root using the test Python."
+}
+$temporaryRoot = (ConvertFrom-Json -InputObject ($temporaryRootJson -join "`n")).root
+if (-not $temporaryRoot -or -not (Test-Path -LiteralPath $temporaryRoot -PathType Container)) {
+    throw "The resolved temporary root is not a directory."
+}
 $testWorkspace = Join-Path $temporaryRoot ("media-manager-tests-" + [Guid]::NewGuid().ToString("N"))
 $testEnvironment = @{
     MEDIA_MANAGER_TEST_APPLICATION_ROOT = $repoRoot
     OPENDESK_TEST_ROOT = $projectRoot
+    TEMP = $temporaryRoot
+    TMP = $temporaryRoot
+    TMPDIR = $temporaryRoot
 }
 $previousTestEnvironment = @{}
 try {
