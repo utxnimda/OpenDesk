@@ -16,6 +16,7 @@ export const UI_STYLE_PRESETS: readonly UIStylePreset[] = [
   { id: 'anime', label: '二次元', caption: 'DAYDREAM', description: '柔彩星光、顶部导航与圆润面板', theme: 'sakura' },
   { id: 'glass', label: '深海透明', caption: 'ABYSS', description: '青色细边、半透明分组与紧凑导航', theme: 'dark' },
   { id: 'mint', label: '薄荷奶油', caption: 'MINT', description: '轻柔粉薄荷、奶油圆卡与舒展留白', theme: 'light' },
+  { id: 'report', label: '数据简报', caption: 'REPORT', description: '暖灰纸面、黑色标签与橙色细节', theme: 'sand' },
 ];
 
 export function uiStylePreset(style: UIStyle): UIStylePreset {

@@ -2,6 +2,33 @@
 
 # 验证记录
 
+## 2026-11-23：OpenDesk 0.21.0 本地打包与 AI 工作台 0.5.1
+
+- 本地重建 App 安装器和便携目录。便携 ZIP 核对了 58 个文件的 SHA-256，安装器与构建收据一致。App 只随附塔防助手 0.10.0，与独立页签包的摘要相同。
+- `npm run check` 的版本、类型、架构与 817 项自动化测试通过，Rust release 测试 75 项通过。便携 EXE 在隔离数据根通过了前端启动、IPC、设置往返、worker 重启和停止检查。
+- AI 工作台 0.5.1 修复 Cursor CLI 输入失败后未关闭管道的问题，并收窄 CLI 与 ACP 测试中刻意使用短限时的场景。已独立打包并通过冻结 worker 的身份、HTTP 鉴权、静态页面和退出排空检查。原 0.5.0 本地包保留。
+- 本轮只验证本地开发包。未执行安装器安装与卸载、实际游戏视觉或真实 Cursor 模型请求。
+
+## 2026-11-16：数据简报 UI 风格（本地 0.21.0）
+
+按用户参考图新增 `report`「数据简报」，建议使用 `sand` 暖砂岩配色。采用暖灰纸面、近黑文字、橙色强调、顶部横向标签、低圆角控件和细线表格。设置预览、保存、Rust 枚举及 SDK 外观消息走既有接口，其他七种风格继续可选；配色保持独立。
+
+- 工程 `npm run check` 通过，共 817 项测试，包含 294 项前端及 46 项 AI 前端测试；版本、类型和架构检查通过。Rust `cargo test --release --locked` 的 75 项测试通过，包含新枚举的独立配色往返。
+- 生产前端在独立 Chrome 中检查 1440×1000、1180×800、860×620，工作台、功能管理、诊断和版本页的布局共 12 项检查通过，无页面横向溢出；另验证深色配色继续独立生效。预览、截图与检查记录在 `.local/report-style/`。
+- `npm run build` 成功生成 App 0.21.0 安装器与便携目录，默认仅随附塔防 0.10.0。AI 0.5.0 独立包构建和冻结 worker 检查通过。塔防独立包与随附包复用同一产物。旧构建目录已移入本机 `.local/report-previous-outputs-*` 保留。
+- 标准核心桌面 smoke 通过。另在独立框架数据根预置 `uiStyle:report`、`theme:sand` 后运行打包 EXE，前端就绪、IPC、设置落盘往返与 worker 启停通过，保存结果仍为 report/sand。此检查没有切换用户实例的风格。
+- 本轮未执行安装器安装/卸载、实际游戏视觉或用户既有插件升级。包为 dirty 源码的本地开发产物；没有 Git 提交、推送或远端发布。
+
+## 2026-11-16：AI 工作台 0.4.6 本地 CLI 流式接入
+
+Cursor 新模型目录改为读取 `agent models`，完整模型 ID 使用普通 CLI 的 Ask/print/stream-json 路径，旧参数化会话继续使用 ACP。复用现有进程所有权、聊天事件和会话存储；完整提示词经 stdin 发送。AI 页签版本为 0.4.6，宿主仍为 0.20.1。
+
+- `npm run test:ai` 通过类型检查、46 项前端及 145 项 Python 测试。新增真实管道 fixture 验证模型目录、中文增量和重复 flush、长输入、会话继续、断流、异常退出、取消与阻塞输入回收；服务链路测试覆盖两轮对话保存及 nativeThreadId 继续。
+- `npm run check` 通过，共 814 项自动化测试；版本、类型和架构检查通过，`git diff --check` 通过。
+- `npm run build:module -- ai-workbench` 生成 `dist/modules/ai-workbench/0.4.6/ai-workbench-0.4.6.ndpkg`，SHA-256 为 `c92adff05706bd74075100c2696533cf53aa876f3ed2b731d61e76c395bc54fb`，来源如实标为 dirty。冻结 worker 的身份、HTTP 鉴权、静态页面与关闭排空检查通过。
+- 使用冻结 worker、隔离测试数据根及正常 HTTP API 读取本机真实 Cursor 目录，返回 280 个选项，含 133 个 Claude 选项。选择 `claude-opus-5-5-high-fast` 后，真实请求返回 `CURSOR_WORKSPACE_UNTRUSTED`，任务为 failed，正常关闭且无活动任务。工作区信任需用户在官方 CLI 确认；此前同账号的普通 CLI 请求另遇团队用量上限。
+- 真实 Claude 完整回答、当前用户实例导入/切换及原生聊天视觉未验收。已有 0.4.5 本地包保留。没有 Git 提交、推送或远端发布。
+
 ## 2026-11-11：补齐 Rust、作品管理器与公开插件集成门禁
 
 本轮只调整工程检查、CI 和当前状态文档，不改变应用或页签运行行为，因此保留宿主 0.20.1 与各模块版本。GitHub Actions 新增独立的 `desktop-checks` 和 `media-manager-checks`：前者先生成 Tauri 声明的 worker/随附包资源，再执行 Rust check/test；后者使用作品管理器锁文件，运行原应用及 OpenDesk 适配器的完整回归。源码 job 继续执行快速根检查和前端构建，三个 job 都使用只读仓库权限。

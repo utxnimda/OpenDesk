@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { APPEARANCE_ATTRIBUTES, applyAppearance, observeHostAppearance, parseAppearanceMessage,
   readAppearanceFragment, readHostAppearance, writeAppearanceFragment, type WorkbenchAppearance } from '../shared/appearance';
 
-const styles = ['simple','codex','cursor','web','anime','glass','mint'] as const;
+const styles = ['simple','codex','cursor','web','anime','glass','mint','report'] as const;
 const themes = ['light','dark','sakura','ocean','forest','sand','graphite'] as const;
 const solid = {material:'solid',transparency:100,motion:'off',transparentBackground:false} as const;
 function element(theme='light', uiStyle='simple') {

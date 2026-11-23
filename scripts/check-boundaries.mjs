@@ -273,7 +273,7 @@ function checkMetadata() {
   const defaultsPath = 'config/framework/defaults.json';
   try {
     const value = JSON.parse(readFileSync(resolve(root, defaultsPath), 'utf8'));
-    if (!value || Array.isArray(value) || Object.keys(value).sort().join(',') !== 'closeToTray,personalization,schemaVersion,theme,uiStyle' || value.schemaVersion !== 1 || !['system', 'light', 'dark', 'sakura', 'ocean', 'forest', 'sand', 'graphite'].includes(value.theme) || !['simple', 'codex', 'cursor', 'web', 'anime', 'glass', 'mint'].includes(value.uiStyle) || typeof value.closeToTray !== 'boolean') {
+    if (!value || Array.isArray(value) || Object.keys(value).sort().join(',') !== 'closeToTray,personalization,schemaVersion,theme,uiStyle' || value.schemaVersion !== 1 || !['system', 'light', 'dark', 'sakura', 'ocean', 'forest', 'sand', 'graphite'].includes(value.theme) || !['simple', 'codex', 'cursor', 'web', 'anime', 'glass', 'mint', 'report'].includes(value.uiStyle) || typeof value.closeToTray !== 'boolean') {
       report(defaultsPath, 1, 'settings-schema', 'Expected schema v1 with schemaVersion, theme, uiStyle, closeToTray and personalization. Update the contract intentionally when the schema changes.');
     }
     const p = value.personalization;

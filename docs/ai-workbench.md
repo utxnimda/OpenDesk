@@ -6,10 +6,10 @@ AI 是独立 `ai-workbench` 页签包，使用 hostApi 2 的 Web App 机制。�
 
 - OpenAI Responses 和 Chat Completions 兼容接口：连接管理、动态 `/models`、手填模型、流式回答、历史会话、停止、错误处理。
 - Codex App Server：发现模型、新建与继续本插件保存的线程、增量输出、审批、中断和拥有进程回收。默认 `read-only` / `on-request`，不启动桌面 Codex、不接管其任意已有会话。
-- Cursor Agent：通过官方 ACP 连接独立 CLI，动态模型目录、创建和恢复本插件保存的会话、Ask 模式、流式输出、一次性审批与取消。不把 Cursor 编辑器启动器当作 Agent，也不通过编辑器 UI 输入。
+- Cursor Agent：模型列表读取官方 `agent models`。Claude 等完整模型 ID 通过普通 CLI 的 `--model`、Ask 模式和 `stream-json` 接入，支持流式回答、继续本插件保存的会话和取消。旧参数化会话继续通过 ACP 使用一次性审批。
 - Codex 工作区：用户显式读取本机 app-server 的 `project/list`，显示已登记项目及目录可用性，选择后用于新对话 CWD。该实验性接口以已安装 CLI 能力为准，不支持时提示更新或手填，不扫描私有数据库或导入旧聊天。
 - 模型以完整下拉目录展示，另保留手填入口；已有会话空闲时可以切换模型。后端拒绝运行中修改，只有确认保存后才更新显示；网络结果不明时核对权威会话，无法确认则暂停发送。
-- 每个本地模型的推理、速度、上下文等参数来自该模型真实目录，不按名称猜能力。Codex 支持目录提供的 effort 和速度档；Cursor 使用官方参数化 ACP 设置并核对服务端实际值。API `/models` 没有提供同等参数契约时不显示虚构的通用选项。
+- 每个本地模型的推理、速度、上下文等参数来自该模型真实目录。Codex 支持目录提供的 effort 和速度档；Cursor 新选项保留 `agent models` 返回的完整 ID，推理强度、Fast 等通过对应的固定模型版本选择。旧 ACP 参数化会话保留参数校验。API `/models` 没有提供同等参数契约时不显示虚构的通用选项。
 - 左侧按 Agent 类型 → 工作区 → OpenDesk 已有对话组织，合并同类型同目录；自动检测和手工连接都参与。工作区可以从原 App/Agent 登记目录读取，或仅添加到 OpenDesk；原软件聊天不会自动导入。
 - API 会话可调用经宿主授权的只读插件工具。正式塔防 0.9.3 延续 0.9.0 引入的当前统计摘要接口，使用已经打开的同一后台，不启动采集、不读取任意路径。
 - Vue 界面使用单一消息滚动区，支持小窗口，并从 0.1.4 起完整跟随宿主七种风格及七种配色。按本轮授权，进入页签会检测本地程序并读取工作区元数据；恢复焦点只刷新本地健康状态。模型刷新和发送消息仍是显式操作，目录读取不执行推理。
@@ -18,7 +18,7 @@ WorkBuddy、通用 MCP 服务、可写业务工具、自动执行工作流以及
 
 ## 使用
 
-1. 从 [AI 工作台 0.4.4 Release](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 下载 `ai-workbench-0.4.4.ndpkg`，在「功能管理」导入、选择版本并启用。本地构建路径为 `dist/modules/ai-workbench/0.4.4/ai-workbench-0.4.4.ndpkg`。
+1. 已发布的包仍是 [AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4)。当前源码版本是 0.5.1，本地构建路径为 `dist/modules/ai-workbench/0.5.1/ai-workbench-0.5.1.ndpkg`；导入并选择该版本后启用 CLI 模型目录与 Claude 流式接入。0.5.0 增加数据简报风格同步，0.5.1 修复 Cursor CLI 在输入失败时的管道回收。0.4.5、0.4.6 和 0.5.0 的本地包保留。
 2. 打开 AI 工作台，在「连接与设置」选择 API 类型，填写服务地址和 Key，保存后读取模型；API 类型必须与服务端匹配。
 3. 使用 Codex 时选择左侧工作区，或填写已有工作目录；建议留空可执行路径，依次通过 PATH、Codex App 安装目录查找。严格匹配当前用户官方 `OpenAI/Codex/bin/<版本>/codex.exe` 的失效旧路径可解析到同一安装根的当前版本，保留原连接及会话身份。任意手填路径失效不会回退到另一个程序。首次登录使用 Codex 官方流程，工作台不索取或复制认证文件。
 4. 使用 Cursor 时先按[官方说明](https://cursor.com/docs/cli/installation)安装 Agent CLI 并执行 `agent login`；编辑器登录不保证 CLI 已登录。可留空使用官方安装位置/PATH，或填写官方包内 `cursor-agent.cmd` 的绝对路径，后台解析相邻运行时后直接启动，不运行任意 shell。当前默认 Ask 模式，未支持的交互明确拒绝。
@@ -85,7 +85,9 @@ HTTP 服务仅绑定 `127.0.0.1` 随机端口，API 校验 Host、Origin 和每�
 
 Codex 使用拥有的子进程与 Windows Job，协议失败、取消和退出都只处理本次启动的进程。不转出原始推理或原始 stderr。无法确认回收时状态为 unknown，保留回收句柄供关闭排空重试。hostApi 2 的 `module.prepareShutdown` 先停止接收新任务并请求取消，仍有活动或未回收进程时不会宣称 ready。
 
-Cursor 使用相同的进程所有权约束，经 ACP 确认 Ask 模式和所选模型后才发送提示词；不启用 force/yolo 或自动批准 MCP。仅返回当前会话的回答文本，不重复显示恢复会话时的历史，不公开内部推理或原始错误流。目录查询也计入后台活动；查询进程清理失败同样保留重试句柄，防止关闭流程误报已排空。官方 CLI 作为本机依赖单独安装，不随 `.ndpkg` 或源码 Git 分发。
+Cursor 使用相同的进程所有权约束。0.4.6 的完整模型 ID 在发送前重新核对 `agent models`，使用 `--model <id> --mode ask --print --output-format stream-json --stream-partial-output` 启动。提示词经 stdin 输入，初始化事件核对模型显示名与会话标识，后续只接收同会话的文本增量，跳过 CLI 的重复 flush 和内部推理。成功需要终态事件、完整文本与流式文本一致、进程正常退出同时成立；非零退出、断流、空结果、额度和未信任目录均返回可定位错误。继续对话仅使用本插件保存的 `--resume <session_id>`，取消会回收本轮拥有的进程后再完成。
+
+普通 CLI 路径遵循 headless 审批规则，要求交互确认的操作返回 CLI 错误；工作目录未受信任时提示用户先在官方 CLI 确认。旧的 `model[...]` 会话仍通过 ACP 校验参数并提供一次性审批。目录查询也计入后台活动；查询和对话进程清理失败保留重试句柄，关闭流程等待实际排空。官方 CLI 作为本机依赖单独安装。协议依据 [Cursor 输出格式](https://cursor.com/docs/cli/reference/output-format)和 [Headless CLI](https://cursor.com/docs/cli/headless)。
 
 部署工作台等私有模块不会因 AI 插件而被扫描、复制或公开；当前也没有为其导出工具。未来读取其内容并发给模型，需要独立、明确的数据授权。
 

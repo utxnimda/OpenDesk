@@ -86,7 +86,7 @@ OpenDesk 0.9.0 移除背景导入、背景显示、粒子和氛围调节，设�
 
 既有六种风格保留，新增 `mint`“薄荷奶油”，建议浅色，以静态浅粉/薄荷渐变、深青文字、圆角卡片、中心内容列与轻导航呈现；选择风格不改主题，深色与石墨夜保留各自语义色。`glass` 仍显示为“深海透明”，采用深蓝黑半透明、青色细边、低圆角紧凑分区和顶部标签栏。`surfaceEffects` 继续作为 protocol 1 的可选兼容字段，当前宿主仅按风格生成固定材质与透明度描述，关闭表面动效；没有用户背景图片、材质、浓度或氛围设置。消息不含图片 ID、路径、data URL 或图片字节。
 
-七种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。薄荷布局和公共控件样式放在既有 `workbench-styles.css`，随模块构建指纹变化，因此正式塔防使用新包版本 0.1.9，不覆盖公开 0.1.7。App 升级仍保留用户固定选择，模块内部采用新风格需要手动选中已安装的 0.1.9 或兼容新版本（当前为 0.9.5）。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
+八种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。0.21.0 本地新增 `report`「数据简报」，使用顶部横向导航、暖灰纸面、黑色标签、橙色强调与细线表格，建议沙砾配色；其他配色继续独立生效。Rust 保存新枚举，设置预览与 SDK 消息沿用已有链路。共享样式进入模块构建指纹，塔防 0.10.0 与 AI 0.5.1 独立出包以采纳新样式。原有薄荷风格及 0.1.9 等历史包保持原身份；App 升级仍保留用户固定选择，模块内部采用新风格需要手动选择支持它的新包。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
 
 模块 iframe 固定填满主内容区的剩余空间，内部 body 自行滚动；宿主不测量业务 DOM。设置变化不改变模块身份、版本选择或业务数据。
 
@@ -126,7 +126,7 @@ App 设置只显示角色卡和「不启用宠物」，不复制宠物菜单。�
 
 `scripts/module-pack.mjs` 负责独立 Vite 构建、worker 冻结、真实冻结 worker 验证和 ZIP 打包，`module-pack-archive.py` 只封装普通文件。摘要放在外部索引，不进入包内自引用。
 
-`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.9.5/`；`virtual-partner`、`ai-workbench` 和 `media-manager` 分别输出 0.8.2、0.4.4 与 0.3.1。App 0.20.1 仅随附塔防 0.9.5，并写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
+`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.10.0/`；`virtual-partner`、`ai-workbench` 和 `media-manager` 分别输出 0.8.2、0.5.1 与 0.3.1。已发布的 AI 工作台仍是 0.4.4。本地 App 0.21.0 仅随附塔防 0.10.0，并写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
 
 `npm run test:architecture` 检查 `apps/` 以及公开分发清单中外部插件的 `integrations/opendesk`，因此不会扫描未登记的本机插件目录。模块包装前端遵守宿主的静态导入、Tauri 适配器和全局注册边界；作品管理器原应用内部的兼容 DOM/全局接口仍由插件自己的回归约束，不被误当作 OpenDesk 公共 API。CI 另以独立 Windows job 编译并测试 Rust 宿主，以及使用作品管理器锁定环境运行其完整 Python/JavaScript 与适配器回归。
 

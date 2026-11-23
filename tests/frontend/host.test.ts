@@ -59,7 +59,7 @@ describe('host adapter boundary', () => {
   it('keeps the default layout independent of the system color theme', () => {
     expect(DEFAULT_SETTINGS).toEqual({ schemaVersion: 1, theme: 'system', uiStyle: 'simple', closeToTray: true, personalization: clonePersonalization() });
   });
-  it.each<UIStyle>(['simple', 'codex', 'cursor', 'web', 'anime', 'glass', 'mint'])('passes the %s style and color theme unchanged through settings IPC', async (uiStyle) => {
+  it.each<UIStyle>(['simple', 'codex', 'cursor', 'web', 'anime', 'glass', 'mint', 'report'])('passes the %s style and color theme unchanged through settings IPC', async (uiStyle) => {
     const settings: Settings = { schemaVersion: 1, theme: 'ocean', uiStyle, closeToTray: false, personalization: clonePersonalization() };
     const bridge = vi.fn().mockResolvedValue(settings);
     const host = createHostAdapter(bridge as InvokeBridge);

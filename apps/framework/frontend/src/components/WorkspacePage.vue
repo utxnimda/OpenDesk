@@ -68,6 +68,13 @@ const copyByStyle: Record<UIStyle, {
     description: '常用工具和你的伙伴，都在熟悉的位置。选一个功能，轻松开始。',
     moduleTitle: '你的工具',
   },
+  report: {
+    eyebrow: 'OPENDESK / WORKSPACE',
+    title: '工作台总览',
+    subtitle: '',
+    description: '查看已启用的功能和版本，打开需要的工具。',
+    moduleTitle: '功能目录',
+  },
 };
 const copy = computed(() => copyByStyle[props.uiStyle]);
 const shortcuts = [

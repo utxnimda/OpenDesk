@@ -259,6 +259,28 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(self.service.workspaces(connection["id"]), expected)
             reader.assert_called_once_with(sys.executable, str(self.base.resolve()))
 
+    def test_cursor_cli_catalog_stream_persistence_and_resume_through_service(self):
+        fixture = Path(__file__).parent / "fixtures/cursor_cli.py"
+        report = self.base / "cli-report.jsonl"
+        command = [sys.executable, "-u", str(fixture), "--report", str(report)]
+        connection = self.service.save_connection({"name":"Cursor", "kind":"cursor", "workspace":str(self.base)})
+        with patch("ai_workbench.cursor_provider._command", return_value=command):
+            catalog = self.service.models(connection["id"])["models"]
+            self.assertIn("claude-fixture-high", [model["id"] for model in catalog])
+            conversation = self.service.create_conversation({"connectionId":connection["id"], "model":"claude-fixture-high"})
+            for prompt in ("First", "Next"):
+                result = self.complete(self.service.start_run(conversation["id"], {"text":prompt})["runId"])
+                self.assertEqual(result["run"]["status"], "completed")
+                self.assertEqual("".join(event["text"] for event in result["events"] if event["type"] == "delta"), "你好，完成。")
+            saved = self.service.store.get("conversations", conversation["id"])
+            self.assertEqual(saved["nativeThreadId"], "cli-fixture-session")
+            self.assertEqual([item["text"] for item in saved["messages"] if item["role"] == "assistant"], ["你好，完成。", "你好，完成。"])
+        records = [json.loads(line) for line in report.read_text(encoding="utf-8").splitlines()]
+        runs = [entry["command"] for entry in records if "--print" in entry.get("command", [])]
+        self.assertEqual(len(runs), 2)
+        self.assertNotIn("--resume", runs[0])
+        self.assertEqual(runs[1][runs[1].index("--resume") + 1], "cli-fixture-session")
+
     def test_cursor_dispatch_uses_agent_identity_without_api_key(self):
         connection = self.service.save_connection({"name": "Cursor", "kind": "cursor", "workspace": str(self.base)})
         self.assertFalse(connection["hasKey"])

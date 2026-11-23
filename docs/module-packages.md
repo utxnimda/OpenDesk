@@ -57,6 +57,8 @@ test.echo严格接受 `{text:string}`，最多4096字符且不能含孤立代理
 
 连接消息与后续外观消息还可包含 `uiStyle`：`simple`、`codex`、`cursor`、`web`、`anime`、`glass` 或 `mint`。它独立于配色，控制支持该字段的模块公共表面样式；缺失或未知值在对应 SDK 中回退为 `simple`，旧包可以忽略该可选字段。protocol 1、hostApi 1、基础 `theme` 和既有 `nimdadesk:hello` / `nimdadesk:connect` 消息标识均保持不变，应用改名不等于更换消息标识。
 
+本地宿主 0.21.0 增加 `report`「数据简报」，成为第八种可选值。它采用暖灰纸面、黑色选中态、橙色强调和细线表格，建议配色为 `sand`。共享 SDK 及塔防 0.10.0、AI 工作台 0.5.1 支持该值；旧包按既有未知值策略处理。宿主不修改 iframe 内部业务 DOM，页签更新仍需明确导入与选择。
+
 `glass` 当前显示名为“深海透明”，使用深蓝黑半透明、青色细边与低圆角紧凑分区；宿主采用顶部标签栏。显示名调整不改变存储 ID、包身份或消息协议，也不恢复背景图片和氛围调节。建议配色为 `dark`，用户仍可独立选择配色。
 
 宿主 0.15.0 新增 `mint`“薄荷奶油”，建议配色 `light`，采用静态浅粉/薄荷柔雾、深青文字、圆角卡片与轻导航。深色与石墨夜继续使用各自语义色，选择风格不强制主题。共享 CSS 与 SDK 更新已对应正式塔防 manifest 0.1.9（保留本地开发 0.1.8）、测试台本地 fixture 开发版本 1.0.7。已公开的塔防 0.1.7 保持不可变；App 升级保留用户固定版本，需要在「功能管理」手动选择已安装的 0.1.9 或兼容新版本（当前为 0.9.5），模块内才具备薄荷样式。旧包可以忽略或回退未知 `mint`，不能由宿主强改其内部 DOM。
@@ -114,9 +116,9 @@ npm run build:module-fixtures
 
 | 命令 | 输出 | 范围 |
 |---|---|---|
-| `build:modules` | `dist/bundled-modules/app-manifest.json` 和当前源码 manifest 对应页签包 | 宿主 0.20.1 仅随附塔防 0.9.5 |
-| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.9.5/` 下的包、manifest 与 SHA256SUMS | 独立分发，已核对与 App 随附包字节一致 |
-| `build:module -- ai-workbench` | `dist/modules/ai-workbench/0.4.4/` 下的包、manifest 与 SHA256SUMS | 独立正式 AI 页签，不随 App 默认装配；用户下载后导入选择 |
+| `build:modules` | `dist/bundled-modules/app-manifest.json` 和当前源码 manifest 对应页签包 | 本地宿主 0.21.0 随附塔防 0.10.0 |
+| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.10.0/` 下的包、manifest 与 SHA256SUMS | 独立分发，已核对与 App 随附包字节一致 |
+| `build:module -- ai-workbench` | `dist/modules/ai-workbench/0.5.1/` 下的包、manifest 与 SHA256SUMS | 当前源码版本；已发布的正式包仍是 0.4.4，不随 App 默认装配 |
 | `build:module -- virtual-partner` | `dist/modules/virtual-partner/0.8.2/` 下的包、manifest 与 SHA256SUMS | 独立分发，由用户在功能管理中导入、选择并启用 |
 | `build:module-fixtures` | `dist/module-fixtures/fixtures.json`、测试台 baseline 及四个变体 | 仅本机开发验证，不进入 App 或独立 Release |
 

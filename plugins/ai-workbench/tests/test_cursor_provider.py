@@ -29,7 +29,12 @@ class CursorProviderTests(unittest.TestCase):
         self.addCleanup(mock.patch.stopall)
         mock.patch.object(provider, "_command", return_value=[sys.executable, "-u", str(self.fixture),
                           "--scenario", scenario, "--report", str(self.report)]).start()
-        for name, value in (("RPC_TIMEOUT", 1.5), ("TURN_TIMEOUT", 1.5), ("INTERRUPT_TIMEOUT", .25), ("CLOSE_TIMEOUT", .25)):
+        timeouts = {
+            "RPC_TIMEOUT": 1.5 if scenario == "timeout" else 10,
+            "TURN_TIMEOUT": 1.5 if scenario == "turn_timeout" else 10,
+            "INTERRUPT_TIMEOUT": .25 if scenario == "ignore_cancel" else 2,
+        }
+        for name, value in timeouts.items():
             mock.patch.object(provider, name, value).start()
         def start(*args, **kwargs):
             process = self.original_popen(*args, **kwargs)
@@ -52,18 +57,22 @@ class CursorProviderTests(unittest.TestCase):
         return [json.loads(line) for line in self.report.read_text(encoding="utf-8").splitlines()]
 
     def test_dynamic_model_catalog_has_no_session_or_inference(self):
-        self.patch_client()
-        result = provider.list_models(workspace=str(self.root))
-        self.assertEqual([model["id"] for model in result], ["fixture-a[]", "fixture-b[effort=high]"])
-        self.assertEqual(result[1]["parameters"], [{"id":"effort","label":"Effort","defaultValue":"high", "options":[{"value":"low","label":"Low"},{"value":"high","label":"High"}]}])
-        methods = [item.get("method") for item in self.messages() if "method" in item]
-        self.assertEqual(methods, ["initialize", "cursor/list_available_models"])
-        self.assertIsNotNone(self.processes[0].poll())
+        with mock.patch.object(provider, "_cli_models", return_value=[{"id":"claude-fixture", "label":"Claude Fixture"}]) as query:
+            result = provider.list_models(workspace=str(self.root))
+        self.assertEqual(result, [{"id":"claude-fixture", "label":"Claude Fixture", "providerModelId":"claude-fixture", "parameters":[]}])
+        query.assert_called_once_with(None, str(self.root.resolve()))
+
+    def test_cli_catalog_preserves_full_variants_and_removes_duplicates(self):
+        cli = provider._parse_cli_models(
+            "Available models\n\ngpt-5.2-low - GPT-5.2 Low\n"
+            "\x1b[32mclaude-opus-5-5-high-fast - Claude Opus 5.5 1M High Fast\x1b[0m\n"
+            "claude-opus-5-5-high-fast - Duplicate\nTip: use --model <id>\n")
+        self.assertEqual([item["id"] for item in cli], ["gpt-5.2-low", "claude-opus-5-5-high-fast"])
 
     def test_model_failure_does_not_expose_stderr_or_invent_catalog(self):
         self.patch_client("models_failure")
         with self.assertRaises(provider.CursorError) as failure:
-            provider.list_models(workspace=str(self.root))
+            self.run_turn(model="fixture-b[effort=high]", model_options={"effort":"low"})
         self.assertEqual(failure.exception.code, "CURSOR_AUTH_REQUIRED")
         self.assertNotIn("sk-secret", str(failure.exception))
 

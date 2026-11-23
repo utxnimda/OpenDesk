@@ -1,4 +1,4 @@
-"""Cursor Agent CLI adapter using its public ACP protocol, never the IDE UI.
+"""Cursor Agent adapter for CLI streaming and existing parameterized ACP sessions.
 
 References: https://cursor.com/docs/cli/acp and /cli/reference/parameters.
 Only an explicit prompt invokes inference. Model discovery does not create a chat.
@@ -115,10 +115,12 @@ def _provider_error(value: Any) -> CursorError:
     raw = json.dumps(value, ensure_ascii=False, default=str).lower()
     if any(word in raw for word in ("auth_required", "unauthorized", "not logged", "authentication", "login", "401")):
         return CursorError("CURSOR_AUTH_REQUIRED", "Cursor Agent 尚未登录或登录已过期，请先执行 agent login。")
-    if any(word in raw for word in ("rate limit", "quota", "429")):
+    if any(word in raw for word in ("rate limit", "quota", "429", "usage limit")):
         return CursorError("CURSOR_RATE_LIMIT", "Cursor 当前额度或请求频率受限，请检查账号后重试。")
-    if "invalid model value" in raw or "unknown model" in raw:
-        return CursorError("CURSOR_MODEL_UNAVAILABLE", "此模型 ID 不在 Cursor ACP 目录中，请刷新模型列表并重新选择。")
+    if "--trust" in raw or "workspace is not trusted" in raw:
+        return CursorError("CURSOR_WORKSPACE_UNTRUSTED", "请先在 Cursor CLI 中打开并确认信任此工作目录，再重试。")
+    if any(word in raw for word in ("invalid model value", "unknown model", "cannot use this model")):
+        return CursorError("CURSOR_MODEL_UNAVAILABLE", "此模型当前不可用，请用 agent models 刷新模型列表并重新选择。")
     if isinstance(value, dict) and value.get("code") in (-32601, -32602):
         return CursorError("CURSOR_PROTOCOL_UNSUPPORTED", "当前 Cursor Agent 不支持所需 ACP 协议，请更新官方 CLI 后重试。")
     return CursorError("CURSOR_PROVIDER_ERROR", "Cursor Agent 操作失败，未收到可确认的成功结果。")
@@ -132,6 +134,9 @@ class _Process:
         self.job = None
         self.closed = False
         self.readers = []
+        self.input_writer = None
+        self.input_failed = False
+        self.stderr_tail = bytearray()
         environment = dict(os.environ)
         for name in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "CODEX_API_KEY", "CURSOR_API_KEY", "CURSOR_AUTH_TOKEN"):
             environment.pop(name, None)
@@ -179,8 +184,10 @@ class _Process:
 
     def _stderr(self):
         try:
-            while not self.closing.is_set() and self.process.stderr.read(4096):
-                pass
+            while chunk := self.process.stderr.read(4096):
+                # Bounded in-memory diagnostics are classified, never published.
+                self.stderr_tail.extend(chunk)
+                del self.stderr_tail[:-16384]
         except (OSError, ValueError):
             if not self.closing.is_set():
                 self.fault = CursorError("CURSOR_DISCONNECTED", "Cursor 错误通道已断开。")
@@ -205,6 +212,17 @@ class _Process:
         except (OSError, ValueError) as error:
             raise CursorError("CURSOR_DISCONNECTED", "Cursor 输入通道已关闭。") from error
 
+    def write_prompt(self, text):
+        """Use stdin so long/private prompts never enter process arguments."""
+        def write():
+            try:
+                with self.process.stdin as pipe:
+                    pipe.write(text.encode("utf-8"))
+            except (OSError, ValueError):
+                self.input_failed = True
+        self.input_writer = threading.Thread(target=write, daemon=True)
+        self.input_writer.start()
+
     def close(self):
         if self.closed:
             return
@@ -219,10 +237,12 @@ class _Process:
 
     def _close(self):
         self.closing.set()
-        try:
-            self.process.stdin.close()
-        except (OSError, ValueError):
-            pass  # Broken input is already closed; process exit still must be confirmed.
+        # A writer blocked in a pipe must be released by process exit first.
+        if self.input_writer is None or not self.input_writer.is_alive():
+            try:
+                self.process.stdin.close()
+            except (OSError, ValueError):
+                pass  # Process exit still must be confirmed.
         try:
             self.process.wait(timeout=CLOSE_TIMEOUT)
         except subprocess.TimeoutExpired:
@@ -246,28 +266,17 @@ class _Process:
                     pass
             for reader in self.readers:
                 reader.join(timeout=1)
+            if self.input_writer is not None:
+                self.input_writer.join(timeout=1)
+                if self.input_writer.is_alive():
+                    raise OSError("Cursor prompt writer has not stopped")
             self.process.stdout.close()
             self.process.stderr.close()
 
 
 def list_models(executable: str | None = None, workspace: str | None = None) -> list[dict]:
-    client = _Client(executable, _workspace(workspace), None)
-    try:
-        cancelled = threading.Event()
-        def reject_request(value):
-            if "method" in value and "id" in value:
-                client.process.send({"id": value["id"], "error": {"code": -32601, "message": "Catalog queries do not accept client requests."}})
-                raise CursorError("CURSOR_UNSUPPORTED_REQUEST", "Cursor 查询模型时请求了其他交互，已拒绝。")
-        initialized = client.request("initialize", {"protocolVersion": 1, "clientCapabilities": {},
-                                     "clientInfo": {"name": "opendesk_ai", "version": "0.2.0"}}, reject_request, cancelled)
-        if initialized.get("protocolVersion") != 1:
-            raise CursorError("CURSOR_PROTOCOL_UNSUPPORTED", "Cursor ACP 协议版本不受支持。")
-        # CLI --list-models contains aliases that session/set_model rejects.
-        # This Cursor ACP extension returns the actual model configuration IDs.
-        result = client.request("cursor/list_available_models", {}, reject_request, cancelled)
-        return _model_options(result.get("models"))
-    finally:
-        client.process.close()
+    return [{**entry, "providerModelId": entry["id"], "parameters": []}
+            for entry in _cli_models(executable, _workspace(workspace))]
 
 
 def _model_options(entries) -> list[dict]:
@@ -312,6 +321,49 @@ def _model_options(entries) -> list[dict]:
             models.append({"id": identity, "label": label, "providerModelId": entry["value"], "parameters": parameters})
             seen.add(identity)
     return models
+
+
+def _parse_cli_models(text: str) -> list[dict]:
+    """Parse `agent models` lines. Ignores headings and the usage tip."""
+    models, seen = [], set()
+    atom = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:/-]{0,127}\Z")
+    for raw in text.splitlines():
+        line = re.sub(r"\x1b\[[0-9;]*m", "", raw).strip()
+        identity, separator, label = line.partition(" - ")
+        label = re.sub(r"\s+\((?:default|current)\)$", "", label.strip())
+        if not separator or not atom.fullmatch(identity) or not 1 <= len(label) <= 256 or identity in seen:
+            continue
+        seen.add(identity)
+        models.append({"id": identity, "label": label})
+    return models
+
+
+def _cli_models(executable: str | None, workspace: str | None = None, cancelled=None) -> list[dict]:
+    process = _Process(executable, workspace, ["--disable-auto-update", "models"])
+    try:
+        process.process.stdin.close()
+        chunks, size = [], 0
+        deadline = time.monotonic() + RPC_TIMEOUT
+        while True:
+            if cancelled is not None and cancelled.is_set():
+                raise CursorError("CANCELLED", "Cursor 模型查询已停止。")
+            line = process.read(deadline)
+            if line is None:
+                break
+            size += len(line)
+            if size > MAX_FRAME_BYTES:
+                raise CursorError("CURSOR_OUTPUT_LIMIT", "Cursor 模型目录超过大小限制。")
+            if line:
+                chunks.append(line)
+        process.close()
+        if process.process.returncode != 0:
+            raise _provider_error(process.stderr_tail.decode("utf-8", "replace"))
+        models = _parse_cli_models(b"".join(chunks).decode("utf-8", "replace"))
+        if not 1 <= len(models) <= 1000:
+            raise CursorError("CURSOR_PROTOCOL_ERROR", "agent models 没有返回有效模型目录。")
+        return models
+    finally:
+        process.close()
 
 
 def _option_shape(options) -> dict:
@@ -439,6 +491,12 @@ def run_cursor(*, executable: str | None, workspace: str, model: str, prompt: st
         _identifier(thread_id, "会话标识")
     if cancelled.is_set():
         raise CursorError("CANCELLED", "Cursor 请求已停止。")
+    if "[" not in model:
+        from .cursor_cli import run_cli
+        if selected_options:
+            raise CursorError("MODEL_OPTION_UNSUPPORTED", "CLI 模型已包含固定参数，请从 agent models 选择对应版本。")
+        return run_cli(executable=executable, workspace=directory, model=model, prompt=prompt,
+                       thread_id=thread_id, emit=emit, cancelled=cancelled)
     client = _Client(executable, directory, None if selected_options else model)
     session = thread_id
     text = ""
@@ -508,10 +566,14 @@ def run_cursor(*, executable: str | None, workspace: str, model: str, prompt: st
             session = _identifier(result.get("sessionId"), "会话标识")
         elif result.get("sessionId", session) != session:
             raise CursorError("CURSOR_PROTOCOL_ERROR", "Cursor 返回了不同的会话身份。")
+        if thread_id is None and "[" not in model:
+            reported = result.get("models") if isinstance(result.get("models"), dict) else {}
+            if reported.get("currentModelId") != model:
+                raise CursorError("CURSOR_MODEL_UNAVAILABLE", "Cursor 没有确认这个 CLI 模型。请刷新模型目录，或用 agent models 核对 ID。")
         client.request("session/set_mode", {"sessionId": session, "modeId": "ask"}, handle, cancelled)
         if selected_options:
             _apply_parameterized_model(client, session, model, handle, cancelled)
-        else:
+        elif "[" in model:
             client.request("session/set_model", {"sessionId": session, "modelId": model}, handle, cancelled)
         prompting = True
         request = client.begin("session/prompt", {"sessionId": session, "prompt": [{"type": "text", "text": prompt}]})

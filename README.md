@@ -16,6 +16,8 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 ## 正式页签与本地开发测试
 
+当前源码新增 OpenDesk **0.21.0** 的「数据简报」风格，位于「设置 → 风格与配色」。建议配色为沙砾暖调，采用暖灰纸面、黑色标签、橙色强调和细线表格。塔防 **0.10.0** 与 AI 工作台 **0.5.1** 采纳新的共享风格，均为本地开发版本；正式下载仍以下列公开记录为准。
+
 OpenDesk 0.20.1 为主视图页签提供可选的桌宠头像接口，虚拟伙伴可从已登记角色的动作中选择一帧作头像。[页签包契约](docs/module-packages.md)
 
 当前 App 随附的塔防页签也可独立下载。虚拟伙伴、AI 工作台 0.4.4 与作品管理器 0.3.1 均按需单独导入。[下载索引](docs/downloads.md)
@@ -61,7 +63,7 @@ npm run build:module -- media-manager
 
 | 稳定功能 ID | 功能 | 当前功能版本 | 最近更新所属应用版本 |
 |---|---|---|---|
-| `core.workbench` | 七种界面风格，新增薄荷奶油；独立配色、分类设置与外观保存 | 0.8.1 | 0.19.1（已随 0.19.3 交付） |
+| `core.workbench` | 八种界面风格，新增数据简报；独立配色、分类设置与外观保存 | 0.9.0 | 0.21.0（本地开发） |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
 | `core.module-packages` | 独立页签、Web 应用、模块第二视图、经授权的只读工具调用与桌宠头像帧 | 0.9.1 | 0.20.1 |
 | `core.personalization` | 已移除：背景图片、材质与氛围调节；保留历史 ID | 0.2.0 | 0.9.0 |
@@ -90,7 +92,7 @@ npm run build:module -- media-manager
 
 ## 界面风格与配色
 
-设置分为「风格与配色」「宠物陪伴」「窗口行为」三类。「风格与配色」提供七种布局，`uiStyle` 与配色 `theme` 独立；切换风格不强制改变配色，「使用建议配色」是独立操作。默认使用简洁布局与跟随系统配色，宠物关闭。旧 schema 1 设置可继续读取，旧 `background` / `effects` 仅兼容忽略，不恢复背景或氛围。
+设置分为「风格与配色」「宠物陪伴」「窗口行为」三类。「风格与配色」提供八种布局，`uiStyle` 与配色 `theme` 独立；切换风格不强制改变配色，「使用建议配色」是独立操作。默认使用简洁布局与跟随系统配色，宠物关闭。旧 schema 1 设置可继续读取，旧 `background` / `effects` 仅兼容忽略，不恢复背景或氛围。
 
 | 界面风格 | 布局方向 |
 |---|---|
@@ -120,7 +122,7 @@ npm run build:module -- media-manager
 
 薄荷奶油保留其他配色选择，深色和石墨夜沿用各自的语义颜色；浅色最接近参考方向。七项风格选择器随可用宽度自动换列。柔色背景由静态 CSS 绘制，不读取图片，也不恢复用户背景与氛围设置。
 
-新版随附模块支持七种风格与配色同步。模块仍使用既有 protocol 1 消息标识，`uiStyle`、`surfaceEffects` 保留可选扩展兼容；当前宿主只由风格生成固定、无动效的表面描述，没有用户材质或浓度调节。旧包可以忽略扩展，并继续收到兼容的基础浅色/深色主题。宿主不发送图片、路径或图片数据。共享 CSS 和 SDK 的薄荷样式从塔防 0.1.9 起提供，0.8.2 继续支持；升级保留用户固定选择，已有用户需在「功能管理」手动选择已安装的新版本。
+本地塔防 0.10.0 与 AI 0.5.1 支持八种风格与配色同步。模块仍使用既有 protocol 1 消息标识，`uiStyle`、`surfaceEffects` 保留可选扩展兼容；当前宿主只由风格生成固定、无动效的表面描述，没有用户材质或浓度调节。旧包可以忽略扩展，并继续收到兼容的基础浅色/深色主题。宿主不发送图片、路径或图片数据。共享 CSS 和 SDK 的薄荷样式从塔防 0.1.9 起提供，0.8.2 继续支持；升级保留用户固定选择，已有用户需在「功能管理」手动选择已安装的新版本。
 
 打开功能后，模块外层固定占据主内容区的剩余空间，宿主不再叠加重复的卡片边框与模块标题；内容滚动由 iframe 内的页面负责。宿主不读取或测量 iframe 的业务 DOM 来调整高度，模块保留自己的布局与滚动责任。
 
@@ -148,7 +150,7 @@ npm run build:module -- media-manager
 
 ## 桌面基础
 
-- 七种界面风格、独立配色设置、真实功能入口与宿主运行诊断。
+- 八种界面风格、独立配色设置、真实功能入口与宿主运行诊断。
 - 既有静态风格保留并新增薄荷奶油；两只宠物素材不变，独立菜单面板已随 0.15.0 发布。
 - 显式模块声明、校验、导航和页面懒加载；框架不导入具体业务模块。
 - Rust 宿主统一设置读写；格式带版本，暂存后替换，损坏/未来格式不被默认设置覆盖。
@@ -209,7 +211,7 @@ npm run dev
 | `npm run dev:web` | 127.0.0.1:1420 浏览器预览，明确不提供桌面能力 |
 | `npm run build:modules` | 仅按分发清单构建 App 随附页签与默认清单，当前为塔防助手 |
 | `npm run build:module-fixtures` | 构建本地测试台 baseline 及四个变体，均不公开分发 |
-| `npm run build:module -- tower-assistant` | 按当前 manifest 独立构建塔防页签至 `dist/modules/tower-assistant/0.9.5/` |
+| `npm run build:module -- tower-assistant` | 按当前 manifest 独立构建塔防页签至 `dist/modules/tower-assistant/0.10.0/` |
 | `npm run release:stage -- app` | 校验干净提交与构建清单，本地整理 App 发布附件 |
 | `npm run release:stage -- module tower-assistant` | 本地整理塔防页签的独立版本发布附件 |
 | `npm run check` | 宿主与内置页签的版本、类型、公开插件集成边界及自动化测试 |
@@ -237,7 +239,7 @@ npm run dev
 
 首次运行 Rust 检查前需要 `npm run build:worker` 和 `npm run build:modules`，因为桌面构建描述引用 worker 与自带包资源。首次取得仓库应使用已有 Cargo.lock；不要在正常检查时主动更新锁文件。
 
-生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携 ZIP 应完整解压后启动，不能只复制 EXE。当前源码安装器为 `apps/framework/desktop/src-tauri/target/release/bundle/nsis/OpenDesk_0.20.1_x64-setup.exe`，App 及两个更新页签均已公开发布并下载核验。生成安装器本身不代表已安装或已签名；Git 推送不会自动上传 Release 附件。
+生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携 ZIP 应完整解压后启动，不能只复制 EXE。当前源码安装器为 `apps/framework/desktop/src-tauri/target/release/bundle/nsis/OpenDesk_0.21.0_x64-setup.exe`，0.21.0 是本地开发版本。此前 0.20.1 App 及当时两个更新页签已公开发布并下载核验。生成安装器本身不代表已安装或已签名；Git 推送不会自动上传 Release 附件。
 
 便携目录重建时若存在不属于本次产物清单的文件或目录，构建会在复制前拒绝，避免旧依赖或个人文件混入新包。请将旧输出移走后重新生成，或先检查并手工清理；脚本不自动删除未知内容。
 

@@ -25,6 +25,7 @@ pub enum UiStyle {
     Anime,
     Glass,
     Mint,
+    Report,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -487,6 +488,7 @@ mod tests {
             (UiStyle::Anime, "anime"),
             (UiStyle::Glass, "glass"),
             (UiStyle::Mint, "mint"),
+            (UiStyle::Report, "report"),
         ] {
             let settings = Settings {
                 ui_style: style,

@@ -236,6 +236,11 @@ svg.lucide { display: block; width: 16px; height: 16px; flex: 0 0 auto; stroke-w
 :root[data-ui-style='simple'] { --ai-composer-radius: 10px; --ai-card-radius: 7px; }
 :root[data-ui-style='codex'] { --ai-control-radius: 7px; --ai-composer-radius: 20px; }
 :root[data-ui-style='cursor'] { --ai-control-radius: 4px; --ai-composer-radius: 6px; --ai-card-radius: 4px; }
+:root[data-ui-style='report'] { --ai-control-radius: 1px; --ai-composer-radius: 1px; --ai-card-radius: 1px; --ai-page: var(--bg); }
+:root[data-ui-style='report'] .conversation-sidebar { background: var(--bg); border-right: 1px solid var(--border); }
+:root[data-ui-style='report'] .chat-header { border-bottom: 1px solid var(--border); background: var(--bg); }
+:root[data-ui-style='report'] .composer { border: 1px solid var(--control-border); box-shadow: none; background: var(--surface); }
+:root[data-ui-style='report'] .user-message .message-body { border-left: 2px solid var(--accent); background: var(--surface); }
 :root[data-ui-style='cursor'] .chat-header { border-bottom: 1px solid var(--border); background: var(--surface-soft); }
 :root[data-ui-style='web'] { --ai-composer-radius: 14px; --ai-card-radius: 10px; }
 :root[data-ui-style='anime'] { --ai-composer-radius: 14px; --ai-control-radius: 8px; --ai-card-radius: 10px; }

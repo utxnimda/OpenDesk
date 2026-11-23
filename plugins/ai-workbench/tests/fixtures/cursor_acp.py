@@ -73,7 +73,13 @@ for raw in sys.stdin.buffer:
             session = params.get("sessionId", session)
             if method == "session/load":
                 delta("Previous answer must not replay into new reply")
-            reply(value, {"sessionId": session, "modes": {"currentModeId": "ask"}})
+            payload = {"sessionId": session, "modes": {"currentModeId": "ask"}}
+            if "--model" in command:
+                chosen = command[command.index("--model") + 1]
+                if scenario == "cli_model_mismatch":
+                    chosen = "other-model"
+                payload["models"] = {"currentModelId": chosen}
+            reply(value, payload)
     elif method == "session/set_mode":
         reply(value, {})
     elif method == "session/set_model":
