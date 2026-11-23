@@ -129,8 +129,8 @@ class DesktopAppTest(unittest.TestCase):
             legacy = app_root / "nimda-desktop.yaml"
             current.write_text("version: 1\npaths:\n  workspace_root: '../current'\n", encoding="utf-8")
             legacy.write_text("version: 1\npaths:\n  workspace_root: '../legacy'\n", encoding="utf-8")
-            self.assertEqual(load_desktop_configuration(app_root).workspace_root, base / "current")
-            self.assertEqual(load_desktop_configuration(app_root, legacy).workspace_root, base / "legacy")
+            self.assertEqual(load_desktop_configuration(app_root).workspace_root, (base / "current").resolve())
+            self.assertEqual(load_desktop_configuration(app_root, legacy).workspace_root, (base / "legacy").resolve())
             for invalid in ("version: 999\npaths: {}\n", "[]\n", "version: 1\npaths: {}\n"):
                 current.write_text(invalid, encoding="utf-8")
                 with self.assertRaises(ValueError):
@@ -141,7 +141,7 @@ class DesktopAppTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "驱动器相对路径"):
                 load_desktop_configuration(app_root)
             current.unlink()
-            self.assertEqual(load_desktop_configuration(app_root).workspace_root, base / "legacy")
+            self.assertEqual(load_desktop_configuration(app_root).workspace_root, (base / "legacy").resolve())
 
     def test_source_bootstrap_defaults_to_external_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -152,7 +152,7 @@ class DesktopAppTest(unittest.TestCase):
             (workspace / "config").mkdir(parents=True)
             (workspace / "data").mkdir()
             with patch.dict(os.environ, {}, clear=True):
-                self.assertEqual(load_desktop_configuration(app_root).workspace_root, workspace)
+                self.assertEqual(load_desktop_configuration(app_root).workspace_root, workspace.resolve())
                 os.environ["MEDIA_MANAGER_WORKSPACE_ROOT"] = "."
                 with self.assertRaisesRegex(ValueError, "absolute"):
                     load_desktop_configuration(app_root)
