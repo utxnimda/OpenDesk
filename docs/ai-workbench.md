@@ -18,7 +18,7 @@ WorkBuddy、通用 MCP 服务、可写业务工具、自动执行工作流以及
 
 ## 使用
 
-1. 已发布的包仍是 [AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4)。当前源码版本是 0.5.1，本地构建路径为 `dist/modules/ai-workbench/0.5.1/ai-workbench-0.5.1.ndpkg`；导入并选择该版本后启用 CLI 模型目录与 Claude 流式接入。0.5.0 增加数据简报风格同步，0.5.1 修复 Cursor CLI 在输入失败时的管道回收。0.4.5、0.4.6 和 0.5.0 的本地包保留。
+1. 已发布的包仍是 [AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4)。当前源码版本是待发布的 0.5.2，本地构建路径为 `dist/modules/ai-workbench/0.5.2/ai-workbench-0.5.2.ndpkg`；导入并选择该版本后启用 CLI 模型目录与 Claude 流式接入。0.5.0 增加数据简报风格同步，0.5.1 修复 Cursor CLI 在输入失败时的管道回收，0.5.2 用于从干净提交准备正式包。0.4.5、0.4.6、0.5.0 和 0.5.1 的本地包保留。
 2. 打开 AI 工作台，在「连接与设置」选择 API 类型，填写服务地址和 Key，保存后读取模型；API 类型必须与服务端匹配。
 3. 使用 Codex 时选择左侧工作区，或填写已有工作目录；建议留空可执行路径，依次通过 PATH、Codex App 安装目录查找。严格匹配当前用户官方 `OpenAI/Codex/bin/<版本>/codex.exe` 的失效旧路径可解析到同一安装根的当前版本，保留原连接及会话身份。任意手填路径失效不会回退到另一个程序。首次登录使用 Codex 官方流程，工作台不索取或复制认证文件。
 4. 使用 Cursor 时先按[官方说明](https://cursor.com/docs/cli/installation)安装 Agent CLI 并执行 `agent login`；编辑器登录不保证 CLI 已登录。可留空使用官方安装位置/PATH，或填写官方包内 `cursor-agent.cmd` 的绝对路径，后台解析相邻运行时后直接启动，不运行任意 shell。当前默认 Ask 模式，未支持的交互明确拒绝。
