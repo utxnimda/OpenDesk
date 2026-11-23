@@ -2,7 +2,9 @@
 
 目标：App 包含宿主与默认页签包；用户可导入新页签/更新；不兼容时保留原包和错误；同页签多版本并存并选择。范围不包含市场、远程自动更新或安全沙箱。
 
-**当前正式交付（2026-11-03）**　[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 随附塔防包与独立包已核对为相同字节。[下载索引](downloads.md)
+**当前正式交付（2026-11-23）**　[OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0) 仅随附[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1)，[AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2) 独立下载导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，主分支与三个发布标签的 CI 均通过。App 的 6 个附件和两个页签各 4 个附件，共 14 个，均已从远端重新下载并核对大小与 SHA-256；随附塔防与独立包字节一致。
+
+**历史交付（2026-11-03）**　[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 随附塔防包与独立包已核对为相同字节。[下载索引](downloads.md)
 
 0.16.0 开发版新增可选 `hostApi: 2`，为已有 HTTP 服务的完整应用提供受控嵌套页面及安全停用协议，详见[本地 Web 应用接入](module-web-apps.md)。本文的静态模块示例继续使用 `hostApi: 1`，原包无需升级。
 
@@ -57,7 +59,7 @@ test.echo严格接受 `{text:string}`，最多4096字符且不能含孤立代理
 
 连接消息与后续外观消息还可包含 `uiStyle`：`simple`、`codex`、`cursor`、`web`、`anime`、`glass` 或 `mint`。它独立于配色，控制支持该字段的模块公共表面样式；缺失或未知值在对应 SDK 中回退为 `simple`，旧包可以忽略该可选字段。protocol 1、hostApi 1、基础 `theme` 和既有 `nimdadesk:hello` / `nimdadesk:connect` 消息标识均保持不变，应用改名不等于更换消息标识。
 
-本地宿主 0.21.0 增加 `report`「数据简报」，成为第八种可选值。它采用暖灰纸面、黑色选中态、橙色强调和细线表格，建议配色为 `sand`。共享 SDK 及当前待发布的塔防 0.10.1、AI 工作台 0.5.2 支持该值；旧包按既有未知值策略处理。宿主不修改 iframe 内部业务 DOM，页签更新仍需明确导入与选择。
+正式宿主 0.21.0 增加 `report`「数据简报」，成为第八种可选值。它采用暖灰纸面、黑色选中态、橙色强调和细线表格，建议配色为 `sand`。共享 SDK 及正式塔防 0.10.1、AI 工作台 0.5.2 支持该值；旧包按既有未知值策略处理。宿主不修改 iframe 内部业务 DOM，页签更新仍需明确导入与选择。
 
 `glass` 当前显示名为“深海透明”，使用深蓝黑半透明、青色细边与低圆角紧凑分区；宿主采用顶部标签栏。显示名调整不改变存储 ID、包身份或消息协议，也不恢复背景图片和氛围调节。建议配色为 `dark`，用户仍可独立选择配色。
 
@@ -116,13 +118,13 @@ npm run build:module-fixtures
 
 | 命令 | 输出 | 范围 |
 |---|---|---|
-| `build:modules` | `dist/bundled-modules/app-manifest.json` 和当前源码 manifest 对应页签包 | 本地宿主 0.21.0 的构建目标随附塔防 0.10.1 |
-| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.10.1/` 下的包、manifest 与 SHA256SUMS | 独立分发，构建后核对与 App 随附包字节一致 |
-| `build:module -- ai-workbench` | `dist/modules/ai-workbench/0.5.2/` 下的包、manifest 与 SHA256SUMS | 当前待发布源码版本；已发布的正式包仍是 0.4.4，不随 App 默认装配 |
+| `build:modules` | `dist/bundled-modules/app-manifest.json` 和当前源码 manifest 对应页签包 | 正式宿主 0.21.0 随附塔防 0.10.1 |
+| `build:module -- tower-assistant` | `dist/modules/tower-assistant/0.10.1/` 下的包、manifest 与 SHA256SUMS | 独立分发，已核对与 App 随附包字节一致 |
+| `build:module -- ai-workbench` | `dist/modules/ai-workbench/0.5.2/` 下的包、manifest 与 SHA256SUMS | 已独立发布，不随 App 默认装配 |
 | `build:module -- virtual-partner` | `dist/modules/virtual-partner/0.8.2/` 下的包、manifest 与 SHA256SUMS | 独立分发，由用户在功能管理中导入、选择并启用 |
 | `build:module-fixtures` | `dist/module-fixtures/fixtures.json`、测试台 baseline 及四个变体 | 仅本机开发验证，不进入 App 或独立 Release |
 
-构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；当前公开塔防为 `0.9.5`，宿主为 `0.20.1`，从 Git 主线开发且未合入本机 `0.3.0`。本次发布不改变个人选择，实际游戏透明视觉尚待验收。此前 `0.6.0`、`0.6.1`、`0.7.0`、`0.7.1`、`0.8.0`、`0.8.1` 本地包保留，不替换为不同摘要。既有公开与本地包均保留原身份和字节，0.8.1 的 dirty 来源不能冒充 0.8.2 的正式构建来源。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。
+构建与便携复制检查实际目录，只允许清单中的文件，不从本机导入/已安装目录或缓存推导范围。旧目录中的额外包会被拒绝，应保留移出后重新构建，不能默默混入 App。现有版本不同摘要拒绝覆盖；当前公开塔防为 `0.10.1`，宿主为 `0.21.0`，从 Git 主线开发且未合入本机 `0.3.0`。本次发布不改变个人选择，实际游戏透明视觉尚待验收。此前 `0.6.0`、`0.6.1`、`0.7.0`、`0.7.1`、`0.8.0`、`0.8.1` 本地包保留，不替换为不同摘要。既有公开与本地包均保留原身份和字节，0.8.1 的 dirty 来源不能冒充 0.8.2 的正式构建来源。升级 App 不卸载、覆盖或擅自切换用户此前导入的测试台或其他包，个人选择仍独立。
 
 塔防 0.7.0 延续 0.6.1 的采集和统计实现，保留 0.5.2 修复后的包根 Worker 入口布局；新增窗口只使用宿主可选能力，业务仍保持 `hostApi: 1`、`dataSchema: 1`。当前观察脚本采集工作公式、人物资料和攻击分类；构建定义显式列出 `capture/inject.js`、`capture/observer.js` 与 `capture/runtime-worker.js`，作为固定原创采集素材放入模块 worker 运行资源。包不携带游戏原包、图集、存档、安装备份、身份令牌或事件流；不从游戏目录或 `.local` 实验目录收集素材。命名采集/统计方法由宿主按 manifest 授权，前端没有任意脚本执行入口。具体 RPC、安装副作用与版本范围见[塔防模块说明](tower-assistant.md)。构建、发布或导入该包不等于成功激活，也不会自动安装游戏采集入口；`updateRequired` 为真时，需先退出游戏、移除并恢复原包，再安装当前入口并重启，才能获得新字段。
 

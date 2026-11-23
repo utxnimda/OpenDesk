@@ -1,5 +1,11 @@
 # OpenDesk 发布手册
 
+## 2026-11-23 发布结果 · OpenDesk 0.21.0、塔防 0.10.1、AI 0.5.2
+
+已从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建并公开发布 App `v0.21.0`、`modules/tower-assistant/v0.10.1` 和 `modules/ai-workbench/v0.5.2`。App 仅随附塔防，AI 独立下载。三个标签和 main 的 Check 均通过，14 个附件均重新下载核对大小与 SHA-256。正式暂存目录分别为 `dist/releases/app/0.21.0/`、`dist/releases/modules/tower-assistant/0.10.1/` 与 `dist/releases/modules/ai-workbench/0.5.2/`。
+
+原本地 dirty App 0.21.0 输出已保留，新 App 从干净提交重新构建。塔防 0.10.0 与 AI 0.5.0／0.5.1 的本地原包保留，正式页签采用新版本以保留不可变身份。App 标为最新，页签不覆盖该入口。实际审计、验证限制与下载见 [验证记录](verification.md) 和 [下载索引](downloads.md)。后续文档提交不移动构建标签。
+
 本手册描述可重复执行的公开交付流程，命令块供后续发布参考，不应原样重复创建已发布版本。实际发布版本、下载地址及校验结果分别记录在 [下载索引](downloads.md) 和 [验证记录](verification.md)。版本规则见 [版本维护](versioning.md)，包格式见 [模块包契约](module-packages.md)。
 
 ## 2026-11-03 发布结果 · OpenDesk 0.20.1、塔防 0.9.5、虚拟伙伴 0.8.2

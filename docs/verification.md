@@ -2,6 +2,18 @@
 
 # 验证记录
 
+## 2026-11-23 发布结果 · OpenDesk 0.21.0、塔防 0.10.1、AI 工作台 0.5.2
+
+从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建并公开发布 [App 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)、[塔防 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1) 与 [AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2)。App 标为最新，仅随附塔防；两个页签提供独立下载。
+
+- 工程版本、类型、架构与 817 项自动化测试通过。同一 Rust 源码此前本地 release 测试 75 项通过。本次构建提交的 main 与三个发布标签的远端 Check 均成功，覆盖源码、Rust 宿主和作品管理器回归。
+- 正式安装器、便携目录与两个独立页签构建通过。构建收据及模块 manifest 均为上述提交、`dirty:false`。塔防与 AI 的冻结 worker 检查通过，AI 检查覆盖身份、HTTP 鉴权、静态页面和退出排空。
+- 正式便携 EXE 在独立测试根通过前端、IPC、设置读写和 worker 启停 smoke，结果位于本机 `.local/smoke/20261123-151258-573/smoke-result.json`。
+- 逐文件复核便携 ZIP 58 条目、塔防 74 条目、AI 71 条目及 NSIS 构建输入。App 随附清单只有塔防；个人配置、资料、导入包、部署工作台、模块测试台 fixture、数据库和日志未进入公开附件。
+- 三个注解标签固定在构建提交。App 6 个附件、塔防 4 个、AI 4 个，共 14 个均从公开 Release 重新下载并逐项比较大小与 SHA-256。核验记录位于本机 `.local/release-downloads/021-20261123-152240-238/verified-artifacts.json`。
+- 安装器 SHA-256 为 `e625d86a755cb2495e5cbe1354b8d42b3505252e80383ba8e74841467f6a7582`，便携 ZIP 为 `bdb551ad9858c9b20b84d6249b3552315c072ce921703201629abe531555d8a9`。随附和独立塔防均为 `53e7dbbd26bdd8a8dff70779a7492738d20e03f815e2462228f4b6c11c5e9dbc`，AI 为 `941ab1aeadf3d3d92a9a6e88f9298720d50aec12ccdb8e6ed3429a1061031d00`。
+- 未执行安装器载荷解包、干净机器安装与卸载、发布者签名、真实 Cursor 模型请求、实际游戏视觉和长时运行。原 App 0.21.0 的 dirty 本地开发输出、塔防 0.10.0 及 AI 0.5.0／0.5.1 包保持原字节。发布结果文档单独提交，构建标签保持原提交。
+
 ## 2026-11-23：OpenDesk 0.21.0 本地打包与 AI 工作台 0.5.1
 
 - 本地重建 App 安装器和便携目录。便携 ZIP 核对了 58 个文件的 SHA-256，安装器与构建收据一致。App 只随附塔防助手 0.10.0，与独立页签包的摘要相同。

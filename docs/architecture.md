@@ -2,7 +2,9 @@
 
 本文包含用户授权的本地版本化页签包。实现范围与运行证据分开，具体检查结果见 README 和验证记录。
 
-当前正式交付为 [App 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)、[塔防助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) 和 [虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)，来源为干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5`。App 只随附塔防，独立塔防包与随附包字节一致，虚拟伙伴独立下载导入。2026-11-03 三个 Release 的 14 个附件均已重新下载并核对 SHA-256。AI 工作台 0.4.4 与作品管理器 0.3.1 沿用既有独立 Release；测试包、部署工作台与本机数据未进入本次交付。历史 0.19.3／0.9.3、0.18.0／0.8.2 的来源与验证记录保留。
+当前正式交付为 [OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)、[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1) 和 [AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2)，App 仅随附塔防，AI 工作台独立下载导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，主分支与三个发布标签的 CI 均通过。App 的 6 个附件和两个页签各 4 个附件，共 14 个，均已从远端重新下载并核对大小与 SHA-256；随附塔防与独立包字节一致。
+
+2026-11-03 的历史正式交付为 [App 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)、[塔防助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) 和 [虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)，来源为干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5`。App 只随附塔防，独立塔防包与随附包字节一致，虚拟伙伴独立下载导入。2026-11-03 三个 Release 的 14 个附件均已重新下载并核对 SHA-256。AI 工作台 0.4.4 与作品管理器 0.3.1 沿用既有独立 Release；测试包、部署工作台与本机数据未进入本次交付。历史 0.19.3／0.9.3、0.18.0／0.8.2 的来源与验证记录保留。
 
 OpenDesk 的应用标识为 `net.nimda.opendesk`。可执行文件、worker、构建目录及环境变量使用 OpenDesk / opendesk / OPENDESK 命名。默认配置与包选择归属该应用的数据目录，不自动迁入或删除旧应用数据；版本历史和历史验证记录保留原始身份及证据含义。
 
@@ -38,7 +40,7 @@ flowchart TB
 
 `config/version.json` 保留宿主/core 与已有发布历史；包内 `manifest.json` 描述独立模块版本；App 索引说明本次默认随附内容；本机选择及成功激活状态说明用户实际使用版本。旧中央业务历史不能冒充当前包版本。
 
-正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定：默认随附仍只有 `tower-assistant`，允许独立发布的源码另含 `nimda-workspace`（作品管理器，见 [统一工程说明](media-manager.md)）、`ai-workbench`（见 [AI 工作台](ai-workbench.md)）与 `virtual-partner`（见 [虚拟伙伴](virtual-partner.md)）。当前公开的 0.20.1 App 随附塔防助手 0.9.5；虚拟伙伴 0.8.2 独立发布，AI 工作台 0.4.4 与作品管理器 0.3.1 保留原包。历史 0.19.3／0.9.3、0.18.0／0.8.2、0.17.0／0.1.9、0.12.0／0.1.7 的随附事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
+正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定：默认随附仍只有 `tower-assistant`，允许独立发布的源码另含 `nimda-workspace`（作品管理器，见 [统一工程说明](media-manager.md)）、`ai-workbench`（见 [AI 工作台](ai-workbench.md)）与 `virtual-partner`（见 [虚拟伙伴](virtual-partner.md)）。当前公开的 0.21.0 App 随附塔防助手 0.10.1，AI 工作台 0.5.2 独立发布；虚拟伙伴 0.8.2 与作品管理器 0.3.1 保留原包。历史 0.20.1／0.9.5、0.19.3／0.9.3、0.18.0／0.8.2、0.17.0／0.1.9、0.12.0／0.1.7 的随附事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
 
 模块前端由自己的 `frontend/index.html` 启动，使用相对路径资源。通过 `apps/framework/module-sdk` 的 `createModuleBridge()` 完成身份握手后访问 `bridge.host`。页面不直接导入 Tauri API，宿主核对当前包及其 manifest 业务方法。旧页面的消息不能被当作新版本结果。
 
@@ -86,7 +88,7 @@ OpenDesk 0.9.0 移除背景导入、背景显示、粒子和氛围调节，设�
 
 既有六种风格保留，新增 `mint`“薄荷奶油”，建议浅色，以静态浅粉/薄荷渐变、深青文字、圆角卡片、中心内容列与轻导航呈现；选择风格不改主题，深色与石墨夜保留各自语义色。`glass` 仍显示为“深海透明”，采用深蓝黑半透明、青色细边、低圆角紧凑分区和顶部标签栏。`surfaceEffects` 继续作为 protocol 1 的可选兼容字段，当前宿主仅按风格生成固定材质与透明度描述，关闭表面动效；没有用户背景图片、材质、浓度或氛围设置。消息不含图片 ID、路径、data URL 或图片字节。
 
-八种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。0.21.0 本地新增 `report`「数据简报」，使用顶部横向导航、暖灰纸面、黑色标签、橙色强调与细线表格，建议沙砾配色；其他配色继续独立生效。Rust 保存新枚举，设置预览与 SDK 消息沿用已有链路。共享样式进入模块构建指纹，塔防 0.10.1 与 AI 0.5.2 为当前独立包构建版本，正在准备正式发布。原有薄荷风格及 0.1.9 等历史包保持原身份；App 升级仍保留用户固定选择，模块内部采用新风格需要手动选择支持它的新包。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
+八种风格由 `SUPPORTED_UI_STYLES` 与显式 preset 管理。0.21.0 新增 `report`「数据简报」，使用顶部横向导航、暖灰纸面、黑色标签、橙色强调与细线表格，建议沙砾配色；其他配色继续独立生效。Rust 保存新枚举，设置预览与 SDK 消息沿用已有链路。共享样式进入模块构建指纹，塔防 0.10.1 与 AI 0.5.2 已从干净提交构建并独立发布。原有薄荷风格及 0.1.9 等历史包保持原身份；App 升级仍保留用户固定选择，模块内部采用新风格需要手动选择支持它的新包。旧 SDK 可忽略或回退未知风格，协议与基础 theme 契约不变。
 
 模块 iframe 固定填满主内容区的剩余空间，内部 body 自行滚动；宿主不测量业务 DOM。设置变化不改变模块身份、版本选择或业务数据。
 
@@ -126,7 +128,7 @@ App 设置只显示角色卡和「不启用宠物」，不复制宠物菜单。�
 
 `scripts/module-pack.mjs` 负责独立 Vite 构建、worker 冻结、真实冻结 worker 验证和 ZIP 打包，`module-pack-archive.py` 只封装普通文件。摘要放在外部索引，不进入包内自引用。
 
-`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.10.1/`；`virtual-partner`、`ai-workbench` 和 `media-manager` 分别输出 0.8.2、0.5.2 与 0.3.1。已发布的 AI 工作台仍是 0.4.4。本地 App 0.21.0 的构建目标仅随附塔防 0.10.1，并写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
+`scripts/distribution.mjs` 统一校验公开模块白名单、测试模块排除和实际随附目录。`npm run build:module -- tower-assistant` 按当前 manifest 输出独立的 `dist/modules/tower-assistant/0.10.1/`；`virtual-partner`、`ai-workbench` 和 `media-manager` 分别输出 0.8.2、0.5.2 与 0.3.1。AI 工作台 0.5.2 已独立发布。正式 App 0.21.0 仅随附塔防 0.10.1，并写入 `dist/app-build.json`，记录源码身份与产物清单。模块 smoke 从本地 fixture baseline 预置测试台，再验证版本切换，不要求把它放回正式随附清单。
 
 `npm run test:architecture` 检查 `apps/` 以及公开分发清单中外部插件的 `integrations/opendesk`，因此不会扫描未登记的本机插件目录。模块包装前端遵守宿主的静态导入、Tauri 适配器和全局注册边界；作品管理器原应用内部的兼容 DOM/全局接口仍由插件自己的回归约束，不被误当作 OpenDesk 公共 API。CI 另以独立 Windows job 编译并测试 Rust 宿主，以及使用作品管理器锁定环境运行其完整 Python/JavaScript 与适配器回归。
 

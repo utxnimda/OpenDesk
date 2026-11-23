@@ -1,6 +1,6 @@
 # OpenDesk AI 工作台
 
-独立的 hostApi 2 Web App 页签。当前待发布版本 0.5.2，使用 Vue 3 / TypeScript 与 Python，详细范围、使用和权限见[AI 工作台说明](../../docs/ai-workbench.md)。
+独立的 hostApi 2 Web App 页签。当前正式版本 0.5.2，使用 Vue 3 / TypeScript 与 Python，详细范围、使用和权限见[AI 工作台说明](../../docs/ai-workbench.md)。
 
 支持 OpenAI Responses、Chat Completions 兼容接口、本地 Codex App Server 与 Cursor Agent CLI。Cursor 模型列表读取 `agent models`，Claude 等完整模型 ID 使用 `--model` 和普通 CLI 流式输出，旧参数化会话继续使用 ACP。API 模式可按用户授权调用 OpenDesk 当前已打开插件的只读工具；本地代理使用各自的只读模式与审批，不接入动态插件工具。模型使用完整目录下拉列表，可在对话空闲时切换；Codex 工作区通过本机 app-server 显式读取。聊天布局参考 Codex，配色和材质继承 OpenDesk。
 

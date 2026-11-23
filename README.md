@@ -2,7 +2,9 @@
 
 OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk`，使用 OpenDesk 名称、构建产物和独立数据目录。本仓库从经过检查的源码快照建立全新 Git 历史，不导入旧提交、标签或生成产物。既有版本历史和验证记录保留原始名称、路径及历史含义，不能代替当前 OpenDesk 的构建与运行验证。
 
-**正式交付（2026-11-03）**　[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。
+**正式交付（2026-11-23）**　[OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0) 仅随附[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1)，[AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2) 独立下载导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，主分支与三个发布标签的 CI 均通过。App 的 6 个附件和两个页签各 4 个附件，共 14 个，均已从远端重新下载并核对大小与 SHA-256；随附塔防与独立包字节一致。
+
+**历史交付（2026-11-03）**　[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。
 
 **历史交付（2026-10-29）**：[App 0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3)、[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 和[塔防山贼助手 0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3) 均从干净提交 `92c22f21d21f5287e8acb515d1de4509ed1bec50` 构建并公开发布。App 仅随附塔防，AI 页签单独下载导入。三个 Release 共 14 个附件已重新下载并逐项核对 SHA-256；部署工作台、测试包、个人配置、聊天记录和凭据未进入交付。
 
@@ -12,19 +14,19 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 面向 Windows 的本地桌面工具台，用于挂载和开发独立功能。基于 **Tauri 2 + Vue 3 / TypeScript + Python worker**，通用框架管理窗口、设置和后台通信，业务模块各自负责界面与逻辑。
 
-**最新公开版本：[v0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)**（2026-11-03） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
+**最新公开版本为 [v0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)**（2026-11-23） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
 
 ## 正式页签与本地开发测试
 
-当前源码新增 OpenDesk **0.21.0** 的「数据简报」风格，位于「设置 → 风格与配色」。建议配色为沙砾暖调，采用暖灰纸面、黑色标签、橙色强调和细线表格。塔防 **0.10.1** 与 AI 工作台 **0.5.2** 正在准备正式发布，采纳新的共享风格。原塔防 0.10.0、AI 工作台 0.5.0 和 0.5.1 的本地包保留，正式下载仍以下列公开记录为准。
+OpenDesk **0.21.0** 新增「数据简报」风格，位于「设置 → 风格与配色」。建议配色为沙砾暖调，采用暖灰纸面、黑色标签、橙色强调和细线表格。正式塔防 **0.10.1** 与 AI 工作台 **0.5.2** 采纳新的共享风格。原塔防 0.10.0、AI 工作台 0.5.0 和 0.5.1 的本地包保留。
 
 OpenDesk 0.20.1 为主视图页签提供可选的桌宠头像接口，虚拟伙伴可从已登记角色的动作中选择一帧作头像。[页签包契约](docs/module-packages.md)
 
-当前 App 随附的塔防页签也可独立下载。虚拟伙伴、AI 工作台 0.4.4 与作品管理器 0.3.1 均按需单独导入。[下载索引](docs/downloads.md)
+当前 App 随附的塔防页签也可独立下载。虚拟伙伴 0.8.2、AI 工作台 0.5.2 与作品管理器 0.3.1 均按需单独导入。[下载索引](docs/downloads.md)
 
 页签前端是独立构建的 HTML/JS/CSS，后台是每包自己的 worker 和依赖。切换版本同时更换对应前后端，不重编译宿主；其他页签的运行实例保持独立。禁用保留所选版本和数据。首版数据 schema 必须精确兼容，不执行自动迁移、回退或删除数据。
 
-当前正式塔防版本为 **0.9.5**，宿主为 **0.20.1**。塔防提供供 AI 工作台 API 会话使用的授权只读统计摘要，并同步共享外观样式；既有存档分析、统计排行与明细公式功能保留。升级 App 保留个人固定选择，需要在「功能管理」手动选择新页签版本。透明窗口需要宿主 0.18.0 或更新，AI 工具中介需要 0.19.0 或更新；实际游戏视觉和长时间性能仍以既有验收边界为准。
+当前正式塔防版本为 **0.10.1**，宿主为 **0.21.0**。塔防提供供 AI 工作台 API 会话使用的授权只读统计摘要，并同步共享外观样式；既有存档分析、统计排行与明细公式功能保留。升级 App 保留个人固定选择，需要在「功能管理」手动选择新页签版本。透明窗口需要宿主 0.18.0 或更新，AI 工具中介需要 0.19.0 或更新；实际游戏视觉和长时间性能仍以既有验收边界为准。
 
 0.7.0 新增复用同一模块 worker 的原生透明排行榜窗口，已完成构建、自动化和通用原生窗口链路验证，游戏上的透明叠加视觉尚未验收。这些结果不代替 0.7.1 的验证；此前 **0.6.1** 也保留为已完成本地限定范围验收的不可变包。塔防继续基于 Git 主线 0.1.9 开发，没有合入本机 0.3.0；保留指定存档的灵物地图、灵气排名和 23 层存档支持，以及人物工作统计、伤害分类、固定人物与公式详情。用户此前确认 0.5.2 修复入口的游戏画面正常、采集初始化成功；此前已只读核对游戏内三份采集脚本与当前源码一致，无需为本次明细修复重装入口；新字段的实际工作/伤害事件与长时间性能尚未完整验证，具体实现范围见[模块说明](docs/tower-assistant.md)。
 
@@ -63,7 +65,7 @@ npm run build:module -- media-manager
 
 | 稳定功能 ID | 功能 | 当前功能版本 | 最近更新所属应用版本 |
 |---|---|---|---|
-| `core.workbench` | 八种界面风格，新增数据简报；独立配色、分类设置与外观保存 | 0.9.0 | 0.21.0（本地开发） |
+| `core.workbench` | 八种界面风格，新增数据简报；独立配色、分类设置与外观保存 | 0.9.0 | 0.21.0 |
 | `core.versioning` | 版本与更新追踪 | 0.1.1 | 0.2.1 |
 | `core.module-packages` | 独立页签、Web 应用、模块第二视图、经授权的只读工具调用与桌宠头像帧 | 0.9.1 | 0.20.1 |
 | `core.personalization` | 已移除：背景图片、材质与氛围调节；保留历史 ID | 0.2.0 | 0.9.0 |
@@ -122,7 +124,7 @@ npm run build:module -- media-manager
 
 薄荷奶油保留其他配色选择，深色和石墨夜沿用各自的语义颜色；浅色最接近参考方向。七项风格选择器随可用宽度自动换列。柔色背景由静态 CSS 绘制，不读取图片，也不恢复用户背景与氛围设置。
 
-本地塔防 0.10.1 与 AI 0.5.2 支持八种风格与配色同步。模块仍使用既有 protocol 1 消息标识，`uiStyle`、`surfaceEffects` 保留可选扩展兼容；当前宿主只由风格生成固定、无动效的表面描述，没有用户材质或浓度调节。旧包可以忽略扩展，并继续收到兼容的基础浅色/深色主题。宿主不发送图片、路径或图片数据。共享 CSS 和 SDK 的薄荷样式从塔防 0.1.9 起提供，0.8.2 继续支持；升级保留用户固定选择，已有用户需在「功能管理」手动选择已安装的新版本。
+正式塔防 0.10.1 与 AI 0.5.2 支持八种风格与配色同步。模块仍使用既有 protocol 1 消息标识，`uiStyle`、`surfaceEffects` 保留可选扩展兼容；当前宿主只由风格生成固定、无动效的表面描述，没有用户材质或浓度调节。旧包可以忽略扩展，并继续收到兼容的基础浅色/深色主题。宿主不发送图片、路径或图片数据。共享 CSS 和 SDK 的薄荷样式从塔防 0.1.9 起提供，0.8.2 继续支持；升级保留用户固定选择，已有用户需在「功能管理」手动选择已安装的新版本。
 
 打开功能后，模块外层固定占据主内容区的剩余空间，宿主不再叠加重复的卡片边框与模块标题；内容滚动由 iframe 内的页面负责。宿主不读取或测量 iframe 的业务 DOM 来调整高度，模块保留自己的布局与滚动责任。
 
@@ -239,7 +241,7 @@ npm run dev
 
 首次运行 Rust 检查前需要 `npm run build:worker` 和 `npm run build:modules`，因为桌面构建描述引用 worker 与自带包资源。首次取得仓库应使用已有 Cargo.lock；不要在正常检查时主动更新锁文件。
 
-生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携 ZIP 应完整解压后启动，不能只复制 EXE。当前源码安装器为 `apps/framework/desktop/src-tauri/target/release/bundle/nsis/OpenDesk_0.21.0_x64-setup.exe`，0.21.0 是本地开发版本。此前 0.20.1 App 及当时两个更新页签已公开发布并下载核验。生成安装器本身不代表已安装或已签名；Git 推送不会自动上传 Release 附件。
+生产包为 `dist/OpenDesk/OpenDesk.exe`，必须连同同目录的 `opendesk-worker.exe`、`_internal` 和 `bundled-modules` 使用。便携 ZIP 应完整解压后启动，不能只复制 EXE。当前源码安装器为 `apps/framework/desktop/src-tauri/target/release/bundle/nsis/OpenDesk_0.21.0_x64-setup.exe`，0.21.0 已于 2026-11-23 公开发布并完成远端附件核验。此前 0.20.1 App 及当时两个更新页签的历史记录保留。生成安装器本身不代表已安装或已签名；Git 推送不会自动上传 Release 附件。
 
 便携目录重建时若存在不属于本次产物清单的文件或目录，构建会在复制前拒绝，避免旧依赖或个人文件混入新包。请将旧输出移走后重新生成，或先检查并手工清理；脚本不自动删除未知内容。
 
@@ -256,7 +258,7 @@ npm run release:stage -- app
 npm run release:stage -- module tower-assistant
 ```
 
-历史版本继续保留原发布目录。本次 2026-10-29 使用 `dist/releases/app/0.19.3/`、`dist/releases/modules/tower-assistant/0.9.3/` 和 `dist/releases/modules/ai-workbench/0.4.4/`。`release:stage` 只整理本地附件，不提交、打标签或上传；暂存时要求干净源码、真实构建收据、版本及全部摘要一致，已有版本目录拒绝覆盖。发布结果文档另作后续提交，不移动构建标签。
+历史版本继续保留原发布目录。本次 2026-11-23 使用 `dist/releases/app/0.21.0/`、`dist/releases/modules/tower-assistant/0.10.1/` 和 `dist/releases/modules/ai-workbench/0.5.2/`。`release:stage` 只整理本地附件，不提交、打标签或上传；暂存时要求干净源码、真实构建收据、版本及全部摘要一致，已有版本目录拒绝覆盖。发布结果文档另作后续提交，不移动构建标签。
 
 上传时只使用各暂存目录中审核通过的明确文件清单。不得递归上传整个 `dist`、本机 imports/installed、测试 fixture、缓存或其他分支产物。新增/更新的正式页签按自己的 ID/版本独立构建、暂存与发布下载；本机安装或导入行为不产生发布授权，也不自动加入分发清单。
 
@@ -319,4 +321,4 @@ docs/                             工程规范、架构和验证
 
 ## AI 工作台独立页签
 
-[AI 工作台 0.4.4](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.4.4) 已独立发布，推荐搭配 OpenDesk 0.19.3。支持 API 聊天、本地 Codex 与 Cursor Agent、真实模型目录及参数、按 Agent 类型组织的可用工作区树，以及经授权读取当前插件实例的只读工具。侧栏可拖动保存宽度，回答支持 Markdown 和代码高亮，风格与配色跟随宿主；0.4.4 修复终态先于尾部事件可见的竞态。详细使用与限制见 [AI 工作台](docs/ai-workbench.md)。App 默认仍只随附塔防，AI 需单独导入，不自动改写个人页签选择。
+[AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2) 已独立发布，推荐搭配 OpenDesk 0.21.0。支持 API 聊天、本地 Codex 与 Cursor Agent、真实模型目录及参数、按 Agent 类型组织的可用工作区树，以及经授权读取当前插件实例的只读工具。侧栏可拖动保存宽度，回答支持 Markdown 和代码高亮，风格与配色跟随宿主，新增数据简报风格，支持 Cursor CLI 模型目录与流式输出，并保留既有终态一致性修复。详细使用与限制见 [AI 工作台](docs/ai-workbench.md)。App 默认仍只随附塔防，AI 需单独导入，不自动改写个人页签选择。
