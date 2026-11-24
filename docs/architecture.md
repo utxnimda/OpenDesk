@@ -40,7 +40,7 @@ flowchart TB
 
 `config/version.json` 保留宿主/core 与已有发布历史；包内 `manifest.json` 描述独立模块版本；App 索引说明本次默认随附内容；本机选择及成功激活状态说明用户实际使用版本。旧中央业务历史不能冒充当前包版本。
 
-正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定：默认随附仍只有 `tower-assistant`，允许独立发布的源码另含 `nimda-workspace`（作品管理器，见 [统一工程说明](media-manager.md)）、`ai-workbench`（见 [AI 工作台](ai-workbench.md)）与 `virtual-partner`（见 [虚拟伙伴](virtual-partner.md)）。当前公开的 0.21.0 App 随附塔防助手 0.10.1，AI 工作台 0.5.2 独立发布；虚拟伙伴 0.8.2 与作品管理器 0.3.1 保留原包。历史 0.20.1／0.9.5、0.19.3／0.9.3、0.18.0／0.8.2、0.17.0／0.1.9、0.12.0／0.1.7 的随附事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
+正式分发范围由 `config/distribution.json` 的 `bundledModules` / `publicModules` 决定：默认随附仍只有 `tower-assistant`，允许独立发布的源码另含 `nimda-workspace`（作品管理器，见 [统一工程说明](media-manager.md)）、`ai-workbench`（见 [AI 工作台](ai-workbench.md)）、`virtual-partner`（见 [虚拟伙伴](virtual-partner.md)）与 `deepseek-harness`（本地开发中，见 [DeepSeek Harness 页签说明](deepseek-harness.md) 及 [DSH × OpenDesk 页签操控链路统一规划](dsh-opendesk-automation-plan.md)）。当前公开的 0.21.0 App 随附塔防助手 0.10.1，AI 工作台 0.5.2 独立发布；虚拟伙伴 0.8.2 与作品管理器 0.3.1 保留原包。历史 0.20.1／0.9.5、0.19.3／0.9.3、0.18.0／0.8.2、0.17.0／0.1.9、0.12.0／0.1.7 的随附事实保留。测试台本地开发版本为 1.0.7，`test-lab` 是开发测试源码，生成包只用于本地 fixture，不进入 App 或独立 Release。本机部署工作台及其他导入包没有进入此次公开交付。运行时导入目录、已安装包和构建缓存都不能决定公开清单。源码归属、构建产物和发布范围分别检查。
 
 模块前端由自己的 `frontend/index.html` 启动，使用相对路径资源。通过 `apps/framework/module-sdk` 的 `createModuleBridge()` 完成身份握手后访问 `bridge.host`。页面不直接导入 Tauri API，宿主核对当前包及其 manifest 业务方法。旧页面的消息不能被当作新版本结果。
 

@@ -10,6 +10,9 @@ export const MODULE_DEFINITIONS = Object.freeze({
   'ai-workbench': Object.freeze({ sourcePath: 'plugins/ai-workbench/integrations/opendesk', testFixture: false,
     externalBuilder: Object.freeze({ script: 'build.mjs', projectPath: 'plugins/ai-workbench', workDirectory: '.cache/ai-workbench-build',
       pythonEnv: 'OPENDESK_AI_PYTHON', pythonEnvAliases: Object.freeze(['OPENDESK_PYTHON']), pythonConfig: 'aiPython', pythonConfigAliases: Object.freeze(['python']) }) }),
+  'deepseek-harness': Object.freeze({ sourcePath: 'plugins/deepseek-harness/integrations/opendesk', testFixture: false,
+    externalBuilder: Object.freeze({ script: 'build.mjs', projectPath: 'plugins/deepseek-harness', workDirectory: '.cache/deepseek-harness-build',
+      pythonEnv: 'OPENDESK_DSH_PYTHON', pythonEnvAliases: Object.freeze(['OPENDESK_PYTHON']), pythonConfig: 'dshPython', pythonConfigAliases: Object.freeze(['python']) }) }),
   'test-lab': Object.freeze({ folder: 'test_lab', backend: 'apps.features.test_lab.backend.service', marker: 'v1-baseline', testFixture: true }),
   'nimda-workspace': Object.freeze({ sourcePath: 'plugins/media-manager/integrations/opendesk', testFixture: false,
     externalBuilder: Object.freeze({ script: 'build.mjs', projectPath: 'plugins/media-manager', workDirectory: '.cache/media-manager-build',
@@ -17,7 +20,7 @@ export const MODULE_DEFINITIONS = Object.freeze({
       pythonConfig: 'mediaManagerPython', pythonConfigAliases: Object.freeze(['workManagerPython']) }) }),
 });
 // CLI names may change independently of installed package identities.
-export const MODULE_BUILD_ALIASES = Object.freeze({ 'media-manager': 'nimda-workspace' });
+export const MODULE_BUILD_ALIASES = Object.freeze({ 'media-manager': 'nimda-workspace', dsh: 'deepseek-harness' });
 const SEMVER = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const DIGEST = /^[a-f0-9]{64}$/;
 const plainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);

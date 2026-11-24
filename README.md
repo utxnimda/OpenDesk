@@ -322,3 +322,7 @@ docs/                             工程规范、架构和验证
 ## AI 工作台独立页签
 
 [AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2) 已独立发布，推荐搭配 OpenDesk 0.21.0。支持 API 聊天、本地 Codex 与 Cursor Agent、真实模型目录及参数、按 Agent 类型组织的可用工作区树，以及经授权读取当前插件实例的只读工具。侧栏可拖动保存宽度，回答支持 Markdown 和代码高亮，风格与配色跟随宿主，新增数据简报风格，支持 Cursor CLI 模型目录与流式输出，并保留既有终态一致性修复。详细使用与限制见 [AI 工作台](docs/ai-workbench.md)。App 默认仍只随附塔防，AI 需单独导入，不自动改写个人页签选择。
+
+## DeepSeek Harness 独立页签
+
+`deepseek-harness` 是独立的 `hostApi: 2` Web App 页签（本地开发源码 `0.3.2`，尚未公开发布），通过包内监督 worker、本地 HTTP/WebSocket 反向代理、本地源码构建与 `dev:web` 热开发工作流以及受控 OpenDesk 只读工具 Streamable HTTP MCP 桥接完整承载原生 `dsh web`（Cordis 插件、MCP、Subagents、Plan 与定时任务）。默认隔离 `DSH_HOME` 于模块数据目录，并支持连接外部独立运行的 `dsh web` 实例。可用 `npm run test:dsh` 检查、`npm run build:module -- deepseek-harness`（或 `dsh`）单独构建。详见 [DeepSeek Harness 页签说明](docs/deepseek-harness.md) 与 [DSH × OpenDesk 页签操控链路统一规划](docs/dsh-opendesk-automation-plan.md)。

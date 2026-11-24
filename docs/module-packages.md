@@ -104,7 +104,7 @@ SDK 保留 0.8.0 引入的可选 `surfaceEffects` 以兼容已有包。当前宿
 
 ## 分发范围与构建
 
-`config/distribution.json` 决定正式分发范围。`bundledModules` 指定 App 随附页签，目前只有 `tower-assistant`。`publicModules` 包含全部随附页签，以及可独立公开的作品管理器 `nimda-workspace`、AI 工作台 `ai-workbench` 和虚拟伙伴 `virtual-partner`。测试台 `test-lab` 标记为 `testFixture`，其二进制仅用于本地验证。
+`config/distribution.json` 决定正式分发范围。`bundledModules` 指定 App 随附页签，目前只有 `tower-assistant`。`publicModules` 包含全部随附页签，以及可独立公开的作品管理器 `nimda-workspace`、AI 工作台 `ai-workbench`、虚拟伙伴 `virtual-partner` 和 DeepSeek Harness `deepseek-harness`（本地开发源码 0.1.0，尚未公开发布）。测试台 `test-lab` 标记为 `testFixture`，其二进制仅用于本地验证。
 
 先按 README 配置 Python venv 和锁定依赖；以下命令只构建本地文件，不提交、打标签或上传：
 

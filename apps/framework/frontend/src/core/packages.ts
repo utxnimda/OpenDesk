@@ -58,6 +58,9 @@ export function packageSandbox(instance: Pick<PackageInstance, 'webApp'> | null)
     ? `${base} allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox`
     : base;
 }
+export function packagePermissions(instance: Pick<PackageInstance, 'webApp'> | null): string {
+  return instance?.webApp === true ? 'clipboard-write' : '';
+}
 export function canSelectPackage(module: InstalledModule, version: PackageVersion): boolean {
   return version.compatible && !(module.selectedVersion === version.version && module.selectedDigest === version.digest);
 }

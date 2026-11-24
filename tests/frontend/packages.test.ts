@@ -3,7 +3,7 @@ import { createSSRApp } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import PackagesPage from '../../apps/framework/frontend/src/components/PackagesPage.vue';
 import { createHostAdapter } from '../../apps/framework/frontend/src/core/host';
-import { canOpenPackage, canSelectPackage, packageKey, packageSandbox, safeRepositoryLink, type InstalledModule, type PackageVersion } from '../../apps/framework/frontend/src/core/packages';
+import { canOpenPackage, canSelectPackage, packageKey, packagePermissions, packageSandbox, safeRepositoryLink, type InstalledModule, type PackageVersion } from '../../apps/framework/frontend/src/core/packages';
 
 const oldVersion: PackageVersion = { version: '1.0.0', digest: 'old-digest', source: 'bundled', compatible: true, error: null };
 const newVersion: PackageVersion = { version: '1.1.0', digest: 'new-digest', source: 'imported', compatible: true, error: null };
@@ -15,6 +15,10 @@ describe('package selection contract', () => {
     expect(packageSandbox({})).toBe(staticSandbox);
     expect(packageSandbox({ webApp: false })).toBe(staticSandbox);
     expect(packageSandbox({ webApp: true })).toBe(`${staticSandbox} allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox`);
+    expect(packagePermissions(null)).toBe('');
+    expect(packagePermissions({})).toBe('');
+    expect(packagePermissions({ webApp: false })).toBe('');
+    expect(packagePermissions({ webApp: true })).toBe('clipboard-write');
   });
   it('remounts a restored web-app origin without remounting on the first open or status changes', () => {
     const initial = packageKey(module);

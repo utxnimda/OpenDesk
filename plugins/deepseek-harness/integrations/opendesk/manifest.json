@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "deepseek-harness",
+  "label": "DeepSeek Harness",
+  "version": "0.3.2",
+  "hostApi": 2,
+  "webApp": true,
+  "target": "windows-x64",
+  "frontend": "frontend/index.html",
+  "worker": "worker/module-worker.exe",
+  "methods": [
+    "dsh.status",
+    "dsh.probe",
+    "dsh.configure",
+    "dsh.start",
+    "dsh.stop",
+    "dsh.restart",
+    "dsh.install",
+    "dsh.install.cancel",
+    "dsh.source.install",
+    "dsh.source.build",
+    "dsh.source.cancel",
+    "dsh.logs",
+    "dsh.browser.open",
+    "dsh.mcp.sync",
+    "dsh.mcp.poll",
+    "dsh.mcp.respond"
+  ],
+  "dataSchema": 1,
+  "source": {
+    "commit": null,
+    "dirty": true,
+    "repository": null
+  }
+}

@@ -35,7 +35,8 @@
     "desktop:check": "node scripts/desktop.mjs check",
     "desktop:test": "node scripts/desktop.mjs test",
     "doctor": "node scripts/doctor.mjs",
-    "test:ai": "node plugins/ai-workbench/check.mjs"
+    "test:ai": "node plugins/ai-workbench/check.mjs",
+    "test:dsh": "node plugins/deepseek-harness/check.mjs"
   },
   "dependencies": {
     "@lucide/vue": "1.57.0",
