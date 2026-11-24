@@ -83,9 +83,13 @@ def main() -> None:
             status = call("dsh.status")
             assert status["version"] == version
             assert status["runtime"]["proxyUrl"] == proxy_url
+            assert status["mcp"]["listening"] is True
             assert status["mcp"]["active"] is False
 
-            mcp_cleared = call("dsh.mcp.sync", {"tools": []})
+            mcp_meta = call("dsh.mcp.sync", {"tools": [], "hostMetaEnabled": True})
+            assert mcp_meta["active"] is True
+            assert mcp_meta["hostMetaEnabled"] is True
+            mcp_cleared = call("dsh.mcp.sync", {"tools": [], "hostMetaEnabled": False})
             assert mcp_cleared["active"] is False
             assert call("dsh.mcp.poll") == {"calls": []}
 

@@ -72,10 +72,13 @@ def main() -> int:
         def handle_mcp_sync(params):
             if not isinstance(params, dict):
                 raise ProtocolError("INVALID_PARAMS", "MCP 同步参数必须是对象。")
-            unknown = set(params.keys()) - {"tools"}
+            unknown = set(params.keys()) - {"tools", "hostMetaEnabled"}
             if unknown or not isinstance(params.get("tools"), list):
-                raise ProtocolError("INVALID_PARAMS", "MCP 同步仅接受 tools 数组。")
-            return service.mcp_sync(params["tools"])
+                raise ProtocolError("INVALID_PARAMS", "MCP 同步仅接受 tools 数组和可选 hostMetaEnabled 布尔值。")
+            host_meta = params.get("hostMetaEnabled")
+            if host_meta is not None and not isinstance(host_meta, bool):
+                raise ProtocolError("INVALID_PARAMS", "hostMetaEnabled 必须是布尔值。")
+            return service.mcp_sync(params["tools"], host_meta_enabled=host_meta)
 
         def handle_mcp_respond(params):
             if not isinstance(params, dict):

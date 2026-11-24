@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "tower-assistant",
   "label": "塔防山贼助手",
-  "version": "0.10.1",
+  "version": "0.10.3",
   "hostApi": 1,
   "target": "windows-x64",
   "frontend": "frontend/index.html",
@@ -20,7 +20,8 @@
     "tower.statistics.status",
     "tower.statistics.explain",
     "tools.describe",
-    "tower.ai.summary"
+    "tower.ai.summary",
+    "tower.ai.summary.filtered"
   ],
   "dataSchema": 1,
   "source": {

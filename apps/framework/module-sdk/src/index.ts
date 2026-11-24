@@ -1,6 +1,6 @@
 /** Browser-only module SDK. It deliberately has no Tauri or host-process imports. */
-import { parseToolOperation, toolIdentity, type ModuleToolsClient, type HostTool } from './module-tools';
-export type { HostTool, HostToolIdentity, ModuleToolsClient } from './module-tools';
+import { parseToolOperation, toolIdentity, type ModuleToolsClient, type HostTool, type HostModuleSummary, type HostOpenModuleResult } from './module-tools';
+export type { HostTool, HostToolAccess, HostToolIdentity, HostModuleSummary, HostOpenModuleResult, ModuleToolsClient } from './module-tools';
 import { isSurfaceContext, parseSurfaceOperation, type ModuleSurfaceClient, type ModuleSurfaceContext } from './module-surface';
 export type { ModuleSurfaceClient, ModuleSurfaceContext, ModuleSurfaceOptions } from './module-surface';
 import { parsePetPortraitOperation, type PetPortraitCatalog, type PetPortraitFrame, type PetPortraitsClient } from './pet-portraits';
@@ -57,6 +57,7 @@ export interface ConnectMessage {
   surfaceEffects?: unknown;
   moduleSurface?: unknown;
   moduleTools?: unknown;
+  moduleToolsV2?: unknown;
   petPortraits?: unknown;
 }
 export interface ModuleBridge {
@@ -133,11 +134,19 @@ export function createModuleBridge(options: { petPortraits?: boolean } = {}): Mo
   function receive(event: MessageEvent) {
     if (!active || port || !matchesSource(event, window.parent, parentOrigin) || !isConnectMessage(event.data, generation) || event.ports.length !== 1) return;
     port = event.ports[0];
-    if (event.data.moduleTools === 1) tools = {
-      list: () => toolRequest('list', {}) as Promise<HostTool[]>,
-      grant: async items => { await toolRequest('grant', { tools: items.map(toolIdentity) }); },
-      call: (tool, args) => toolRequest('call', { tool: toolIdentity(tool), arguments: args }),
-    };
+    if (event.data.moduleTools === 1) {
+      const v2 = event.data.moduleToolsV2 === 1;
+      tools = {
+        list: () => toolRequest('list', {}) as Promise<HostTool[]>,
+        grant: async items => { await toolRequest('grant', { tools: items.map(toolIdentity) }); },
+        call: (tool, args) => toolRequest('call', { tool: toolIdentity(tool), arguments: args }),
+        ...(v2 ? {
+          listModules: () => toolRequest('list-modules', {}) as Promise<HostModuleSummary[]>,
+          openModule: (moduleId: string, opts?: { focus?: boolean }) =>
+            toolRequest('open-module', { moduleId, focus: Boolean(opts?.focus) }) as Promise<HostOpenModuleResult>,
+        } : {}),
+      };
+    }
     if (options.petPortraits === true && event.data.petPortraits === 1) petPortraits = {
       list: () => portraitRequest('list', {}) as Promise<PetPortraitCatalog>,
       frame: (petId, sourceId, index) => portraitRequest('frame', { petId, sourceId, index }) as Promise<PetPortraitFrame>,

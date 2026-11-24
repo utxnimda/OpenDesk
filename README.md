@@ -325,4 +325,4 @@ docs/                             工程规范、架构和验证
 
 ## DeepSeek Harness 独立页签
 
-`deepseek-harness` 是独立的 `hostApi: 2` Web App 页签（本地开发源码 `0.3.2`，尚未公开发布），通过包内监督 worker、本地 HTTP/WebSocket 反向代理、本地源码构建与 `dev:web` 热开发工作流以及受控 OpenDesk 只读工具 Streamable HTTP MCP 桥接完整承载原生 `dsh web`（Cordis 插件、MCP、Subagents、Plan 与定时任务）。默认隔离 `DSH_HOME` 于模块数据目录，并支持连接外部独立运行的 `dsh web` 实例。可用 `npm run test:dsh` 检查、`npm run build:module -- deepseek-harness`（或 `dsh`）单独构建。详见 [DeepSeek Harness 页签说明](docs/deepseek-harness.md) 与 [DSH × OpenDesk 页签操控链路统一规划](docs/dsh-opendesk-automation-plan.md)。
+`deepseek-harness` 是独立的 `hostApi: 2` Web App 页签（本地开发源码 `0.4.1`，尚未公开发布），通过包内监督 worker、本地 HTTP/WebSocket 反向代理、本地源码构建与 `dev:web` 热开发工作流、零配置自动注入的 OpenDesk 跨页签 MCP 桥接与路由 Skill 完整承载原生 `dsh web`（Cordis 插件、MCP、Subagents、Plan 与定时任务）。默认隔离 `DSH_HOME` 于模块数据目录，并支持连接外部独立运行的 `dsh web` 实例。可用 `npm run test:dsh` 检查、`npm run build:module -- deepseek-harness`（或 `dsh`）单独构建。详见 [DeepSeek Harness 页签说明](docs/deepseek-harness.md) 与 [DSH × OpenDesk 页签操控链路统一规划](docs/dsh-opendesk-automation-plan.md)。

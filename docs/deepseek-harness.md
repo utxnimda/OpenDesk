@@ -1,6 +1,6 @@
 # DeepSeek Harness 独立页签
 
-`deepseek-harness` 是 OpenDesk 的独立 `hostApi: 2`（`webApp: true`）页签包（当前本地源码版本 `0.3.2`），用于完整承载 [DeepSeek Harness (`dsh`)](https://github.com/deepseek-ai/deepseek-harness) 的原生 Web 应用及全部 Cordis 插件逻辑。
+`deepseek-harness` 是 OpenDesk 的独立 `hostApi: 2`（`webApp: true`）页签包（当前本地源码版本 `0.4.1`），用于完整承载 [DeepSeek Harness (`dsh`)](https://github.com/deepseek-ai/deepseek-harness) 的原生 Web 应用及全部 Cordis 插件逻辑。
 
 关于未来通过 DSH 自然语言操作 OpenDesk 其他页签的端到端架构规划，见 [DSH × OpenDesk 页签操控链路统一规划](dsh-opendesk-automation-plan.md)。
 
@@ -22,11 +22,10 @@ App 默认随附清单仍只有 `tower-assistant`；`deepseek-harness` 属于按
    - 自动识别源码仓版本、Git 分支/修改态、`pnpm` / `corepack pnpm` 工具链、依赖与产物构建状态；
    - 支持页签内一键执行受控白名单动作：`pnpm install`、`pnpm run build:artifacts`（支持完成后自动重启）、随时取消（Windows Job Object 回收）；
    - 支持两种源码运行模式：**已构建产物模式（`built`）**（启动快，修改源码后点顶栏「重建并重启」立即生效）与 **源码热开发模式（`dev`）**（运行 `pnpm run dev:web`，开启 `tsc` + `tsdown` + `vite` 监听自动热重建前端与插件源码）。
-5. **OpenDesk 只读工具受控 MCP 桥接（`0.2.0` 新增，`0.3.1` 修复握手响应式同步）**：
-   - 在页签设置面板中可列出其他已打开 OpenDesk 页签导出的 `contractVersion: 1` 只读工具，经由 OpenDesk 宿主原生授权弹窗（`bridge.host.tools.grant`）显式批准后，由 Worker 在 `127.0.0.1:<随机端口>/mcp` 启动标准 **Streamable HTTP MCP** 端点；
-   - 端点强制校验精确 `Host` 与会话级随机 `Authorization: Bearer <token>`，仅暴露经用户勾选授权的无参数只读工具；每次 `tools/call` 均经包装页回流至宿主 `bridge.host.tools.call`，由 Rust 宿主重新核验版本、摘要、代次与授权快照；
-   - 关闭页签、撤销桥接或触发 `module.prepareShutdown` 时立即撤销令牌并唤醒所有挂起调用；
-   - `0.3.1` 修复了包装页在 `nimdadesk:connect` 异步握手完成前缓存 `bridge.host.tools` 为不可用的响应式问题，并在切换设置面板时自动刷新可用工具。
+5. **OpenDesk 跨页签操控桥接（MCP，阶段 1–4 已打通，`0.4.0`）**：
+   - 托管隔离模式下自动启动 `127.0.0.1:<随机端口>/mcp`（精确 `Host` + 会话随机 `Bearer` + SSE `notifications/tools/list_changed`），并通过 `--patch` 零配置注入到 DSH（令牌仅经 `OPENDESK_MCP_TOKEN` 环境变量传递不落盘）同时自动写入 `DSH_HOME/skills/opendesk-workbench/SKILL.md` 路由技能；
+   - 配合支持 `moduleToolsV2: 1` 的最新 OpenDesk 宿主，自动暴露 `opendesk_list_modules` 与 `opendesk_open_module` 元工具，支持按需经用户原生确认唤醒未打开页签；
+   - 同时支持 v1 无参只读工具与 v2 参数化 `read` / `ui-navigate` / `write` 工具（写操作由 Rust 宿主强制逐次弹出原生审批框展示实际参数摘要）。
 6. **本地源码仓扩展建议（独立平级仓库，不混入 OpenDesk Git）**：
    - 将 `deepseek-harness` 克隆至独立平级目录（如 `D:\MyWorkspace\deepseek-harness`）后，可在该源码仓内自行扩展模型与子代理插件（例如接入本机 Cursor CLI ACP、WorkBuddy CLI ACP、多上下文窗口与推理档位），在 OpenDesk 页签顶栏点击「重建并重启」即可快速编译生效。
 
@@ -54,4 +53,4 @@ npm run test:dsh
 npm run build:module -- deepseek-harness
 ```
 
-构建产物位于 `dist/modules/deepseek-harness/<版本>/`（当前 `0.3.2`）。本页签当前已完成本地源码实现、自动化测试、真实 `@deepseek-ai/dsh` 与本地 `deepseek-harness` 源码构建产物联调以及冻结 `.ndpkg` 构建验收，未公开发布 Release，不自动修改任何用户的既有页签选择。
+构建产物位于 `dist/modules/deepseek-harness/<版本>/`（当前 `0.4.1`）。本页签当前已完成本地源码实现、自动化测试、真实 `@deepseek-ai/dsh` 与本地 `deepseek-harness` 源码构建产物联调（含零配置 MCP 自动连接）以及冻结 `.ndpkg` 构建验收，未公开发布 Release，不自动修改任何用户的既有页签选择。

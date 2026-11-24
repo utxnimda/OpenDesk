@@ -87,6 +87,8 @@ function receive(event: MessageEvent) {
     await props.host.openPackageSurface(owned.token, operation.params);
   }, async operation => {
     if (operation.action === 'list' && props.host.listPackageTools) return props.host.listPackageTools(owned.token);
+    if (operation.action === 'list-modules' && props.host.listPackageToolModules) return props.host.listPackageToolModules(owned.token);
+    if (operation.action === 'open-module' && props.host.openPackageToolModule) return props.host.openPackageToolModule(owned.token, operation.params.moduleId, operation.params.focus);
     if (operation.action === 'grant' && props.host.grantPackageTools) return props.host.grantPackageTools(owned.token, operation.params.tools);
     if (operation.action === 'call' && props.host.callPackageTool) return props.host.callPackageTool(owned.token, operation.params.tool, operation.params.arguments);
     throw new Error('当前宿主不支持此工具操作。');
@@ -101,6 +103,7 @@ function receive(event: MessageEvent) {
     ...packageAppearance(props.theme, props.uiStyle, props.surfaceEffects),
     moduleSurface: { context: null },
     moduleTools: 1,
+    moduleToolsV2: 1,
     ...(portraitConnection ? { petPortraits: 1 } : {}),
   }, origin, [transport.port2]);
 }

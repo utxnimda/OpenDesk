@@ -2,32 +2,37 @@
 
 本文档规划如何打通 **DeepSeek Harness (`dsh`)** 与 **OpenDesk** 的跨页签协作链路，使未来用户可以在 DSH 对话中直接通过自然语言驱动已安装的 OpenDesk 页签功能（例如：「帮我打开塔防助手查看当前收益统计」「用作品管理器检索某个作品并打开详情」「在 XXX 页签里执行某个受控操作」），同时严格遵守 OpenDesk 的架构隔离、单权威状态与分级人工审批边界（见 [架构与边界](architecture.md) 与 [工程基本原则](principles.md)）。
 
-> **文档状态声明**：本文档明确区分「已落地基线」与「后续规划阶段」；未标注为已实现的阶段均为架构设计与演进路线，尚未在宿主或业务页签中实施。
+> **文档状态声明**：本文档明确区分「已实现并验证」与「后续扩展」；阶段 1（零配置 MCP 自动注入与 `list_changed` SSE）、阶段 2（宿主 `moduleToolsV2` 页签目录发现与受控唤醒）、阶段 3（`tools.describe` `contractVersion: 2` 有界参数校验与写操作逐次原生审批）及阶段 4（DSH 隔离 Router Skill + 塔防助手 `0.10.3` 首批 v2 参数化只读工具示范）已完成代码实现与自动化/实机链路验证；其余业务页签（如作品管理器等）后续按各自需求独立接入。
 
 ---
 
-## 1. 当前已落地基线（v1）
+## 1. 当前已实现能力总览（阶段 1–4 核心链路已贯通）
 
-当前仓库已打通从 OpenDesk 宿主到 DSH 的第一阶段只读闭环：
+当前仓库已完整打通从 DSH 到 OpenDesk 宿主与目标业务页签的受控协同链路：
 
-1. **独立 `hostApi: 2` / `webApp: true` 页签**：`deepseek-harness`（源码版本 `0.3.2`）通过包内 Python 监督 Worker 与本地 HTTP/WebSocket 反向代理承载原生 `dsh web`，支持托管模式、外部模式及本地源码开发工作流（`pnpm install`、`build:artifacts`、`dev:web`）。
-2. **宿主 `moduleTools: 1` 跨页签只读中介**：OpenDesk Rust 宿主（`apps/framework/desktop/src-tauri/src/module_packages/tools.rs`）已实现：
-   - 发现已打开页签在 `manifest.methods` 中显式声明的 `tools.describe`（`contractVersion: 1`、`readOnly: true`、空对象 `inputSchema`）；
-   - 绑定完整目录快照弹出原生授权确认框（内存态授权，不落盘，版本/摘要/代次变化立即失效）；
-   - 通过 `modules_tools_call` 复用目标正在运行的实例（绝不启动第二份业务 worker），限 64 KiB 返回。
-3. **DSH 本地受控 Streamable HTTP MCP 桥接**：`deepseek-harness` Worker 内置仅监听 `127.0.0.1:<随机端口>/mcp` 的标准 MCP 服务端（强校验 `Host` + 会话级 `Authorization: Bearer <token>`），包装页轮询 `dsh.mcp.poll` → 调用宿主 `bridge.host.tools.call` → 回传 `dsh.mcp.respond`。
-4. **本地源码仓双 ACP 模型接入**（位于独立平级仓库 `D:\MyWorkspace\deepseek-harness`，不混入 OpenDesk Git）：
-   - `@deepseek-ai/dsh-llm-cursor-cli`：`Cursor CLI (ACP)` 常驻主模型（支持 45 个含 `1M`/`500K`/`300K`/`272K` 上下文选项的模型条目与推理档位）+ `subagent_cursor`；
-   - `@deepseek-ai/dsh-llm-workbuddy-acp`：`WorkBuddy (ACP)` 常驻主模型（30 个模型与思考档位）+ `subagent_workbuddy`。
+1. **独立 `hostApi: 2` / `webApp: true` 页签**：`deepseek-harness`（源码版本 `0.4.1`）通过包内 Python 监督 Worker 与本地 HTTP/WebSocket 反向代理承载原生 `dsh web`，支持托管模式、外部模式及本地源码开发工作流（`pnpm install`、`build:artifacts`、`dev:web`）。
+2. **阶段 1 — 零配置 MCP 自动注入与动态推送**：
+   - `start_webapp()` 立即启动 `127.0.0.1:<随机端口>/mcp` 的标准 Streamable HTTP MCP 端点（精确 `Host` + 会话随机 `Bearer` + `GET /mcp` SSE `notifications/tools/list_changed` 推送）；
+   - 托管隔离模式下自动生成 `<data>/opendesk-bridge.patch.yml`（令牌仅经 `OPENDESK_MCP_TOKEN` 子进程环境变量传递，不落盘明文）并通过 `--patch` 挂载 `@deepseek-ai/dsh-mcp-client`（`serverName: opendesk`，工具前缀 `mcp__opendesk__*`）。
+3. **阶段 2 — 宿主 `moduleToolsV2: 1` 页签发现与受控唤醒**（保留 `moduleTools: 1` 100% 兼容旧包）：
+   - 新增仅限 `main` 窗口的 Tauri 命令 `modules_tools_list_modules` 与 `modules_tools_open_module`；
+   - 经 MCP 暴露 `opendesk_list_modules`（枚举已启用页签状态）与 `opendesk_open_module(moduleId, focus?)`（未打开时弹出原生确认框，经用户同意后由 `App.vue` 挂载目标 `<PackageFrame>` 并等待就绪后返回工具列表，默认后台静默唤醒不打断对话）。
+4. **阶段 3 — `tools.describe` `contractVersion: 2` 参数化校验与分级审批**：
+   - 宿主以 `{"maxContractVersion": 2}` 向目标页签协商（旧包拒绝时自动回落 `{}` 兼容 v1）；
+   - Rust 宿主边界严格校验 v2 `inputSchema`（有界扁平对象、`additionalProperties: false`、禁止执行类属性名与嵌套对象）与运行时参数（上限 16 KiB、范围/长度/枚举/无控制字符/无 `..` 路径遍历）；
+   - 分级审批：`read` / `ui-navigate` 沿用会话内批量原生确认，**`write` 每次调用强制触发 Rust 原生警告弹窗展示目标模块身份与参数 JSON 摘要**，拒绝直接放行并记录审计日志。
+5. **阶段 4 — DSH Router Skill 与首批业务页签示范**：
+   - 托管隔离 `DSH_HOME/skills/opendesk-workbench/SKILL.md` 自动内置 OpenDesk 跨页签路由决策协议；
+   - `tower-assistant`（源码版本 `0.10.3`）已升级支持 `tools.describe` v1/v2 协商并新增参数化只读工具 `runtime_summary_filtered`（`tower.ai.summary.filtered`）。
+6. **本地源码仓双 ACP 模型接入**（位于独立平级仓库 `D:\MyWorkspace\deepseek-harness`，不混入 OpenDesk Git）：
+   - `@deepseek-ai/dsh-llm-cursor-cli`：`Cursor CLI (ACP)` 常驻主模型（45 条含 `1M`/`500K`/`300K`/`272K` 上下文选项的模型条目与推理档位）+ `subagent_cursor`；
+   - `@deepseek-ai/dsh-llm-workbuddy-acp`：`WorkBuddy (ACP)` 常驻主模型（30 条模型与思考档位）+ `subagent_workbuddy`。
 
-### 当前 v1 缺口（为何还不能直接说「用 XXX 页签做某事」）
+### 后续演进项（未实现，按需推进）
 
-| 缺口 | 当前限制 | 影响 |
-| --- | --- | --- |
-| 1. MCP 配置需手工粘贴 | 授权后需复制配置 JSON 到 DSH 的 MCP 设置 | 新会话或重启页签后会话令牌变化，需要重新配置 |
-| 2. 目标页签必须已手动打开 | `discover_tools` 只扫描当前已激活实例 | 未打开的目标页签对 DSH 不可见，模型无法自主发现或唤醒 |
-| 3. 仅支持无参数只读工具 | `tools.rs` 强制 `readOnly: true` 与空 `inputSchema` | 无法按条件查询（如关键词、ID、筛选条件），也无法触发受控操作或视图跳转 |
-| 4. 缺少统一路由技能与审计视图 | DSH 不知道“OpenDesk 有哪些页签”以及“怎么分步安全执行” | 模型难以稳定规划“发现 → 唤醒 → 读取 → 确认 → 执行 → 复核”流程 |
+- 其余独立业务页签（如 `nimda-workspace` 作品管理器等）按各自具体需求自主接入 `tools.describe` v2；
+- 在完整桌面 WebView2 窗口中对新版本宿主与 `0.4.0` 页签做真实人工弹窗点击与多页签交互验收；
+- 需要正式发布新宿主版本时通过 `npm run version:prepare` 提升宿主版本号并构建发布。
 
 ---
 

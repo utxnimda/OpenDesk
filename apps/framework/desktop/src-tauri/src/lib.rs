@@ -592,6 +592,89 @@ async fn modules_tools_grant(
 }
 
 #[tauri::command]
+async fn modules_tools_list_modules(
+    window: tauri::WebviewWindow,
+    token: String,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    if window.label() != "main" {
+        return Err("TOOLS_WINDOW_DENIED".into());
+    }
+    state
+        .modules
+        .as_ref()
+        .map_err(Clone::clone)?
+        .list_modules_for_tools(&token)
+        .await
+}
+
+#[tauri::command]
+async fn modules_tools_open_module(
+    window: tauri::WebviewWindow,
+    app: tauri::AppHandle,
+    token: String,
+    module_id: String,
+    focus: Option<bool>,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    if window.label() != "main" {
+        return Err("TOOLS_WINDOW_DENIED".into());
+    }
+    let manager = state.modules.as_ref().map_err(Clone::clone)?;
+    let focus_flag = focus.unwrap_or(false);
+    match manager
+        .prepare_module_open(&token, &module_id, focus_flag)
+        .await?
+    {
+        module_packages::PreparedModuleOpen::AlreadyOpen {
+            module_id,
+            label,
+            version,
+            focus,
+            ..
+        } => {
+            if focus {
+                let _ = app.emit(
+                    "module-tools-open",
+                    json!({ "moduleId": module_id, "focus": true }),
+                );
+            }
+            manager
+                .wait_module_ready_for_tools(&token, &module_id, &label, &version, 3_000)
+                .await
+        }
+        module_packages::PreparedModuleOpen::NeedsApproval {
+            message,
+            module_id,
+            label,
+            version,
+            focus,
+        } => {
+            let decision = tauri::async_runtime::spawn_blocking(move || {
+                rfd::MessageDialog::new()
+                    .set_title("OpenDesk · 打开功能页签确认")
+                    .set_description(&message)
+                    .set_level(rfd::MessageLevel::Info)
+                    .set_buttons(rfd::MessageButtons::YesNo)
+                    .show()
+            })
+            .await
+            .map_err(|_| "TOOLS_APPROVAL_FAILED")?;
+            if decision != rfd::MessageDialogResult::Yes {
+                return Err("TOOLS_OPEN_DECLINED".into());
+            }
+            let _ = app.emit(
+                "module-tools-open",
+                json!({ "moduleId": module_id, "focus": focus }),
+            );
+            manager
+                .wait_module_ready_for_tools(&token, &module_id, &label, &version, 15_000)
+                .await
+        }
+    }
+}
+
+#[tauri::command]
 async fn modules_tools_call(
     window: tauri::WebviewWindow,
     token: String,
@@ -602,12 +685,28 @@ async fn modules_tools_call(
     if window.label() != "main" {
         return Err("TOOLS_WINDOW_DENIED".into());
     }
-    state
-        .modules
-        .as_ref()
-        .map_err(Clone::clone)?
-        .call_tool(&token, tool, arguments)
-        .await
+    let manager = state.modules.as_ref().map_err(Clone::clone)?;
+    match manager.prepare_tool_call(&token, tool, arguments).await? {
+        module_packages::PreparedToolCall::Direct(approved) => {
+            manager.execute_prepared_tool_call(&token, approved).await
+        }
+        module_packages::PreparedToolCall::NeedsApproval { message, call } => {
+            let decision = tauri::async_runtime::spawn_blocking(move || {
+                rfd::MessageDialog::new()
+                    .set_title("OpenDesk · 插件写操作确认")
+                    .set_description(&message)
+                    .set_level(rfd::MessageLevel::Warning)
+                    .set_buttons(rfd::MessageButtons::YesNo)
+                    .show()
+            })
+            .await
+            .map_err(|_| "TOOLS_APPROVAL_FAILED")?;
+            if decision != rfd::MessageDialogResult::Yes {
+                return Err("TOOLS_WRITE_DECLINED".into());
+            }
+            manager.execute_prepared_tool_call(&token, call).await
+        }
+    }
 }
 
 #[tauri::command]
@@ -1239,6 +1338,8 @@ pub fn run() {
             modules_open,
             modules_call,
             modules_tools_list,
+            modules_tools_list_modules,
+            modules_tools_open_module,
             modules_tools_grant,
             modules_tools_call,
             modules_close,

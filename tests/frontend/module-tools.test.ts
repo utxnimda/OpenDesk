@@ -3,10 +3,22 @@ import { parseToolOperation, toolIdentity } from '../../apps/framework/module-sd
 import { createPackageBroker } from '../../apps/framework/frontend/src/core/package-broker';
 const tool = { name:'example__read',moduleId:'example',version:'1.0.0',digest:'a'.repeat(64),generation:'one' };
 describe('explicit read-only module tool boundary', () => {
-  it('accepts only bounded zero-argument operations and strips presentation fields', () => {
+  it('accepts bounded v1/v2 operations, rejects dangerous arguments, and strips presentation fields', () => {
     expect(toolIdentity({...tool,title:'Title'})).toEqual(tool);
     expect(parseToolOperation('call',{tool,arguments:{}}).action).toBe('call');
+    expect(parseToolOperation('call',{tool,arguments:{query:'tower',limit:10}})).toEqual({
+      action:'call',
+      params:{tool,arguments:{query:'tower',limit:10}},
+    });
+    expect(parseToolOperation('list-modules',{})).toEqual({action:'list-modules',params:{}});
+    expect(parseToolOperation('open-module',{moduleId:'tower-assistant',focus:false})).toEqual({
+      action:'open-module',
+      params:{moduleId:'tower-assistant',focus:false},
+    });
+    expect(()=>parseToolOperation('open-module',{moduleId:'../bad'})).toThrow();
     expect(()=>parseToolOperation('call',{tool,arguments:{command:'run'}})).toThrow();
+    expect(()=>parseToolOperation('call',{tool,arguments:{query:'../secret'}})).toThrow();
+    expect(()=>parseToolOperation('call',{tool,arguments:{nested:{a:1}}})).toThrow();
     expect(()=>parseToolOperation('grant',{tools:[]})).toThrow();
     expect(()=>parseToolOperation('grant',{tools:Array(17).fill(tool)})).toThrow();
     expect(()=>toolIdentity({...tool,generation:''})).toThrow();

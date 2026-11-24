@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "deepseek-harness",
   "label": "DeepSeek Harness",
-  "version": "0.3.2",
+  "version": "0.4.1",
   "hostApi": 2,
   "webApp": true,
   "target": "windows-x64",

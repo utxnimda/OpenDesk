@@ -1,6 +1,6 @@
 //! Independently versioned local module packages. No remote downloads or generic execution API.
 mod tools;
-pub use tools::ToolIdentity;
+pub use tools::{PreparedModuleOpen, PreparedToolCall, ToolIdentity};
 mod runtime;
 mod static_server;
 mod store;

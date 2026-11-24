@@ -112,6 +112,17 @@ class SupervisorTests(unittest.TestCase):
                 self.assertNotIn("mock-launch-token-999", log_text)
                 self.assertIn("token=***", log_text)
 
+                # Stage 1 & 4: isolated mode stages zero-config MCP patch (no raw token on disk) & router SKILL.md.
+                patch_file = data_dir / "opendesk-bridge.patch.yml"
+                self.assertTrue(patch_file.is_file())
+                patch_text = patch_file.read_text(encoding="utf-8")
+                self.assertIn("@deepseek-ai/dsh-mcp-client", patch_text)
+                self.assertIn("OPENDESK_MCP_TOKEN", patch_text)
+                self.assertNotIn(service.mcp.token, patch_text)
+                skill_file = data_dir / "dsh-home" / "skills" / "opendesk-workbench" / "SKILL.md"
+                self.assertTrue(skill_file.is_file())
+                self.assertIn("opendesk_list_modules", skill_file.read_text(encoding="utf-8"))
+
                 # Safe drain via prepare_shutdown must terminate the managed child cleanly.
                 drain_deadline = time.monotonic() + 10.0
                 drain = service.prepare_shutdown()

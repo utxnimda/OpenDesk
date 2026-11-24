@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
-import type { HostTool, HostToolIdentity, ModuleBridge } from '@opendesk/module-sdk';
+import type { HostModuleSummary, HostTool, HostToolIdentity, ModuleBridge } from '@opendesk/module-sdk';
 import { errorMessage } from '@opendesk/module-sdk';
 import {
+  accessLabel,
   buildMcpSnippet,
   DSH_IFRAME_SANDBOX,
   dshSourceLabel,
@@ -27,10 +28,12 @@ const toolbarCollapsed = ref(false);
 const iframeKey = ref(0);
 const dirtyConfig = ref(false);
 
-// Controlled OpenDesk read-only host tools -> local Streamable HTTP MCP bridge
+// Controlled OpenDesk cross-tab host tools (v1 + v2) -> local Streamable HTTP MCP bridge
 // Note: `bridge.host.tools` is populated asynchronously after the `nimdadesk:connect` handshake
-// (not a Vue reactive object), so track support in a ref updated after `await props.bridge.ready`.
+// (not a Vue reactive object), so track support in refs updated after `await props.bridge.ready`.
 const hostToolsSupported = ref(Boolean(props.bridge.host.tools));
+const hostToolsV2Supported = ref(Boolean(props.bridge.host.tools?.listModules && props.bridge.host.tools?.openModule));
+const availableHostModules = ref<HostModuleSummary[]>([]);
 const availableHostTools = ref<HostTool[]>([]);
 const selectedToolKeys = ref<string[]>([]);
 const mcpState = ref<McpBridgeDto | null>(null);
@@ -74,11 +77,33 @@ async function refreshHostTools() {
   mcpBusy.value = true;
   mcpError.value = '';
   try {
-    const listed = await client.list();
+    const [listedTools, listedModules] = await Promise.all([
+      client.list(),
+      client.listModules ? client.listModules() : Promise.resolve<HostModuleSummary[]>([]),
+    ]);
     if (disposed) return;
-    availableHostTools.value = listed;
-    const validKeys = new Set(listed.map(hostToolKey));
+    availableHostTools.value = listedTools;
+    availableHostModules.value = listedModules;
+    const validKeys = new Set(listedTools.map(hostToolKey));
     selectedToolKeys.value = selectedToolKeys.value.filter((k) => validKeys.has(k));
+  } catch (error) {
+    if (!disposed) mcpError.value = errorMessage(error);
+  } finally {
+    if (!disposed) mcpBusy.value = false;
+  }
+}
+
+async function handleOpenSiblingModule(moduleId: string, focus = false) {
+  const client = props.bridge.host.tools;
+  if (!client?.openModule) return;
+  mcpBusy.value = true;
+  mcpError.value = '';
+  mcpNotice.value = '';
+  try {
+    const opened = await client.openModule(moduleId, { focus });
+    if (disposed) return;
+    await refreshHostTools();
+    mcpNotice.value = `页签「${opened.label}」已就绪，发现 ${opened.tools.length} 个可用工具。`;
   } catch (error) {
     if (!disposed) mcpError.value = errorMessage(error);
   } finally {
@@ -108,19 +133,32 @@ function ensureMcpPoller() {
   }, 400);
 }
 
+type PolledMcpCall =
+  | { callId: string; kind: 'list-modules' }
+  | { callId: string; kind: 'open-module'; moduleId: string; focus?: boolean }
+  | { callId: string; kind?: 'tool-call'; tool: HostToolIdentity; arguments?: Record<string, unknown> };
+
 async function drainMcpCalls() {
   if (disposed || mcpPolling || !mcpState.value?.active) return;
   const client = props.bridge.host.tools;
   if (!client) return;
   mcpPolling = true;
   try {
-    const reply = await props.bridge.host.callWorker<{
-      calls: Array<{ callId: string; tool: HostToolIdentity }>;
-    }>('dsh.mcp.poll', {});
+    const reply = await props.bridge.host.callWorker<{ calls: PolledMcpCall[] }>('dsh.mcp.poll', {});
     for (const item of reply.calls ?? []) {
       if (disposed) break;
       try {
-        const result = await client.call(item.tool, {});
+        let result: unknown;
+        if (item.kind === 'list-modules') {
+          if (!client.listModules) throw new Error('当前宿主不支持枚举模块目录。');
+          result = { modules: await client.listModules() };
+        } else if (item.kind === 'open-module') {
+          if (!client.openModule) throw new Error('当前宿主不支持受控打开模块。');
+          result = await client.openModule(item.moduleId, { focus: Boolean(item.focus) });
+          void refreshHostTools();
+        } else {
+          result = await client.call(item.tool, item.arguments ?? {});
+        }
         await props.bridge.host.callWorker('dsh.mcp.respond', {
           callId: item.callId,
           ok: true,
@@ -146,7 +184,7 @@ async function handleGrantMcpTools() {
   if (!client) return;
   const picked = availableHostTools.value.filter((tool) => selectedToolKeys.value.includes(hostToolKey(tool)));
   if (!picked.length) {
-    mcpError.value = '请至少勾选一个只读工具。';
+    mcpError.value = '请至少勾选一个插件工具。';
     return;
   }
   mcpBusy.value = true;
@@ -171,14 +209,17 @@ async function handleGrantMcpTools() {
         generation: t.generation,
         title: t.title,
         description: t.description,
-        readOnly: true,
-        contractVersion: 1,
+        readOnly: t.readOnly,
+        access: t.access ?? (t.readOnly ? 'read' : 'write'),
+        contractVersion: t.contractVersion,
+        inputSchema: t.inputSchema,
       })),
+      hostMetaEnabled: hostToolsV2Supported.value,
     });
     if (disposed) return;
     mcpState.value = synced;
     ensureMcpPoller();
-    mcpNotice.value = `已授权 ${synced.toolCount} 个只读工具并启动本机 MCP 端点，可复制下方配置填入 DeepSeek Harness MCP 设置。`;
+    mcpNotice.value = `已授权 ${synced.toolCount} 个插件工具并推送通知到本机 MCP 端点（隔离托管模式下 DSH 自动生效）。`;
   } catch (error) {
     if (!disposed) mcpError.value = errorMessage(error);
   } finally {
@@ -191,12 +232,17 @@ async function handleClearMcpTools() {
   mcpError.value = '';
   mcpNotice.value = '';
   try {
-    const synced = await props.bridge.host.callWorker<McpBridgeDto>('dsh.mcp.sync', { tools: [] });
+    const synced = await props.bridge.host.callWorker<McpBridgeDto>('dsh.mcp.sync', {
+      tools: [],
+      hostMetaEnabled: hostToolsV2Supported.value,
+    });
     if (disposed) return;
     mcpState.value = synced;
     revealMcpSnippet.value = false;
-    stopMcpPoller();
-    mcpNotice.value = '已撤销 MCP 工具桥接。';
+    if (!synced.active) stopMcpPoller();
+    mcpNotice.value = hostToolsV2Supported.value
+      ? '已撤销所有业务页签工具授权（保留宿主页签发现/唤醒元工具）。'
+      : '已撤销 MCP 工具桥接。';
   } catch (error) {
     if (!disposed) mcpError.value = errorMessage(error);
   } finally {
@@ -403,8 +449,23 @@ function reloadIframe() {
 onMounted(async () => {
   await props.bridge.ready;
   hostToolsSupported.value = Boolean(props.bridge.host.tools);
+  hostToolsV2Supported.value = Boolean(props.bridge.host.tools?.listModules && props.bridge.host.tools?.openModule);
   await refreshStatus(true);
   if (hostToolsSupported.value) {
+    if (hostToolsV2Supported.value) {
+      try {
+        const synced = await props.bridge.host.callWorker<McpBridgeDto>('dsh.mcp.sync', {
+          tools: [],
+          hostMetaEnabled: true,
+        });
+        if (!disposed) {
+          mcpState.value = synced;
+          ensureMcpPoller();
+        }
+      } catch (error) {
+        if (!disposed) mcpError.value = errorMessage(error);
+      }
+    }
     void refreshHostTools();
   }
   pollTimer = setInterval(() => {
@@ -438,7 +499,9 @@ onUnmounted(() => {
         <span v-if="status?.runtime.mode === 'external'" class="dsh-badge">外部实例</span>
         <span v-else-if="status?.runtime.launchKind === 'source-dev'" class="dsh-badge is-starting">源码热开发</span>
         <span v-else-if="sourceRepo?.isRepo" class="dsh-badge">本地源码</span>
-        <span v-if="mcpState?.active" class="dsh-badge is-running">MCP: {{ mcpState.toolCount }} 个只读工具</span>
+        <span v-if="mcpState?.active" class="dsh-badge is-running">
+          MCP: {{ mcpState.hostMetaEnabled ? '页签调度+' : '' }}{{ mcpState.toolCount }} 工具
+        </span>
         <span v-if="status?.runtime.effectiveDshHome" class="dsh-meta" :title="status.runtime.effectiveDshHome">
           HOME: {{ status.runtime.effectiveDshHome }}
         </span>
@@ -843,8 +906,11 @@ onUnmounted(() => {
           <section class="dsh-card">
             <div class="dsh-card-head">
               <div>
-                <h2>OpenDesk 只读工具桥接（MCP）</h2>
-                <p>将其他已打开 OpenDesk 页签导出的只读工具，经由宿主原生授权弹窗后，通过本机受控 Streamable HTTP MCP 端点安全提供给 DeepSeek Harness。</p>
+                <h2>OpenDesk 跨页签操控桥接（MCP）</h2>
+                <p>
+                  托管隔离模式下已自动向 DSH 注入 <code>mcp__opendesk__*</code> 与 <code>opendesk-workbench</code> 路由技能；
+                  支持发现/受控唤醒已启用页签，以及按需授权业务页签工具（只读/导航会话授权，写操作强制逐次原生审批）。
+                </p>
               </div>
               <button
                 v-if="hostToolsSupported"
@@ -852,20 +918,51 @@ onUnmounted(() => {
                 :disabled="mcpBusy"
                 @click="refreshHostTools"
               >
-                刷新工具
+                刷新目录
               </button>
             </div>
 
             <div v-if="!hostToolsSupported" class="dsh-field-hint">
-              当前宿主未开放模块只读工具桥接能力（需 OpenDesk 0.19+ 宿主）。
+              当前宿主未开放模块工具桥接能力（需 OpenDesk 0.19+ 宿主）。
             </div>
 
             <template v-else>
               <div v-if="mcpError" class="dsh-alert" role="alert">{{ mcpError }}</div>
               <div v-if="mcpNotice" class="dsh-alert dsh-alert-info" role="status">{{ mcpNotice }}</div>
 
+              <div v-if="hostToolsV2Supported && availableHostModules.length" class="dsh-mcp-list">
+                <div class="dsh-field-hint">
+                  已启用的 OpenDesk 页签（DSH 可通过 <code>opendesk_list_modules</code> / <code>opendesk_open_module</code> 发现并经你确认唤醒）：
+                </div>
+                <div
+                  v-for="mod in availableHostModules"
+                  :key="mod.moduleId"
+                  class="dsh-mcp-item"
+                >
+                  <div class="dsh-mcp-item-body">
+                    <div class="dsh-mcp-item-title">
+                      <strong>{{ mod.label }}</strong>
+                      <code>{{ mod.moduleId }}</code>
+                      <span class="dsh-badge">v{{ mod.version }}</span>
+                      <span class="dsh-badge" :class="mod.ready ? 'is-running' : ''">
+                        {{ mod.ready ? '已就绪' : (mod.opened ? '加载中' : '未打开') }}
+                      </span>
+                      <span v-if="mod.supportsTools" class="dsh-badge">导出工具</span>
+                    </div>
+                  </div>
+                  <button
+                    v-if="!mod.ready"
+                    class="dsh-btn dsh-btn-compact"
+                    :disabled="mcpBusy"
+                    @click="handleOpenSiblingModule(mod.moduleId, false)"
+                  >
+                    后台打开
+                  </button>
+                </div>
+              </div>
+
               <div v-if="!availableHostTools.length" class="dsh-field-hint">
-                暂未发现其他已打开页签导出的只读工具。先在 OpenDesk 中打开提供只读工具的页签（如作品管理器或辅助页签），再点击「刷新工具」。
+                暂未发现已打开页签导出的业务工具。可先打开提供工具的页签（如塔防助手、作品管理器），再点击「刷新目录」。
               </div>
 
               <div v-else class="dsh-mcp-list">
@@ -884,6 +981,9 @@ onUnmounted(() => {
                       <strong>{{ tool.title }}</strong>
                       <code>{{ tool.name }}</code>
                       <span class="dsh-badge">{{ tool.moduleId }} v{{ tool.version }}</span>
+                      <span class="dsh-badge" :class="tool.access === 'write' ? 'is-error' : 'is-running'">
+                        {{ accessLabel(tool.access) }}
+                      </span>
                     </div>
                     <span class="dsh-field-hint">{{ tool.description }}</span>
                   </div>
@@ -896,21 +996,26 @@ onUnmounted(() => {
                   :disabled="mcpBusy || !selectedToolKeys.length"
                   @click="handleGrantMcpTools"
                 >
-                  请求宿主授权并启用 MCP 桥接
+                  请求宿主授权并同步到 MCP
                 </button>
                 <button
-                  v-if="mcpState?.active"
+                  v-if="mcpState && mcpState.toolCount > 0"
                   class="dsh-btn dsh-btn-danger"
                   :disabled="mcpBusy"
                   @click="handleClearMcpTools"
                 >
-                  撤销桥接
+                  撤销业务工具授权
                 </button>
               </div>
 
               <div v-if="mcpState?.active && mcpSnippet" class="dsh-mcp-endpoint">
                 <div class="dsh-actions">
-                  <span class="dsh-ok">MCP 端点已就绪：<code>{{ mcpState.url }}</code></span>
+                  <span class="dsh-ok">
+                    MCP 端点已就绪：<code>{{ mcpState.url }}</code>
+                    <template v-if="status?.config.launchMode === 'managed' && status?.config.homeMode === 'isolated'">
+                      （托管隔离模式已自动注入）
+                    </template>
+                  </span>
                   <button class="dsh-btn dsh-btn-compact" @click="handleCopyMcpSnippet">复制 MCP 配置 JSON</button>
                   <button class="dsh-btn dsh-btn-compact" @click="revealMcpSnippet = !revealMcpSnippet">
                     {{ revealMcpSnippet ? '隐藏令牌配置' : '查看配置文本' }}
@@ -918,7 +1023,7 @@ onUnmounted(() => {
                 </div>
                 <pre v-if="revealMcpSnippet" class="dsh-logs">{{ mcpSnippet }}</pre>
                 <span class="dsh-field-hint">
-                  令牌仅对本次页签会话有效，关闭页签或撤销桥接后自动失效；每次工具调用都会由 OpenDesk 宿主重新核验版本、摘要与只读授权。
+                  令牌仅对本次页签会话有效，关闭页签或退出 OpenDesk 后自动失效；每次工具调用均由 Rust 宿主重校验 Schema、版本、摘要与分级审批。
                 </span>
               </div>
             </template>

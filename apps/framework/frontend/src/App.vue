@@ -180,6 +180,18 @@ onMounted(async () => {
       const dispose = await host.subscribePackagesChanged(() => { void refreshCatalog(); });
       if (unmounted) dispose(); else unsubscribe.push(dispose);
     } catch (error) { packageError.value = `功能状态订阅失败：${errorMessage(error)}`; }
+    if (host.subscribeModuleToolsOpen) {
+      try {
+        const dispose = await host.subscribeModuleToolsOpen(({ moduleId, focus }) => {
+          if (!modules.value.some((module) => module.id === moduleId)) return;
+          const next = new Set(visited.value);
+          next.add(moduleId);
+          visited.value = next;
+          if (focus) navigate(moduleId);
+        });
+        if (unmounted) dispose(); else unsubscribe.push(dispose);
+      } catch (error) { packageError.value = `页签协同唤醒订阅失败：${errorMessage(error)}`; }
+    }
   }
   await loadDesktopState();
   if (host.available) {

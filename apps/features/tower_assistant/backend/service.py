@@ -114,23 +114,84 @@ def statistics_explain(params: dict[str, Any]) -> dict[str, Any]:
 
 
 def register(registry: MethodRegistry) -> None:
+    v1_summary_tool = {
+        "name": "runtime_summary",
+        "method": "tower.ai.summary",
+        "title": "读取当前塔防统计摘要",
+        "description": "只读当前插件实例已有的工作和战斗统计；不读取其他目录，不安装或启动采集。未采集时如实返回空状态。",
+        "contractVersion": 1,
+        "readOnly": True,
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    }
+    v2_filtered_tool = {
+        "name": "runtime_summary_filtered",
+        "method": "tower.ai.summary.filtered",
+        "title": "按条件筛选当前塔防统计",
+        "description": "只读当前插件实例的统计快照，支持按类别（all/combat/work）、角色名关键词和条数上限筛选；不读取磁盘路径，不启动采集。",
+        "contractVersion": 2,
+        "access": "read",
+        "readOnly": True,
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "category": {"type": "string", "enum": ["all", "combat", "work"], "description": "筛选统计分类"},
+                "nameContains": {"type": "string", "maxLength": 40, "description": "按角色名关键词筛选"},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 20, "description": "返回角色条数上限"},
+            },
+            "additionalProperties": False,
+        },
+    }
+
     def describe_tools(params: dict[str, Any]) -> MethodResult:
-        if params:
-            raise ProtocolError("INVALID_PARAMS", "工具目录不接受参数。")
-        return MethodResult({"contractVersion": 1, "tools": [{
-            "name": "runtime_summary", "method": "tower.ai.summary", "title": "读取当前塔防统计摘要",
-            "description": "只读当前插件实例已有的工作和战斗统计；不读取其他目录，不安装或启动采集。未采集时如实返回空状态。",
-            "contractVersion": 1, "readOnly": True,
-            "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
-        }]})
+        if not params:
+            return MethodResult({"contractVersion": 1, "tools": [v1_summary_tool]})
+        unknown = set(params.keys()) - {"maxContractVersion"}
+        max_ver = params.get("maxContractVersion")
+        if unknown or type(max_ver) is not int or max_ver < 1:
+            raise ProtocolError("INVALID_PARAMS", "工具目录仅接受可选整数 maxContractVersion。")
+        if max_ver >= 2:
+            return MethodResult({"contractVersion": 2, "tools": [v1_summary_tool, v2_filtered_tool]})
+        return MethodResult({"contractVersion": 1, "tools": [v1_summary_tool]})
 
     def ai_summary(params: dict[str, Any]) -> MethodResult:
         if params:
             raise ProtocolError("INVALID_PARAMS", "统计摘要工具不接受参数或路径。")
         return MethodResult(capture.manager.readonly_summary())
 
+    def ai_summary_filtered(params: dict[str, Any]) -> MethodResult:
+        if not isinstance(params, dict):
+            raise ProtocolError("INVALID_PARAMS", "筛选参数必须是对象。")
+        unknown = set(params.keys()) - {"category", "nameContains", "limit"}
+        if unknown:
+            raise ProtocolError("INVALID_PARAMS", "筛选统计包含未知参数。")
+        category = params.get("category", "all")
+        if category not in ("all", "combat", "work"):
+            raise ProtocolError("INVALID_PARAMS", "category 必须是 all、combat 或 work。")
+        keyword = params.get("nameContains", "")
+        if not isinstance(keyword, str) or len(keyword) > 40 or any(ord(c) < 32 for c in keyword):
+            raise ProtocolError("INVALID_PARAMS", "nameContains 必须是长度不超过 40 的普通文本。")
+        limit = params.get("limit", 10)
+        if type(limit) is not int or not (1 <= limit <= 20):
+            raise ProtocolError("INVALID_PARAMS", "limit 必须是 1 到 20 的整数。")
+
+        base = capture.manager.readonly_summary()
+        rows = list(base.get("totals") or [])
+        if keyword.strip():
+            needle = keyword.strip().lower()
+            rows = [r for r in rows if needle in str(r.get("name") or r.get("personId") or "").lower()]
+        if category == "combat":
+            rows = [r for r in rows if (r.get("damageTotal") or 0) > 0 or (r.get("attackCount") or 0) > 0]
+        elif category == "work":
+            rows = [r for r in rows if (r.get("workTotal") or 0) > 0 or (r.get("workCount") or 0) > 0]
+        base["filter"] = {"category": category, "nameContains": keyword.strip(), "limit": limit}
+        base["matchedRows"] = len(rows)
+        base["totals"] = rows[:limit]
+        base["truncated"] = len(rows) > limit
+        return MethodResult(base)
+
     registry.register("tools.describe", describe_tools)
     registry.register("tower.ai.summary", ai_summary)
+    registry.register("tower.ai.summary.filtered", ai_summary_filtered)
     def handler(operation: Callable[[dict[str, Any]], dict[str, Any]]):
         def call(params: dict[str, Any]) -> MethodResult:
             try:

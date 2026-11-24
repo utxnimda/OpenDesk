@@ -104,16 +104,31 @@ export interface McpToolItemDto {
   generation: string;
   title: string;
   description: string;
-  readOnly: true;
-  contractVersion: 1;
+  readOnly: boolean;
+  access?: 'read' | 'ui-navigate' | 'write';
+  contractVersion: 1 | 2;
+  inputSchema?: Record<string, unknown>;
 }
 
 export interface McpBridgeDto {
   active: boolean;
+  listening?: boolean;
+  hostMetaEnabled?: boolean;
   url: string;
   toolCount: number;
   tools: McpToolItemDto[];
   token?: string;
+}
+
+export function accessLabel(access?: string): string {
+  switch (access) {
+    case 'write':
+      return '写操作·逐次确认';
+    case 'ui-navigate':
+      return '视图导航';
+    default:
+      return '只读';
+  }
 }
 
 export interface DshStatusDto {

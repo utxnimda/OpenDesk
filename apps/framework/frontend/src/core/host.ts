@@ -1,4 +1,4 @@
-import type { HostTool, HostToolIdentity } from '../../../module-sdk/src/module-tools';
+import type { HostModuleSummary, HostOpenModuleResult, HostTool, HostToolIdentity } from '../../../module-sdk/src/module-tools';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import frameworkDefaults from '../../../../../config/framework/defaults.json';
@@ -42,8 +42,11 @@ export interface PackageSurfaceContext { generation: string; instance: PackageIn
 export interface HostAdapter {
   readonly available: boolean;
   listPackageTools?(token: string): Promise<HostTool[]>;
+  listPackageToolModules?(token: string): Promise<HostModuleSummary[]>;
+  openPackageToolModule?(token: string, moduleId: string, focus?: boolean): Promise<HostOpenModuleResult>;
   grantPackageTools?(token: string, tools: HostToolIdentity[]): Promise<void>;
   callPackageTool?(token: string, tool: HostToolIdentity, args: Record<string, unknown>): Promise<unknown>;
+  subscribeModuleToolsOpen?(callback: (request: { moduleId: string; focus: boolean }) => void): Promise<() => void>;
   getInfo(): Promise<HostInfo>;
   getSettings(): Promise<Settings>;
   saveSettings(settings: Settings): Promise<Settings>;
@@ -137,8 +140,18 @@ export function createHostAdapter(bridge?: InvokeBridge, events?: EventBridge): 
     startPackageSurfaceDrag: (generation) => request('module_surface_start_drag', { generation }),
     setPackageSurfaceAlwaysOnTop: (generation, enabled) => request('module_surface_set_always_on_top', { generation, enabled }),
     listPackageTools: token => request('modules_tools_list', { token }),
+    listPackageToolModules: token => request('modules_tools_list_modules', { token }),
+    openPackageToolModule: (token, moduleId, focus = false) => request('modules_tools_open_module', { token, moduleId, focus }),
     grantPackageTools: (token, tools) => request('modules_tools_grant', { token, tools }),
     callPackageTool: (token, tool, args) => request('modules_tools_call', { token, tool, arguments: args }),
+    subscribeModuleToolsOpen: (callback) => events ? events('module-tools-open', (payload) => {
+      if (typeof payload === 'object' && payload !== null && 'moduleId' in payload && typeof (payload as { moduleId?: unknown }).moduleId === 'string') {
+        callback({
+          moduleId: (payload as { moduleId: string }).moduleId,
+          focus: (payload as { focus?: unknown }).focus === true,
+        });
+      }
+    }) : Promise.resolve(() => {}),
     callPackage: (token, method, params = {}) => request('modules_call', { token, method, params }),
     closePackage: (token) => request('modules_close', { token }),
     reportPackageReady: (token, id, version, digest) => request('modules_ui_ready', { token, id, version, digest }),

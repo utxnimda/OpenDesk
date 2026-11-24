@@ -21,8 +21,27 @@ class TowerToolsTests(unittest.TestCase):
         registry = MethodRegistry()
         register(registry)
         description = registry.dispatch(Request("describe", "tools.describe", {})).value
+        self.assertEqual(description["contractVersion"], 1)
+        self.assertEqual(len(description["tools"]), 1)
         tool = description["tools"][0]
         self.assertTrue(tool["readOnly"])
         self.assertIn(tool["method"], registry.capabilities)
         with self.assertRaises(ProtocolError):
             registry.dispatch(Request("call", "tower.ai.summary", {"gameDir": "C:/private"}))
+
+        v2 = registry.dispatch(Request("describe-v2", "tools.describe", {"maxContractVersion": 2})).value
+        self.assertEqual(v2["contractVersion"], 2)
+        self.assertEqual(len(v2["tools"]), 2)
+        filtered = v2["tools"][1]
+        self.assertEqual(filtered["contractVersion"], 2)
+        self.assertEqual(filtered["access"], "read")
+        self.assertIn(filtered["method"], registry.capabilities)
+
+        result = registry.dispatch(
+            Request("filtered-ok", "tower.ai.summary.filtered", {"category": "combat", "limit": 5})
+        ).value
+        self.assertEqual(result["filter"], {"category": "combat", "nameContains": "", "limit": 5})
+        with self.assertRaises(ProtocolError):
+            registry.dispatch(Request("filtered-bad", "tower.ai.summary.filtered", {"gameDir": "C:/private"}))
+        with self.assertRaises(ProtocolError):
+            registry.dispatch(Request("filtered-cat", "tower.ai.summary.filtered", {"category": "exec"}))

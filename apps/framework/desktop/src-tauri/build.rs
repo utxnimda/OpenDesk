@@ -27,6 +27,8 @@ fn main() {
             "modules_open",
             "modules_call",
             "modules_tools_list",
+            "modules_tools_list_modules",
+            "modules_tools_open_module",
             "modules_tools_grant",
             "modules_tools_call",
             "modules_close",

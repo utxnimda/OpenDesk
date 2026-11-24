@@ -62,8 +62,12 @@ class DshService:
         self._data_lock = DataLock(self.data_dir)
         self.config_store = ConfigStore(self.data_dir)
         self.proxy = ReverseProxyServer(log_callback=self._on_proxy_log)
-        self.supervisor = DshSupervisor(self.data_dir, self.proxy)
         self.mcp = McpToolBridge(version=version)
+        self.supervisor = DshSupervisor(
+            self.data_dir,
+            self.proxy,
+            mcp_info_provider=lambda: (self.mcp.url, self.mcp.token),
+        )
         self._config: DshConfig = DshConfig()
         self._config_error: str | None = None
         self._last_probe = None
@@ -84,7 +88,8 @@ class DshService:
             self.supervisor.append_log("system", f"配置加载失败：{error.message}")
 
     def start_webapp(self) -> str:
-        """Called by OpenDesk host's module.webapp control RPC; binds proxy immediately (<1s)."""
+        """Called by OpenDesk host's module.webapp control RPC; binds proxy & MCP immediately (<1s)."""
+        self.mcp.start()
         url = self.proxy.start()
         self.refresh_probe()
         self._maybe_auto_start()
@@ -244,8 +249,8 @@ class DshService:
         webbrowser.open(f"{origin}/")
         return {"opened": True, "url": f"{origin}/"}
 
-    def mcp_sync(self, tools: list) -> dict:
-        return self.mcp.sync_tools(tools)
+    def mcp_sync(self, tools: list, *, host_meta_enabled: bool | None = None) -> dict:
+        return self.mcp.sync_tools(tools, host_meta_enabled=host_meta_enabled)
 
     def mcp_poll(self) -> dict:
         return {"calls": self.mcp.poll_calls()}
