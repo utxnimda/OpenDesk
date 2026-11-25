@@ -53,4 +53,4 @@ npm run test:dsh
 npm run build:module -- deepseek-harness
 ```
 
-构建产物位于 `dist/modules/deepseek-harness/<版本>/`（当前 `0.4.1`）。本页签当前已完成本地源码实现、自动化测试、真实 `@deepseek-ai/dsh` 与本地 `deepseek-harness` 源码构建产物联调（含零配置 MCP 自动连接）以及冻结 `.ndpkg` 构建验收，未公开发布 Release，不自动修改任何用户的既有页签选择。
+构建产物位于 `dist/modules/deepseek-harness/<版本>/`（当前正式版 [0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1)，SHA-256 `6500ff1096cdf01fdd8206abb68b39dff87d2ec1775797e1ee14d5780b2cbfad`）。已完成本地源码实现、自动化测试、真实 `@deepseek-ai/dsh` 与本地源码构建产物联调（含零配置 MCP 自动连接）、冻结 `.ndpkg` 验收与独立 Release 发布；导入不自动修改任何用户的既有页签选择。

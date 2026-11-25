@@ -2,7 +2,9 @@
 
 OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk`，使用 OpenDesk 名称、构建产物和独立数据目录。本仓库从经过检查的源码快照建立全新 Git 历史，不导入旧提交、标签或生成产物。既有版本历史和验证记录保留原始名称、路径及历史含义，不能代替当前 OpenDesk 的构建与运行验证。
 
-**正式交付（2026-11-23）**　[OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0) 仅随附[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1)，[AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2) 独立下载导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，主分支与三个发布标签的 CI 均通过。App 的 6 个附件和两个页签各 4 个附件，共 14 个，均已从远端重新下载并核对大小与 SHA-256；随附塔防与独立包字节一致。
+**正式交付（2026-11-25）**　[OpenDesk 0.22.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.22.0) 仅随附[塔防山贼助手 0.10.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.3)，[DeepSeek Harness 0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1) 独立下载导入。App 0.22.0 来自干净提交 `184b965ea31554d0e128a474861566a8f3fe2fcb`（主分支与 `v0.22.0` 标签 CI 全通），两个独立页签保留其干净构建提交 `d57e300f580329113fcae9e9c8388cc3b07e6502`；全部 14 个远端附件已重新下载并核对大小与 SHA-256。
+
+**历史交付（2026-11-23）**　[OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0) 仅随附[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1)，[AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2) 独立下载导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，主分支与三个发布标签的 CI 均通过。App 的 6 个附件和两个页签各 4 个附件，共 14 个，均已从远端重新下载并核对大小与 SHA-256；随附塔防与独立包字节一致。
 
 **历史交付（2026-11-03）**　[OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) 仅随附[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5)。[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2) 单独下载，可在「功能管理」导入并启用。三个版本均从干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5` 构建。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。
 
@@ -14,7 +16,7 @@ OpenDesk 是独立的本地桌面工作台，应用标识为 `net.nimda.opendesk
 
 面向 Windows 的本地桌面工具台，用于挂载和开发独立功能。基于 **Tauri 2 + Vue 3 / TypeScript + Python worker**，通用框架管理窗口、设置和后台通信，业务模块各自负责界面与逻辑。
 
-**最新公开版本为 [v0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)**（2026-11-23） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
+**最新公开版本为 [v0.22.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.22.0)**（2026-11-25） · [下载索引](docs/downloads.md) · [更新记录](CHANGELOG.md) · [页签包](docs/module-packages.md) · [版本维护](docs/versioning.md) · [发布手册](docs/releasing.md)
 
 ## 正式页签与本地开发测试
 
@@ -325,4 +327,4 @@ docs/                             工程规范、架构和验证
 
 ## DeepSeek Harness 独立页签
 
-`deepseek-harness` 是独立的 `hostApi: 2` Web App 页签（本地开发源码 `0.4.1`，尚未公开发布），通过包内监督 worker、本地 HTTP/WebSocket 反向代理、本地源码构建与 `dev:web` 热开发工作流、零配置自动注入的 OpenDesk 跨页签 MCP 桥接与路由 Skill 完整承载原生 `dsh web`（Cordis 插件、MCP、Subagents、Plan 与定时任务）。默认隔离 `DSH_HOME` 于模块数据目录，并支持连接外部独立运行的 `dsh web` 实例。可用 `npm run test:dsh` 检查、`npm run build:module -- deepseek-harness`（或 `dsh`）单独构建。详见 [DeepSeek Harness 页签说明](docs/deepseek-harness.md) 与 [DSH × OpenDesk 页签操控链路统一规划](docs/dsh-opendesk-automation-plan.md)。
+`deepseek-harness` 是独立的 `hostApi: 2` Web App 页签（最新正式版 [0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1)），通过包内监督 worker、本地 HTTP/WebSocket 反向代理、本地源码构建与 `dev:web` 热开发工作流、零配置自动注入的 OpenDesk 跨页签 MCP 桥接与路由 Skill 完整承载原生 `dsh web`（Cordis 插件、MCP、Subagents、Plan 与定时任务）。默认隔离 `DSH_HOME` 于模块数据目录，并支持连接外部独立运行的 `dsh web` 实例。可用 `npm run test:dsh` 检查、`npm run build:module -- deepseek-harness`（或 `dsh`）单独构建。详见 [DeepSeek Harness 页签说明](docs/deepseek-harness.md) 与 [DSH × OpenDesk 页签操控链路统一规划](docs/dsh-opendesk-automation-plan.md)。

@@ -2,6 +2,21 @@
 
 # 验证记录
 
+## 2026-11-25 发布结果 · OpenDesk 0.22.0、DeepSeek Harness 0.4.1、塔防 0.10.3
+
+已从干净提交 `184b965ea31554d0e128a474861566a8f3fe2fcb` 构建并公开发布 [App 0.22.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.22.0)（标为最新，仅随附塔防 0.10.3），并公开发布源自干净提交 `d57e300f580329113fcae9e9c8388cc3b07e6502` 的独立页签 [DeepSeek Harness 0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1) 与 [塔防 0.10.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.3)（沿用各自原干净构建身份，不伪造新提交来源）。
+
+- **本地检查与实机联调**：版本、架构边界（178 份源码）、类型检查、前端 294 项、Rust 宿主 76 项（0 警告，含 `moduleToolsV2` 目录/唤醒/参数校验/写操作逐次审批测试）、Worker 与塔防 166 项、AI 工作台 46+145 项、DeepSeek Harness 插件 4+13 项全部通过。另在本机以真实源码版 `deepseek-harness` 完成托管隔离模式零配置 `--patch` MCP 自动连接实机联调（`initialize` / `tools/list` / HTTP 200 / WebSocket 101 / `prepareShutdown` 0.11s）。
+- **原生核心桌面 Smoke**：`dist/OpenDesk/OpenDesk.exe`（0.22.0）在隔离测试根通过前端挂载、IPC、设置往返与 worker 启停验证，证据位于本机 `.local/smoke/20261125-145513-118/smoke-result.json`。
+- **远端 CI 记录**：`main`（`184b965`，[Check #45564309484](https://github.com/utxnimda/OpenDesk/actions/runs/45564309484)）、`v0.22.0` 标签（[Check #45564310319](https://github.com/utxnimda/OpenDesk/actions/runs/45564310319)）及前序修复提交 `5cc387a`（[Check #45562046276](https://github.com/utxnimda/OpenDesk/actions/runs/45562046276)）的全部 3 项 job（`source-checks`、`desktop-checks`、`media-manager-checks`）均绿灯通过。两个模块标签固定在原构建提交 `d57e300`，该提交本身在远端 `test:ai` 因 `ai-workbench` 包装页缺少 `ToolOperation` 分支收窄而失败（不影响 `deepseek-harness` 与 `tower-assistant` 包内代码），修复已合入 `5cc387a` 并随 `v0.22.0` 全线通过 CI；未移动既有构建标签。
+- **包审计与远端回下核验**：逐条目审查便携 ZIP 57 条目、塔防 `.ndpkg` 73 条目、DeepSeek Harness `.ndpkg` 68 条目，无部署工作台、测试 fixture、私人配置或凭据泄漏。三个 Release 共 14 个附件（App 6 + 塔防 4 + DSH 4）均从公开 Release 重新下载并逐项比对字节大小与 SHA-256 一致，证据位于本机 `.local/release-downloads/022-20261125-150431/verified-artifacts.json`。
+- **正式附件 SHA-256**：
+  - `OpenDesk_0.22.0_x64-setup.exe`：`706ffaf5e6f2e5b62b0d8cc2c1e766c68ad627d1bbf605555a387a34c9f24b12`
+  - `OpenDesk_0.22.0_windows-x64_portable.zip`：`031070ee2603e3565dd35b02c9ae28505df607416e9535b9a56159a3776ca76d`
+  - `tower-assistant-0.10.3.ndpkg`（App 随附与独立包字节一致）：`f23140e65a7cd2b03bdd37fc9307c40cffc3890767e26ab43272a74ccedbab03`
+  - `deepseek-harness-0.4.1.ndpkg`：`6500ff1096cdf01fdd8206abb68b39dff87d2ec1775797e1ee14d5780b2cbfad`
+- **未验证边界**：未执行代码签名、全新裸机安装与卸载测试、长时间运行压力测试，以及在桌面 WebView2 窗口中人工点击原生唤醒/写操作确认弹窗的完整交互验收。原本地开发包（`deepseek-harness` 0.1.0–0.4.0、`tower-assistant` 0.10.2）均保留原字节。
+
 ## 2026-11-23 发布结果 · OpenDesk 0.21.0、塔防 0.10.1、AI 工作台 0.5.2
 
 从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建并公开发布 [App 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)、[塔防 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1) 与 [AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2)。App 标为最新，仅随附塔防；两个页签提供独立下载。

@@ -48,6 +48,8 @@ hostApi、dataSchema 与包语义版本独立。代码回退不代表数据回�
 
 ## 交付边界
 
+2026-11-25 已发布 [App 0.22.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.22.0)（干净提交 `184b965ea31554d0e128a474861566a8f3fe2fcb`，随附塔防 0.10.3）、[DeepSeek Harness 0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1) 与 [塔防 0.10.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.3)（两模块保留其原干净构建来源 `d57e300f580329113fcae9e9c8388cc3b07e6502`）。App 与独立页签共 14 个附件已重新下载核对大小与 SHA-256；`main` 与 `v0.22.0` 的全部 Check CI 通过。[验证记录](verification.md) · [下载索引](downloads.md)
+
 2026-11-23 已发布 App 0.21.0、塔防 0.10.1 和 AI 工作台 0.5.2，来源为干净提交 `e3b2c821f709787e03dd2c69871db9c030578444`。三个发布标签与 main 的 CI 均通过，14 个远端附件已重新下载核对大小及摘要。App 仅随附塔防，AI 独立导入。原塔防 0.10.0、AI 0.5.0／0.5.1 的本地包保留。未公开的宿主 0.21.0 沿用其现有版本历史并从干净提交重建，保留先前 dirty 输出。[验证记录](verification.md) · [下载索引](downloads.md)
 
 2026-11-03 已发布 [OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)、[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) 与[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)，构建提交为 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5`。此前本地开发的 0.20.0、0.9.4 和 0.8.1 保留其原有来源和摘要。App 仅随附塔防，虚拟伙伴独立分发。[验证记录](verification.md) · [下载索引](downloads.md)

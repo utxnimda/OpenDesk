@@ -1,5 +1,9 @@
 # OpenDesk 发布手册
 
+## 2026-11-25 发布结果 · OpenDesk 0.22.0、DeepSeek Harness 0.4.1、塔防 0.10.3
+
+已从干净提交 `184b965ea31554d0e128a474861566a8f3fe2fcb` 构建并公开发布 App `v0.22.0`（标为最新，仅随附塔防 0.10.3），并公开发布源自干净构建提交 `d57e300f580329113fcae9e9c8388cc3b07e6502` 的独立页签 `modules/deepseek-harness/v0.4.1` 与 `modules/tower-assistant/v0.10.3`。`main` 与 `v0.22.0` 标签的全量 Check CI 通过，14 个远端附件已重新下载并核对大小与 SHA-256；正式暂存目录分别为 `dist/releases/app/0.22.0/`、`dist/releases/modules/deepseek-harness/0.4.1/` 与 `dist/releases/modules/tower-assistant/0.10.3/`。详情与 CI 记录见 [验证记录](verification.md) 和 [下载索引](downloads.md)。
+
 ## 2026-11-23 发布结果 · OpenDesk 0.21.0、塔防 0.10.1、AI 0.5.2
 
 已从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建并公开发布 App `v0.21.0`、`modules/tower-assistant/v0.10.1` 和 `modules/ai-workbench/v0.5.2`。App 仅随附塔防，AI 独立下载。三个标签和 main 的 Check 均通过，14 个附件均重新下载核对大小与 SHA-256。正式暂存目录分别为 `dist/releases/app/0.21.0/`、`dist/releases/modules/tower-assistant/0.10.1/` 与 `dist/releases/modules/ai-workbench/0.5.2/`。

@@ -2,7 +2,9 @@
 
 本文包含用户授权的本地版本化页签包。实现范围与运行证据分开，具体检查结果见 README 和验证记录。
 
-当前正式交付为 [OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)、[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1) 和 [AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2)，App 仅随附塔防，AI 工作台独立下载导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，主分支与三个发布标签的 CI 均通过。App 的 6 个附件和两个页签各 4 个附件，共 14 个，均已从远端重新下载并核对大小与 SHA-256；随附塔防与独立包字节一致。
+当前正式交付为 [OpenDesk 0.22.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.22.0)、[DeepSeek Harness 0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1) 与 [塔防山贼助手 0.10.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.3)，App 仅随附塔防 0.10.3，DeepSeek Harness 0.4.1 独立下载导入。App 0.22.0 来自干净提交 `184b965ea31554d0e128a474861566a8f3fe2fcb`（主分支与 `v0.22.0` 标签 CI 全通），两个页签保留其原干净构建提交 `d57e300f580329113fcae9e9c8388cc3b07e6502`；全部 14 个远端附件已重新下载并核对大小与 SHA-256。
+
+2026-11-23 的历史正式交付为 [OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)、[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1) 和 [AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2)，App 仅随附塔防，AI 工作台独立下载导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，主分支与三个发布标签的 CI 均通过。App 的 6 个附件和两个页签各 4 个附件，共 14 个，均已从远端重新下载并核对大小与 SHA-256；随附塔防与独立包字节一致。
 
 2026-11-03 的历史正式交付为 [App 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)、[塔防助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) 和 [虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)，来源为干净提交 `9b1bd6edb128e6f8ae1173dd064b3022c53bcef5`。App 只随附塔防，独立塔防包与随附包字节一致，虚拟伙伴独立下载导入。2026-11-03 三个 Release 的 14 个附件均已重新下载并核对 SHA-256。AI 工作台 0.4.4 与作品管理器 0.3.1 沿用既有独立 Release；测试包、部署工作台与本机数据未进入本次交付。历史 0.19.3／0.9.3、0.18.0／0.8.2 的来源与验证记录保留。
 

@@ -1,5 +1,7 @@
 # App 与页签下载
 
+2026-11-25 已公开 [OpenDesk 0.22.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.22.0)、[DeepSeek Harness 0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1) 与 [塔防山贼助手 0.10.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.3)。App 仅随附塔防 0.10.3，DeepSeek Harness 0.4.1 独立下载导入。App 0.22.0 从干净提交 `184b965ea31554d0e128a474861566a8f3fe2fcb` 构建，两个模块包保持其真实干净构建来源 `d57e300f580329113fcae9e9c8388cc3b07e6502`；全部 14 个远端附件已重新下载并逐项核对大小与 SHA-256。
+
 2026-11-23 已公开 [OpenDesk 0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0)、[塔防山贼助手 0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1) 和 [AI 工作台 0.5.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fai-workbench%2Fv0.5.2)。App 仅随附塔防，AI 独立导入。三个版本均从干净提交 `e3b2c821f709787e03dd2c69871db9c030578444` 构建，14 个附件已重新下载并核对大小与 SHA-256。
 
 App 与正式页签分别按版本发布。2026-11-03 已公开 [OpenDesk 0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1)、[塔防山贼助手 0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) 与[虚拟伙伴 0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fvirtual-partner%2Fv0.8.2)。App 的 6 个附件和两个页签各 4 个附件，共 14 个，经远端重新下载核对大小与 SHA-256。历史版本的下载链接及核验记录保留在下方。
@@ -8,6 +10,7 @@ App 与正式页签分别按版本发布。2026-11-03 已公开 [OpenDesk 0.20.1
 
 | 版本 | Windows x64 下载 | 随附页签 |
 |---|---|---|
+| [0.22.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.22.0) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.22.0/OpenDesk_0.22.0_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.22.0/OpenDesk_0.22.0_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.22.0/SHA256SUMS.txt) | 塔防山贼助手 0.10.3（与独立包一致）；DeepSeek Harness 0.4.1 独立下载 |
 | [0.21.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.21.0) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.21.0/OpenDesk_0.21.0_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.21.0/OpenDesk_0.21.0_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.21.0/SHA256SUMS.txt) | 塔防山贼助手 0.10.1（与独立包一致） |
 | [0.20.1](https://github.com/utxnimda/OpenDesk/releases/tag/v0.20.1) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.20.1/OpenDesk_0.20.1_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.20.1/OpenDesk_0.20.1_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.20.1/SHA256SUMS.txt) | 塔防山贼助手 0.9.5（与独立包一致） |
 | [0.19.3](https://github.com/utxnimda/OpenDesk/releases/tag/v0.19.3) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.19.3/OpenDesk_0.19.3_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.19.3/OpenDesk_0.19.3_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.19.3/SHA256SUMS.txt) | 塔防山贼助手 0.9.3（与独立包一致）；AI 单独下载 |
@@ -17,9 +20,17 @@ App 与正式页签分别按版本发布。2026-11-03 已公开 [OpenDesk 0.20.1
 | [0.12.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.12.0) | [安装器](https://github.com/utxnimda/OpenDesk/releases/download/v0.12.0/OpenDesk_0.12.0_x64-setup.exe) · [便携包](https://github.com/utxnimda/OpenDesk/releases/download/v0.12.0/OpenDesk_0.12.0_windows-x64_portable.zip) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/v0.12.0/SHA256SUMS.txt) | 塔防山贼助手 0.1.7 |
 | [0.6.0](https://github.com/utxnimda/OpenDesk/releases/tag/v0.6.0) | 历史 Release 中保留原产物与校验文件 | 以该历史版本清单为准 |
 
-便携包需要完整解压后启动 `OpenDesk.exe`。当前 App 0.21.0 只随附塔防 0.10.1。虚拟伙伴 0.8.2、AI 工作台 0.5.2 和作品管理器 0.3.1 按需单独导入。升级 App 保留已有精确版本选择，不自动切换或删除个人插件。部署工作台、模块测试台二进制、外部导入包和私人数据不属于公开交付。
+便携包需要完整解压后启动 `OpenDesk.exe`。当前 App 0.22.0 只随附塔防 0.10.3。DeepSeek Harness 0.4.1、虚拟伙伴 0.8.2、AI 工作台 0.5.2 和作品管理器 0.3.1 按需单独导入。升级 App 保留已有精确版本选择，不自动切换或删除个人插件。部署工作台、模块测试台二进制、外部导入包和私人数据不属于公开交付。
 
 ## 正式页签
+
+### deepseek-harness / DeepSeek Harness
+
+| 版本 | 独立下载 | 契约 |
+|---|---|---|
+| [0.4.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Fdeepseek-harness%2Fv0.4.1) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Fdeepseek-harness%2Fv0.4.1/deepseek-harness-0.4.1.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Fdeepseek-harness%2Fv0.4.1/SHA256SUMS.txt) | Windows x64、hostApi 2、webApp true、dataSchema 1；推荐搭配 OpenDesk 0.22.0 |
+
+完整承载原生 `dsh web`，支持托管隔离/外部连接/本地源码仓开发模式，以及零配置自动注入的 OpenDesk 跨页签 MCP 桥接与 `opendesk-workbench` 路由 Skill。包 SHA-256 为 `6500ff1096cdf01fdd8206abb68b39dff87d2ec1775797e1ee14d5780b2cbfad`。[DeepSeek Harness 页签说明](deepseek-harness.md) · [页签操控链路规划](dsh-opendesk-automation-plan.md)
 
 ### virtual-partner / 虚拟伙伴
 
@@ -52,12 +63,15 @@ App 与正式页签分别按版本发布。2026-11-03 已公开 [OpenDesk 0.20.1
 
 | 版本 | 独立下载 | 契约 |
 |---|---|---|
+| [0.10.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.3) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.10.3/tower-assistant-0.10.3.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.10.3/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1。App 0.22.0 随附相同的包；v2 参数化只读筛选需宿主 0.22.0 |
 | [0.10.1](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.10.1) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.10.1/tower-assistant-0.10.1.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.10.1/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1。App 0.21.0 随附相同的包 |
 | [0.9.5](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.5) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.5/tower-assistant-0.9.5.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.5/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1。App 随附相同的包 |
 | [0.9.3](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.9.3) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.3/tower-assistant-0.9.3.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.9.3/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1；AI 只读工具需宿主 0.19.0 或更新 |
 | [0.8.2](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.8.2) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.8.2/tower-assistant-0.8.2.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.8.2/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1；透明排行榜需 OpenDesk 0.18.0 |
 | [0.1.9](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.9) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.9/tower-assistant-0.1.9.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.9/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1；支持薄荷奶油 |
 | [0.1.7](https://github.com/utxnimda/OpenDesk/releases/tag/modules%2Ftower-assistant%2Fv0.1.7) | [页签包](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.7/tower-assistant-0.1.7.ndpkg) · [校验清单](https://github.com/utxnimda/OpenDesk/releases/download/modules%2Ftower-assistant%2Fv0.1.7/SHA256SUMS.txt) | Windows x64、hostApi 1、dataSchema 1 |
+
+0.10.3 的独立包与 App 0.22.0 随附包 SHA-256 均为 `f23140e65a7cd2b03bdd37fc9307c40cffc3890767e26ab43272a74ccedbab03`。原本地开发 0.10.2 包保留原字节与来源。
 
 0.10.1 的独立包与 App 0.21.0 随附包 SHA-256 均为 `53e7dbbd26bdd8a8dff70779a7492738d20e03f815e2462228f4b6c11c5e9dbc`。原塔防 0.10.0、AI 0.5.0／0.5.1 的本地包保留原字节与来源。
 
