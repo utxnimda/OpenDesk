@@ -22,8 +22,11 @@ async function receive(event: MessageEvent) {
   try {
     if (!bridge.host.tools) throw new Error('此功能需要支持插件工具的新版 OpenDesk；API 聊天和 Codex 仍可使用。');
     const op = parseToolOperation(data.action, data.params);
-    const result = op.action === 'list' ? await bridge.host.tools.list() : op.action === 'grant'
-      ? await bridge.host.tools.grant(op.params.tools) : await bridge.host.tools.call(op.params.tool, op.params.arguments);
+    let result: unknown;
+    if (op.action === 'list') result = await bridge.host.tools.list();
+    else if (op.action === 'grant') result = await bridge.host.tools.grant(op.params.tools);
+    else if (op.action === 'call') result = await bridge.host.tools.call(op.params.tool, op.params.arguments);
+    else throw new Error('当前 AI 工作台版本仅支持只读插件工具调用。');
     if (!disposed) frame?.contentWindow?.postMessage({ channel, nonce, id: data.id, ok: true, result }, origin);
   } catch (cause) {
     if (!disposed) frame?.contentWindow?.postMessage({ channel, nonce, id: data.id, ok: false, error: errorMessage(cause) }, origin);
