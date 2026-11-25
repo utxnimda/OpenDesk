@@ -1,6 +1,6 @@
 # DeepSeek Harness 独立页签
 
-`deepseek-harness` 是 OpenDesk 的独立 `hostApi: 2`（`webApp: true`）页签包（当前本地源码版本 `0.4.1`），用于完整承载 [DeepSeek Harness (`dsh`)](https://github.com/deepseek-ai/deepseek-harness) 的原生 Web 应用及全部 Cordis 插件逻辑。
+`deepseek-harness` 是 OpenDesk 的独立 `hostApi: 2`（`webApp: true`）页签包（当前本地源码版本 `0.4.2`），用于完整承载 [DeepSeek Harness (`dsh`)](https://github.com/deepseek-ai/deepseek-harness) 的原生 Web 应用及全部 Cordis 插件逻辑。
 
 关于未来通过 DSH 自然语言操作 OpenDesk 其他页签的端到端架构规划，见 [DSH × OpenDesk 页签操控链路统一规划](dsh-opendesk-automation-plan.md)。
 
