@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import shutil
 import tempfile
 import time
 import unittest
+from unittest import mock
 import urllib.request
 
+from deepseek_harness.probe import PnpmInfo, probe_environment
 from deepseek_harness.service import DshService
 from deepseek_harness.supervisor import extract_dsh_url_and_token, redact_log_line
 
@@ -166,6 +169,113 @@ class SupervisorTests(unittest.TestCase):
             finally:
                 service.close()
                 external.stop()
+
+    def test_managed_child_appends_pnpm_fallback_shim_to_path(self):
+        node_bin = shutil.which("node")
+        if not node_bin:
+            self.skipTest("node is required for supervisor integration test")
+
+        with tempfile.TemporaryDirectory(prefix="dsh-shim-svc-") as tmp:
+            root = Path(tmp)
+            data_dir = root / "data"
+            fake_pnpm_js = root / "fake-pnpm.mjs"
+            fake_pnpm_js.write_text(
+                "console.log(JSON.stringify({ ok: true, argv: process.argv.slice(2), prompt: process.env.COREPACK_ENABLE_DOWNLOAD_PROMPT || '' }));\n",
+                encoding="utf-8",
+            )
+            mock_dsh_js = root / "mock-dsh-pnpm.js"
+            mock_dsh_js.write_text(
+                r"""
+const http = require('node:http');
+const { spawnSync } = require('node:child_process');
+const path = require('node:path');
+const args = process.argv.slice(2);
+let port = 0;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--port' && args[i + 1]) port = Number(args[i + 1]);
+}
+const server = http.createServer((req, res) => {
+  const parts = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  const shimDir = parts[parts.length - 1] || '';
+  const shimCmd = process.platform === 'win32' ? path.join(shimDir, 'pnpm.cmd') : path.join(shimDir, 'pnpm');
+  const run = process.platform === 'win32'
+    ? spawnSync('cmd.exe', ['/d', '/s', '/c', `""${shimCmd}" -v"`], { encoding: 'utf8', windowsVerbatimArguments: true })
+    : spawnSync(shimCmd, ['-v'], { encoding: 'utf8' });
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({
+    pathLast: shimDir,
+    rc: run.status,
+    stdout: (run.stdout || '').trim(),
+    stderr: (run.stderr || '').trim(),
+  }));
+});
+server.listen(port, '127.0.0.1', () => {
+  console.log(`DeepSeek Harness Web UI listening at http://127.0.0.1:${server.address().port}/`);
+});
+process.on('SIGTERM', () => server.close(() => process.exit(0)));
+""",
+                encoding="utf-8",
+            )
+
+            service = DshService(data_dir, version="0.1.0")
+            try:
+                proxy_url = service.start_webapp()
+                service.configure({
+                    "launchMode": "managed",
+                    "dshSource": "custom",
+                    "customDshPath": str(mock_dsh_js),
+                    "homeMode": "isolated",
+                    "autoStart": False,
+                })
+                real_probe = probe_environment(
+                    data_dir,
+                    dsh_source="custom",
+                    custom_dsh_path=str(mock_dsh_js),
+                )
+                fallback_probe = real_probe.__class__(
+                    node=real_probe.node,
+                    npmPath=real_probe.npmPath,
+                    pnpm=PnpmInfo(
+                        True,
+                        "corepack",
+                        str(Path(node_bin).resolve()),
+                        str(fake_pnpm_js.resolve()),
+                        "corepack pnpm",
+                    ),
+                    dsh=real_probe.dsh,
+                    sourceRepo=real_probe.sourceRepo,
+                    managedCliDir=real_probe.managedCliDir,
+                    managedCliInstalled=real_probe.managedCliInstalled,
+                    systemDshHome=real_probe.systemDshHome,
+                )
+
+                with mock.patch("deepseek_harness.service.probe_environment", return_value=fallback_probe):
+                    service.start_dsh()
+
+                deadline = time.monotonic() + 15.0
+                while time.monotonic() < deadline:
+                    snap = service.status()["runtime"]
+                    if snap["state"] == "running":
+                        break
+                    self.assertNotEqual(snap["state"], "error", snap.get("error"))
+                    time.sleep(0.1)
+                self.assertEqual(service.status()["runtime"]["state"], "running")
+
+                with urllib.request.urlopen(proxy_url, timeout=5) as resp:
+                    self.assertEqual(resp.status, 200)
+                    data = json.loads(resp.read().decode("utf-8"))
+                expected_shim_dir = str((data_dir / "runtime-shims").resolve())
+                self.assertEqual(os.path.normcase(data["pathLast"]), os.path.normcase(expected_shim_dir))
+                self.assertEqual(data["rc"], 0, data["stderr"])
+                parsed = json.loads(data["stdout"])
+                self.assertTrue(parsed["ok"])
+                self.assertEqual(parsed["argv"], ["pnpm", "-v"])
+                self.assertEqual(parsed["prompt"], "0")
+
+                log_text = "\n".join(entry["line"] for entry in service.logs()["entries"])
+                self.assertIn("未检测到全局 pnpm，已自动注入隔离 pnpm 垫片", log_text)
+            finally:
+                service.close()
 
 
 if __name__ == "__main__":

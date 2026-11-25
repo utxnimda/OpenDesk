@@ -18,6 +18,7 @@ from .probe import (
     DshEntry,
     ProbeResult,
     build_pnpm_command,
+    ensure_pnpm_shim,
     is_dsh_source_repo,
     probe_environment,
 )
@@ -416,12 +417,40 @@ class DshSupervisor:
             return ([entry.executable, entry.script, *profile_args], None, 90.0)
         return ([entry.executable, *profile_args], None, 90.0)
 
-    def _build_child_env(self, node_path: str = "", dsh_home: Path | None = None, agents_home: Path | None = None) -> dict[str, str]:
+    def _prepare_pnpm_shim_dir(self, probe: ProbeResult) -> Path | None:
+        if not probe.pnpm.available or probe.pnpm.kind not in ("repo-pnpm", "corepack"):
+            return None
+        try:
+            shim_dir = ensure_pnpm_shim(self.data_dir, probe.pnpm)
+        except (OSError, ValueError, RuntimeError) as error:
+            self.append_log("system", f"生成隔离 pnpm 兜底垫片失败（{probe.pnpm.display}）：{error}")
+            return None
+        if shim_dir is not None:
+            self.append_log("system", f"未检测到全局 pnpm，已自动注入隔离 pnpm 垫片（{probe.pnpm.display}）供插件市场与源码脚本使用。")
+        return shim_dir
+
+    def _build_child_env(
+        self,
+        node_path: str = "",
+        dsh_home: Path | None = None,
+        agents_home: Path | None = None,
+        pnpm_shim_dir: Path | None = None,
+    ) -> dict[str, str]:
         env = os.environ.copy()
+        path_parts = [p for p in env.get("PATH", "").split(os.pathsep) if p]
+        norm = (lambda s: os.path.normcase(os.path.normpath(s)))
         if node_path:
             node_dir = str(Path(node_path).parent.resolve())
-            existing_path = env.get("PATH", "")
-            env["PATH"] = f"{node_dir}{os.pathsep}{existing_path}" if existing_path else node_dir
+            node_key = norm(node_dir)
+            path_parts = [node_dir, *(p for p in path_parts if norm(p) != node_key)]
+        if pnpm_shim_dir is not None:
+            # Append (never prepend) so any native global pnpm on PATH always takes precedence.
+            shim_str = str(Path(pnpm_shim_dir).resolve())
+            shim_key = norm(shim_str)
+            if not any(norm(p) == shim_key for p in path_parts):
+                path_parts.append(shim_str)
+        if path_parts:
+            env["PATH"] = os.pathsep.join(path_parts)
         if dsh_home is not None:
             env["DSH_HOME"] = str(dsh_home)
         if agents_home is not None:
@@ -460,10 +489,12 @@ class DshSupervisor:
             workspace = (self.data_dir / "workspace").resolve()
             workspace.mkdir(parents=True, exist_ok=True)
 
+        pnpm_shim_dir = self._prepare_pnpm_shim_dir(probe)
         env = self._build_child_env(
             node_path=probe.node.path if probe.node.available else "",
             dsh_home=dsh_home,
             agents_home=agents_home,
+            pnpm_shim_dir=pnpm_shim_dir,
         )
 
         patch_file: Path | None = None
@@ -860,7 +891,8 @@ class DshSupervisor:
 
             pnpm_args = ["install"] if kind == "install" else ["run", "build:artifacts"]
             cmd = build_pnpm_command(probe.pnpm, pnpm_args)
-            env = self._build_child_env(node_path=probe.node.path)
+            pnpm_shim_dir = self._prepare_pnpm_shim_dir(probe)
+            env = self._build_child_env(node_path=probe.node.path, pnpm_shim_dir=pnpm_shim_dir)
 
             self._source_task_kind = kind
             self._source_task_state = "running"

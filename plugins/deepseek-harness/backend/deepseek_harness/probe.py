@@ -6,7 +6,9 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
+import stat
 import subprocess
 from typing import Sequence
 
@@ -27,7 +29,7 @@ class NodeInfo:
 @dataclass(frozen=True)
 class PnpmInfo:
     available: bool
-    kind: str  # "pnpm" | "corepack" | "none"
+    kind: str  # "pnpm" | "repo-pnpm" | "corepack" | "none"
     executable: str
     script: str
     display: str
@@ -143,13 +145,14 @@ def probe_npm(node_path: str = "") -> str:
 
 
 def _resolve_windows_cmd_to_js(cmd_path: Path) -> tuple[str, str]:
-    """Inspect a Windows npm/corepack .cmd shim to extract the underlying JS entry so node can run it directly."""
+    """Inspect a Windows npm/pnpm/corepack .cmd shim to extract the underlying JS entry so node can run it directly."""
     try:
         text = cmd_path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
         return "", ""
     # Typical npm shim: "%dp0%\node_modules\@deepseek-ai\dsh\lib\bin.js"
-    match = re.search(r'"%dp0%\\([^"]+\.(?:m?js|cjs))"', text, re.IGNORECASE)
+    # Typical pnpm shim: "%~dp0\..\pnpm\bin\pnpm.mjs"
+    match = re.search(r'"%(?:dp0%|~dp0)\\([^"]+\.(?:m?js|cjs))"', text, re.IGNORECASE)
     if match:
         target = (cmd_path.parent / match.group(1).replace("\\", os.sep)).resolve()
         if target.is_file():
@@ -158,8 +161,37 @@ def _resolve_windows_cmd_to_js(cmd_path: Path) -> tuple[str, str]:
     return "", ""
 
 
-def probe_pnpm(node_info: NodeInfo) -> PnpmInfo:
-    """Detect pnpm directly, or fall back to Node's bundled corepack (`corepack pnpm`)."""
+def _resolve_repo_pnpm(repo_root: Path, node_info: NodeInfo) -> PnpmInfo | None:
+    """Detect a pnpm binary/script bundled inside a validated local source repo's node_modules."""
+    if not repo_root.is_dir():
+        return None
+    if node_info.available and node_info.path:
+        direct_mjs = repo_root / "node_modules" / "pnpm" / "bin" / "pnpm.mjs"
+        if direct_mjs.is_file():
+            return PnpmInfo(True, "repo-pnpm", node_info.path, str(direct_mjs.resolve()), "源码仓 pnpm")
+
+    bin_dir = repo_root / "node_modules" / ".bin"
+    names = ("pnpm.cmd", "pnpm.CMD", "pnpm.exe", "pnpm") if os.name == "nt" else ("pnpm",)
+    seen: set[str] = set()
+    for name in names:
+        cand = bin_dir / name
+        if not cand.is_file():
+            continue
+        resolved = cand.resolve()
+        key = str(resolved).lower() if os.name == "nt" else str(resolved)
+        if key in seen:
+            continue
+        seen.add(key)
+        if resolved.suffix.lower() == ".cmd" and node_info.available and node_info.path:
+            script, _ = _resolve_windows_cmd_to_js(resolved)
+            if script:
+                return PnpmInfo(True, "repo-pnpm", node_info.path, script, "源码仓 pnpm")
+        return PnpmInfo(True, "repo-pnpm", str(resolved), "", "源码仓 pnpm")
+    return None
+
+
+def probe_pnpm(node_info: NodeInfo, *, source_repo_root: Path | None = None) -> PnpmInfo:
+    """Detect pnpm directly, then source-repo local pnpm, or fall back to Node's bundled corepack."""
     node_dir = Path(node_info.path).parent if node_info.available and node_info.path else None
 
     # 1. Explicit pnpm in Node directory or PATH
@@ -181,7 +213,13 @@ def probe_pnpm(node_info: NodeInfo) -> PnpmInfo:
                 return PnpmInfo(True, "pnpm", node_info.path, script, "pnpm")
         return PnpmInfo(True, "pnpm", str(cand), "", "pnpm")
 
-    # 2. Corepack bundled with Node.js (runs pinned pnpm version automatically without global install)
+    # 2. Local pnpm already installed inside the configured DeepSeek Harness source repo (offline, pinned version)
+    if source_repo_root is not None:
+        repo_pnpm = _resolve_repo_pnpm(source_repo_root, node_info)
+        if repo_pnpm is not None:
+            return repo_pnpm
+
+    # 3. Corepack bundled with Node.js (runs pinned pnpm version automatically without global install)
     if node_dir is not None and node_info.available:
         corepack_js = node_dir / "node_modules" / "corepack" / "dist" / "corepack.js"
         if corepack_js.is_file():
@@ -212,6 +250,64 @@ def build_pnpm_command(pnpm_info: PnpmInfo, pnpm_args: Sequence[str]) -> list[st
     if pnpm_info.script:
         return [pnpm_info.executable, pnpm_info.script, *pnpm_args]
     return [pnpm_info.executable, *pnpm_args]
+
+
+def _quote_cmd_arg(value: str) -> str:
+    """Safely quote a static argument inside a Windows .cmd shim without shell metacharacter injection."""
+    if not value or any(ch in value for ch in ("\r", "\n", '"', "\x00")):
+        raise ValueError(f"Invalid shim command argument: {value!r}")
+    return '"' + value.replace("%", "%%") + '"'
+
+
+def ensure_pnpm_shim(data_dir: Path, pnpm_info: PnpmInfo) -> Path | None:
+    """Create an isolated pnpm shim directory when pnpm is not natively on PATH (repo-pnpm / corepack fallback).
+
+    Returns the shim directory path to append to the child process PATH, or None when native pnpm is already available
+    or no fallback exists.
+    """
+    if not pnpm_info.available or pnpm_info.kind not in ("repo-pnpm", "corepack"):
+        return None
+    prefix_argv = build_pnpm_command(pnpm_info, [])
+    if not prefix_argv:
+        return None
+
+    shim_dir = (Path(data_dir) / "runtime-shims").resolve()
+    shim_dir.mkdir(parents=True, exist_ok=True)
+
+    if os.name == "nt":
+        quoted = [_quote_cmd_arg(arg) for arg in prefix_argv]
+        use_call = Path(prefix_argv[0]).suffix.lower() in (".cmd", ".bat")
+        invoke = f"call {' '.join(quoted)} %*" if use_call else f"{' '.join(quoted)} %*"
+        lines = [
+            "@echo off",
+            "setlocal",
+            "chcp 65001 >nul 2>nul",
+        ]
+        if pnpm_info.kind == "corepack":
+            lines.append('set "COREPACK_ENABLE_DOWNLOAD_PROMPT=0"')
+        lines.append(invoke)
+        lines.append("exit /b %ERRORLEVEL%")
+        content = "\r\n".join(lines) + "\r\n"
+        target = shim_dir / "pnpm.cmd"
+        tmp = shim_dir / f".pnpm.cmd.{os.getpid()}.tmp"
+        tmp.write_text(content, encoding="utf-8", newline="")
+        os.replace(tmp, target)
+    else:
+        for arg in prefix_argv:
+            if not arg or any(ch in arg for ch in ("\r", "\n", "\x00")):
+                raise ValueError(f"Invalid shim command argument: {arg!r}")
+        lines = ["#!/bin/sh"]
+        if pnpm_info.kind == "corepack":
+            lines.append("export COREPACK_ENABLE_DOWNLOAD_PROMPT=0")
+        lines.append(f"exec {' '.join(shlex.quote(arg) for arg in prefix_argv)} \"$@\"")
+        content = "\n".join(lines) + "\n"
+        target = shim_dir / "pnpm"
+        tmp = shim_dir / f".pnpm.{os.getpid()}.tmp"
+        tmp.write_text(content, encoding="utf-8", newline="\n")
+        os.chmod(tmp, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+        os.replace(tmp, target)
+
+    return shim_dir
 
 
 def _read_package_json(package_json: Path) -> dict:
@@ -428,7 +524,18 @@ def probe_environment(
 ) -> ProbeResult:
     node_info = probe_node(node_path)
     npm_path = probe_npm(node_info.path if node_info.available else "")
-    pnpm_info = probe_pnpm(node_info)
+    repo_root_hint: Path | None = None
+    if dsh_source == "custom" and custom_dsh_path:
+        custom_path_obj = Path(custom_dsh_path)
+        if custom_path_obj.is_absolute() and custom_path_obj.is_dir() and is_dsh_source_repo(custom_path_obj):
+            repo_root_hint = custom_path_obj.resolve()
+        elif custom_path_obj.is_absolute() and custom_path_obj.is_file():
+            # Also recognize when the user points directly to <repo>/apps/cli/lib/bin.js
+            for parent in custom_path_obj.resolve().parents:
+                if is_dsh_source_repo(parent):
+                    repo_root_hint = parent
+                    break
+    pnpm_info = probe_pnpm(node_info, source_repo_root=repo_root_hint)
     managed_dir = data_dir / "runtime-cli"
     managed_entry = resolve_managed_cli(data_dir, node_info)
     managed_installed = bool(managed_entry.script)

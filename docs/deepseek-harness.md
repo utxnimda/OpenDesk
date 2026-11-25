@@ -34,6 +34,7 @@ App 默认随附清单仍只有 `tower-assistant`；`deepseek-harness` 属于按
 - **托管模式（`managed`，默认）**：
   - 由插件拉起并管理 `dsh --profile <profile> --host 127.0.0.1 --port <空闲端口> --no-open`，并通过 Windows Job Object 绑定进程树所有权；
   - `DSH_HOME` 默认隔离到 `OPENDESK_MODULE_DATA_DIR/dsh-home`（`DSH_AGENTS_HOME` 到 `dsh-agents`），不静默读写本机 `~/.dsh`；用户可在设置中显式切换为复用本机 `~/.dsh` 或自定义绝对目录；
+  - 若本机 `PATH` 与指定 Node 目录中均未安装全局 `pnpm`，托管启动与源码仓任务会在隔离数据目录 `OPENDESK_MODULE_DATA_DIR/runtime-shims` 生成受控 `pnpm` 兜底垫片（优先复用已配置源码仓内的 `node_modules/pnpm`，否则回退到 Node 自带的 `corepack pnpm` 并禁用交互下载提示）并**追加到子进程 `PATH` 末尾**，既保证 DSH 插件市场安装插件与源码嵌套脚本可用，又不覆盖系统已有的全局 `pnpm`；
   - 停用页签、切换版本或退出 OpenDesk 时，`module.prepareShutdown` 会先排空并回收插件拥有的 `dsh` 进程树，确认退出后才报告 `ready: true`。
 - **外部模式（`external`）**：
   - 连接本机已独立运行的 `http://127.0.0.1:<端口>`（支持带可选 `?token=...`）；
