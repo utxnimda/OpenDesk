@@ -2,6 +2,12 @@
 
 <!-- Generated from config/version.json by scripts/version.mjs. Do not edit directly. -->
 
+## 0.22.0 — 2026-11-25
+
+新增跨页签协同唤醒与分级审批协议（moduleToolsV2），开放独立 DeepSeek Harness 页签并随附塔防山贼助手 0.10.3。
+
+- **页签包与版本管理 0.10.0**（调整，`core.module-packages`）：宿主新增 moduleToolsV2 协议（向后兼容 moduleTools v1），支持跨页签目录发现、经用户原生确认受控唤醒目标页签、tools.describe v2 有界参数校验与写操作逐次原生审批；并为宿主核验的 webApp 页签放行 clipboard-write。App 随附塔防山贼助手 0.10.3，DeepSeek Harness 0.4.1 独立分发。
+
 ## 0.21.0 — 2026-11-16
 
 新增暖灰纸面与黑橙细节的数据简报风格。
